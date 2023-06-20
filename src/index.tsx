@@ -23,7 +23,8 @@ const tryInit = () => {
   import('./view/MainScreen').then(({ renderApp }) => {
 
     const onEvents = (e: Map<string, VM<Event>>) => {
-      if (e) {
+      // TODO: fix - detect not loaded yet, not empty sate
+      if (e.size != 0) {
         model.eventsModule.events.unsubscribe(onEvents)
         root.render(renderApp(model))
       }
