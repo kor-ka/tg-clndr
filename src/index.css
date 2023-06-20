@@ -1,0 +1,101 @@
+:root {
+  --color-user-1: #e17076;
+  --color-user-2: #7bc862;
+  --color-user-4: #65aadd;
+  --color-user-5: #a695e7;
+  --color-user-6: #ee7aae;
+  --color-user-7: #6ec9cb;
+  --color-user-8: #faa774;
+
+
+
+
+}
+
+:root {
+  --tg-color-scheme: light;
+  --tg-theme-bg-color: #ffffff;
+  --tg-theme-text-color: #000000;
+  --tg-theme-hint-color: #707579;
+  --tg-theme-link-color: #3390ec;
+  --tg-theme-button-color: #3390ec;
+  --tg-theme-button-text-color: #ffffff;
+  --tg-theme-secondary-bg-color: #f4f4f5;
+  --tg-viewport-height: 576px;
+  --tg-viewport-stable-height: 576px;
+
+  --text-confirm-color: #31b545;
+  --text-destructive-color: #f56058;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tg-color-scheme: dark;
+    --tg-theme-bg-color: #212121;
+    --tg-theme-text-color: #ffffff;
+    --tg-theme-hint-color: #aaaaaa;
+    --tg-theme-link-color: #8774e1;
+    --tg-theme-button-color: #8774e1;
+    --tg-theme-button-text-color: #ffffff;
+    --tg-theme-secondary-bg-color: #0f0f0f;
+    --tg-viewport-height: 576px;
+    --tg-viewport-stable-height: 576px;
+
+    --text-confirm-color: #31b545;
+    --text-destructive-color: #f16d66;
+
+  }
+}
+
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--tg-theme-text-color);
+  font-size: large;
+  background-color: var(--tg-theme-bg-color);
+
+}
+
+button {
+  font-size: 1em;
+  border: none;
+  background-color: var(--tg-theme-button-color);
+  padding: 4px;
+  border-radius: 8px;
+  color: var(--tg-theme-button-text-color);
+}
+
+button:disabled {
+  opacity: 0.7;
+}
+
+input,
+select,
+textarea {
+  color: var(--tg-theme-text-color);
+  font-size: 2em;
+  background-color: var(--tg-theme-bg-color);
+  border: none;
+  outline: none;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
