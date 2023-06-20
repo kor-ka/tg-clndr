@@ -32,7 +32,7 @@ export class SessionModel {
         const endpoint =
             window.location.hostname.indexOf("localhost") >= 0
                 ? "http://localhost:5001"
-                : "https://tg-split.herokuapp.com/";
+                : "https://tg-clndr.herokuapp.com/";
 
         this.socket = io(endpoint, {
             transports: ["websocket"],
