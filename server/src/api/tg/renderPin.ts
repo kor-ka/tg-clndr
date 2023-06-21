@@ -20,7 +20,7 @@ export const renderPin = async (chatId: number, threadId: number | undefined, ev
   const lines = events.map(({ date, tz, description, }) => {
     const dateStr = new Date(date).toLocaleString('en', { month: 'short', day: 'numeric', timeZone: tz })
     const timeStr = new Date(date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h24', timeZone: tz })
-    return `🗓️${dateStr} - ${description}, ${timeStr} ${timeZones.size > 1 ? `(${tz})` : ''}`;
+    return `🗓️ ${dateStr} - ${description}, ${timeStr} ${timeZones.size > 1 ? `(${tz})` : ''}`;
   });
 
   const text = lines.join('\n').trim() || '🗓️ no upcoming events';
