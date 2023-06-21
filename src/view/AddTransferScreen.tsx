@@ -21,7 +21,7 @@ export const AddTransferScreen = () => {
         setDescription(e.target.value);
     }, [])
 
-    const [date, setDate] = React.useState(new Date(editEv?.date ?? Date.now()));
+    const [date, setDate] = React.useState(new Date(editEv?.date ?? Date.now() + 1000 * 60 * 60));
     const onDateInputChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setDate(new Date(e.target.value));
     }, [])
@@ -69,7 +69,7 @@ export const AddTransferScreen = () => {
         <BackButtopnController />
         <div style={{ display: 'flex', flexDirection: 'column', padding: '20px 0px' }}>
 
-            <input value={description} onChange={onDescriptionInputChange} disabled={disable} style={{ flexGrow: 1, padding: '8px 28px' }} placeholder="Description" />
+            <input value={description} onChange={onDescriptionInputChange} autoFocus={true} disabled={disable} style={{ flexGrow: 1, padding: '8px 28px' }} placeholder="Description" />
             <input value={crazyDateFormat} onChange={onDateInputChange} disabled={disable} type="datetime-local" style={{ flexGrow: 1, padding: '8px 28px' }} />
             {editEv && <Button disabled={disable} onClick={onDeleteClick}><ListItem titleStyle={{ color: "var(--text-destructive-color)", alignSelf: 'center' }} titile="DELETE EVENT" /></Button>}
         </div>
