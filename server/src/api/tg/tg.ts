@@ -218,7 +218,7 @@ And don't forget to pin the message with the button, so everyone can open the ap
       } catch (e) {
         console.error(e)
       }
-    })
+    }, null, true);
 
   };
 
