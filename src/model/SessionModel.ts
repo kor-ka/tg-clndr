@@ -12,7 +12,7 @@ export class SessionModel {
     readonly tgWebApp: TgWebAppInitData;
     readonly eventsModule = new EventsModule();
     readonly users: UsersModule;
-    loaded = flase;
+    loaded = false;
 
     private localOprationId = Date.now();
 
