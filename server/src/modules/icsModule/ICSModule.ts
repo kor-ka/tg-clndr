@@ -4,19 +4,23 @@ import { EventsModule } from "../eventsModule/EventsModule";
 import { LATEST_EVENTS } from "../eventsModule/eventStore";
 import { ICS } from "./icsStore";
 import * as ics from "ics"
+import { ChatMetaModule } from "../chatMetaModule/ChatMetaModule";
 
 @singleton()
 export class ICSModule {
   private db = ICS();
   private eventsModule = container.resolve(EventsModule)
+  private chatMetaModule = container.resolve(ChatMetaModule)
 
   readonly update = async (chatId: number, threadId: number | undefined) => {
     const events = await this.eventsModule.getEvents(chatId, threadId);
+    const chat = await this.chatMetaModule.getChatMeta(chatId);
 
     // TODO: migrate description - title
     const { error, value } = ics.createEvents(events.map(e => {
       const date = new Date(e.date);
       return {
+        calName: chat?.name ?? undefined,
         uid: e._id.toHexString(),
         title: e.description,
         start: [date.getFullYear(), date.getMonth() + 1, date.getDate(), date.getHours(), date.getMinutes()],
