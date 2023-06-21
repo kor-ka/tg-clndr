@@ -13,12 +13,14 @@ export function htmlEntities(str: string) {
 }
 
 export const renderPin = async (chatId: number, threadId: number | undefined, events: SavedEvent[]) => {
-  const userModule = container.resolve(UserModule)
-  const chatMetaModule = container.resolve(ChatMetaModule)
+  const userModule = container.resolve(UserModule);
+  const chatMetaModule = container.resolve(ChatMetaModule);
+  const timeZones = new Set<string>();
+  events.forEach(e => timeZones.add(e.tz));
   const lines = events.map(({ date, tz, description, }) => {
     const dateStr = new Date(date).toLocaleString('en', { month: 'short', day: 'numeric', timeZone: tz })
     const timeStr = new Date(date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h24', timeZone: tz })
-    return `${dateStr} - ${description}, ${timeStr} (${tz})`;
+    return `${dateStr} - ${description}, ${timeStr} ${timeZones.size > 1 ? `(${tz})` : ''}`;
   });
 
   const text = lines.join('\n').trim() || '🗓️ no upcoming events';
