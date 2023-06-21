@@ -21,6 +21,7 @@ import { UsersModule as UsersClientModule } from "../../src/model/UsersModule";
 import { UserModule } from "./modules/userModule/UserModule";
 import { VM } from "../../src/utils/vm/VM";
 import { ChatMetaModule } from "./modules/chatMetaModule/ChatMetaModule";
+import { ICSModule } from "./modules/icsModule/ICSModule";
 
 var path = require("path");
 const PORT = process.env.PORT || 5001;
@@ -74,6 +75,31 @@ initMDB().then(() => {
     })
     .get("/favicon.ico", async (_, res) => {
       res.sendFile(path.resolve(__dirname + "/../../../../public/favicon.ico"));
+    })
+
+    .get("/ics/:key/cal.ics", async (req, res) => {
+      try {
+        const chatMetaModule = container.resolve(ChatMetaModule)
+        const icsModule = container.resolve(ICSModule)
+
+        const [chat_descriptor, token] = (req.params.key as string).split('T') ?? [];
+        const [chatId, threadId] = chat_descriptor.split('_').map(Number) ?? [];
+        const [data, chatMeta] = await Promise.all([icsModule.getIcs(chatId, threadId), chatMetaModule.getChatMeta(chatId)]);
+
+        if ((chatMeta?.token ?? undefined) !== token) {
+          throw new Error("unauthorized")
+        }
+
+        res.send(data)
+      } catch (e) {
+        console.error("Something went wrong:", e);
+        if (e instanceof Error) {
+          return res.status(500).send(e.message);
+        } else {
+          return res.status(500).send("Oops 🤷‍♂️");
+        }
+      }
+
     })
 
     .use(express.json({ limit: "500kb" }))
@@ -154,6 +180,7 @@ initMDB().then(() => {
 
   new SocketApi(io).init();
   new TelegramBot().init();
+  container.resolve(ICSModule).init();
 
   server.listen(PORT, () => console.log(`lll- on ${PORT}`));
 }).catch(e => console.error(e));

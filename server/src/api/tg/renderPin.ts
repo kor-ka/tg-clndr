@@ -23,10 +23,14 @@ export const renderPin = async (chatId: number, threadId: number | undefined, ev
     return `🗓️ ${dateStr} - ${description}, ${timeStr} ${timeZones.size > 1 ? `(${tz})` : ''}`;
   });
 
-  const text = lines.join('\n').trim() || '🗓️ no upcoming events';
   let key = [chatId, threadId].filter(Boolean).join('_');
   const token = (await chatMetaModule.getChatMeta(chatId))?.token
   key = [key, token].filter(Boolean).join('T')
+
+  lines.push(`https://tg-clndr-4023e1d4419a.herokuapp.com/ics/${key}/cal.ics`);
+
+  const text = lines.join('\n').trim() || '🗓️ no upcoming events';
+
   let buttonsRows: TB.InlineKeyboardButton[][] = [];
   buttonsRows.push([
     {
