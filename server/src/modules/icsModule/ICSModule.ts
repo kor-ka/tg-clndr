@@ -18,7 +18,7 @@ export class ICSModule {
       const date = new Date(e.date);
       return {
         title: e.description,
-        start: [date.getFullYear(), date.getMonth(), date.getDate(), date.getHours(), date.getMinutes()],
+        start: [date.getFullYear(), date.getMonth() + 1, date.getDate(), date.getHours(), date.getMinutes()],
         duration: { minutes: 60 }
       }
     }));
