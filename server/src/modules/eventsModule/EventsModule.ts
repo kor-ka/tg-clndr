@@ -62,7 +62,7 @@ export class EventsModule {
   // TODO: merge with commit? - two signatures for this function?
   deleteEvent = async (id: string) => {
     const _id = new ObjectId(id);
-    const event = await this.events.findOne({ _id });
+    let event = await this.events.findOne({ _id });
     if (!event) {
       throw new Error("Operation not found")
     }
