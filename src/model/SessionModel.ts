@@ -10,10 +10,11 @@ type TgWebAppInitData = { chat?: { id: number }, user: { id: number }, start_par
 
 export class SessionModel {
     readonly tgWebApp: TgWebAppInitData;
-    readonly eventsModule = new EventsModule()
-    readonly users: UsersModule
+    readonly eventsModule = new EventsModule();
+    readonly users: UsersModule;
+    loaded = flase;
 
-    private localOprationId = Date.now()
+    private localOprationId = Date.now();
 
     private socket: Socket;
 
@@ -50,6 +51,7 @@ export class SessionModel {
 
         this.socket.on("state", ({ events, users }: { events: Event[], users: User[] }) => {
             console.log("on_State", { events, users })
+            this.loaded = true;
             if (events) {
                 // happens on reconnect and cache update
                 // since some event may be deleted in between, rewrite whole event
