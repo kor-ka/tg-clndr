@@ -20,9 +20,11 @@ export class VM<T> {
     this.listeners.delete(listener);
   }
 
-  readonly subscribe = (listener: (val: T) => void) => {
+  readonly subscribe = (listener: (val: T) => void, imidiate = true) => {
     this.listeners.add(listener);
-    listener(this.#val);
+    if(imidiate){
+        listener(this.#val);
+    }    
     return () => {
       this.unsubscribe(listener);
     };
