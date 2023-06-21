@@ -190,7 +190,7 @@ const EventsView = React.memo((({ eventsVM }: { eventsVM: VM<Map<string, VM<Even
     const log = React.useMemo(() => [...eventsMap.values()], [eventsMap]);
     let prevDate: string | undefined = undefined;
     if(log.length === 0){
-        return <Card><ListItem titile=“🗓️ no upcoming events”/></Card>
+        return <Card><ListItem titile={'🗓️ no upcoming events'}/></Card>
     }
     return <>
         <CardLight key="log">{log.map((ev, i, array) => {
