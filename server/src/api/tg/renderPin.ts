@@ -21,7 +21,7 @@ export const renderPin = async (chatId: number, threadId: number | undefined, ev
     return `${dateStr} - ${description}, ${timeStr} (${tz})`;
   });
 
-  const text = lines.join('\n').trim() || '✨ Looking forward to new adventures ✨';
+  const text = lines.join('\n').trim() || '🗓️ no upcoming events';
   let key = [chatId, threadId].filter(Boolean).join('_');
   const token = (await chatMetaModule.getChatMeta(chatId))?.token
   key = [key, token].filter(Boolean).join('T')
