@@ -185,10 +185,13 @@ const DateView = React.memo(({ date }: { date: string }) => {
 });
 
 const EventsView = React.memo((({ eventsVM }: { eventsVM: VM<Map<string, VM<Event>>> }) => {
-    const timeZone = React.useContext(Timezone)
-    const eventsMap = useVMvalue(eventsVM)
-    const log = React.useMemo(() => [...eventsMap.values()], [eventsMap])
-    let prevDate: string | undefined = undefined
+    const timeZone = React.useContext(Timezone);
+    const eventsMap = useVMvalue(eventsVM);
+    const log = React.useMemo(() => [...eventsMap.values()], [eventsMap]);
+    let prevDate: string | undefined = undefined;
+    if(log.length === 0){
+        return <Card><ListItem titile=“🗓️ no upcoming events”/></Card>
+    }
     return <>
         <CardLight key="log">{log.map((ev, i, array) => {
             const date = timeZone && new Date(array[i].val.date).toLocaleString('en', { month: 'short', day: 'numeric', timeZone });
