@@ -27,7 +27,7 @@ export const renderPin = async (chatId: number, threadId: number | undefined, ev
   const token = (await chatMetaModule.getChatMeta(chatId))?.token
   key = [key, token].filter(Boolean).join('T')
 
-  lines.push(`https://tg-clndr-4023e1d4419a.herokuapp.com/ics/${key}/cal.ics`);
+  lines.push(`<a href="https://tg-clndr-4023e1d4419a.herokuapp.com/ics/${key}/cal.ics">add to calendar</a> ← link can be used for <a href="https://support.apple.com/guide/iphone/use-multiple-calendars-iph3d1110d4/ios#:~:text=Subscribe">subscription</a>`);
 
   const text = lines.join('\n').trim() || '🗓️ no upcoming events';
 
