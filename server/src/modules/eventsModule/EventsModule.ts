@@ -72,12 +72,15 @@ export class EventsModule {
       return event;
     } else {
       await this.events.updateOne({ _id }, { $set: { deleted: true }, $inc: { seq: 1 } });
-
+      event = await this.events.findOne({ _id })
+      if (!event) {
+        throw new Error("event lost during delete")
+      }
       // non-blocking cache update
-      this.getEvents(chatId, threadId).catch((e) => console.error(e))
+      this.getEvents(chatId, threadId).catch((e) => console.error(e));
 
       // notify all
-      this.upateSubject.next({ chatId, threadId, event: event, type: 'delete' })
+      this.upateSubject.next({ chatId, threadId, event, type: 'delete' });
 
       return event;
     }
