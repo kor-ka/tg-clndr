@@ -202,7 +202,7 @@ And don't forget to pin the message with the button, so everyone can open the ap
     })
 
     new CronJob('* * * * *', async () => {
-      console.log('cron fire')
+      console.log('tg cron fire')
       try {
         const now = Date.now()
         LATEST_EVENTS()

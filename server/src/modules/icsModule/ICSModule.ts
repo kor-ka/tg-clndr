@@ -46,8 +46,8 @@ export class ICSModule {
       }
     })
 
-    new CronJob('0 * * * *', async () => {
-      console.log('cron fire')
+    new CronJob('* * * * *', async () => {
+      console.log('ics cron fire')
       try {
         const now = Date.now()
         LATEST_EVENTS()
@@ -63,7 +63,7 @@ export class ICSModule {
       } catch (e) {
         console.error(e)
       }
-    })
+    }, null, true);
   }
 
 
