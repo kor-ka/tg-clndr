@@ -39,7 +39,7 @@ export const AddTransferScreen = () => {
                     event: {
                         tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
                         id: editEv?.id ?? model.nextId() + '',
-                        description,
+                        description: description.trim(),
                         date: date.getTime(),
                     }
                 }))
