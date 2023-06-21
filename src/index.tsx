@@ -24,7 +24,7 @@ const tryInit = () => {
 
     const onEvents = (e: Map<string, VM<Event>>) => {
       // TODO: fix - detect not loaded yet, not empty sate
-      if (e.size != 0) {
+      if (model.loaded) {
         model.eventsModule.events.unsubscribe(onEvents)
         root.render(renderApp(model))
       }
