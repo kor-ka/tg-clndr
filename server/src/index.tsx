@@ -90,6 +90,9 @@ initMDB().then(() => {
           throw new Error("unauthorized")
         }
 
+        res.set('Content-disposition', 'attachment; filename=cal.ics');
+        res.set('Content-Type', 'text/calendar');
+
         res.send(data)
       } catch (e) {
         console.error("Something went wrong:", e);
