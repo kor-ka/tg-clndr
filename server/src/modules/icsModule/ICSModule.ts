@@ -17,6 +17,7 @@ export class ICSModule {
     const { error, value } = ics.createEvents(events.map(e => {
       const date = new Date(e.date);
       return {
+        uid: e._id.toHexString(),
         title: e.description,
         start: [date.getFullYear(), date.getMonth() + 1, date.getDate(), date.getHours(), date.getMinutes()],
         duration: { minutes: 60 }
