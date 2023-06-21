@@ -201,7 +201,7 @@ And don't forget to pin the message with the button, so everyone can open the ap
       }
     })
 
-    new CronJob('0 * * * *', async () => {
+    new CronJob('* * * * *', async () => {
       console.log('cron fire')
       try {
         const now = Date.now()
