@@ -27,6 +27,7 @@ export class TelegramBot {
     message = await this.bot.sendMessage(chatId, text, {
       reply_markup: { inline_keyboard: buttonsRows },
       parse_mode: "HTML",
+      disable_web_page_preview: true,
       message_thread_id: threadId
     });
 
@@ -53,6 +54,7 @@ And don't forget to pin the message with the button, so everyone can open the ap
         chat_id: chatId,
         message_id: pinned.messageId,
         parse_mode: "HTML",
+        disable_web_page_preview: true,
         reply_markup: { inline_keyboard: buttonsRows },
       });
 
