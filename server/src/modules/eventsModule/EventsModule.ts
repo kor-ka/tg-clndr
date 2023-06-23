@@ -49,20 +49,20 @@ export class EventsModule {
       })
 
     } finally {
-      await session.endSession()
+      await session.endSession();
     }
 
     // non-blocking cache update
-    this.getEvents(chatId, threadId).catch((e) => console.error(e))
+    this.getEvents(chatId, threadId).catch((e) => console.error(e));
 
-    const e = await this.events.findOne({ _id })
-    if (!e) {
-      throw new Error("operation lost during " + type)
+    const updatedEvent = await this.events.findOne({ _id });
+    if (!updatedEvent) {
+      throw new Error("operation lost during " + type);
     }
     // notify all
-    this.upateSubject.next({ chatId, threadId, event: e, type })
+    this.upateSubject.next({ chatId, threadId, event: updatedEvent, type });
     
-    return event
+    return updatedEvent;
   };
 
   // TODO: merge with commit? - two signatures for this function?
