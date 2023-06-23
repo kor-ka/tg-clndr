@@ -37,7 +37,7 @@ export class EventsModule {
           await this.events.updateOne({ _id, seq: op.seq }, { $set: event, $inc: { seq: 1 } }, { session })
 
           // keep latest date latest
-          const latest = (await this.events.findOne({chatId, threadId}).sort({date: -1}).limit(1).toArray())[0];
+          const latest = (await this.events.find({chatId, threadId}).sort({date: -1}).limit(1).toArray())[0];
           latestDateCandidate = Math.max(latestDateCandidate, latest?.date)
         } else {
           throw new Error('Unknown operation modification type')
@@ -55,13 +55,13 @@ export class EventsModule {
     // non-blocking cache update
     this.getEvents(chatId, threadId).catch((e) => console.error(e))
 
-    const event = await this.events.findOne({ _id })
-    if (!event) {
+    const e = await this.events.findOne({ _id })
+    if (!e) {
       throw new Error("operation lost during " + type)
     }
-
     // notify all
-    this.upateSubject.next({ chatId, threadId, event, type })
+    this.upateSubject.next({ chatId, threadId, event: e, type })
+    
     return event
   };
 
