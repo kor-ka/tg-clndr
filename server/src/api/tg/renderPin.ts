@@ -29,7 +29,7 @@ export const renderPin = async (chatId: number, threadId: number | undefined, ev
 
   lines.push(`<a href="https://tg-clndr-4023e1d4419a.herokuapp.com/ics/${key}/cal.ics">add to my calendar</a> ← link can be used for <a href="https://support.apple.com/guide/iphone/use-multiple-calendars-iph3d1110d4/ios#:~:text=Subscribe">subscription</a>`);
 
-  const text = lines.join('\n').trim() || '🗓️ no upcoming events';
+  const text = lines.length > 1 ? lines.join('\n').trim() : '🗓️ no upcoming events';
 
   let buttonsRows: TB.InlineKeyboardButton[][] = [];
   buttonsRows.push([
