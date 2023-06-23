@@ -24,8 +24,6 @@ export class EventsModule {
           const eventData = { ...event, uid, chatId, threadId };
           // create new event
           _id = (await this.events.insertOne({ ...eventData, seq: 0, idempotencyKey: `${uid}_${id}` }, { session })).insertedId
-          // bump latest index
-          await this.eventsLatest.updateOne({ chatId, threadId }, { $max: { date: event.date } }, { upsert: true });
         } else if (type === 'update') {
           const { id, ...event } = command.event
           _id = new ObjectId(id)
@@ -40,23 +38,26 @@ export class EventsModule {
           throw new Error('Unknown operation modification type')
         }
 
+        // bump latest index
+        await this.eventsLatest.updateOne({ chatId, threadId }, { $max: { date: event.date } }, { upsert: true });
+
       })
-
-      // non-blocking cache update
-      this.getEvents(chatId, threadId).catch((e) => console.error(e))
-
-      const event = await this.events.findOne({ _id })
-      if (!event) {
-        throw new Error("operation lost during " + type)
-      }
-
-      // notify all
-      this.upateSubject.next({ chatId, threadId, event, type })
-      return event
 
     } finally {
       await session.endSession()
     }
+
+    // non-blocking cache update
+    this.getEvents(chatId, threadId).catch((e) => console.error(e))
+
+    const event = await this.events.findOne({ _id })
+    if (!event) {
+      throw new Error("operation lost during " + type)
+    }
+
+    // notify all
+    this.upateSubject.next({ chatId, threadId, event, type })
+    return event
   };
 
   // TODO: merge with commit? - two signatures for this function?
