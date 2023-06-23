@@ -16,6 +16,8 @@ export class EventsModule {
     const { type, event } = command;
     const session = MDBClient.startSession()
     let _id: ObjectId | undefined
+
+    let latestDateCandidate = event.date;
     try {
       await session.withTransaction(async () => {
         // Write op
@@ -33,13 +35,16 @@ export class EventsModule {
             throw new Error("Operation not found")
           }
           await this.events.updateOne({ _id, seq: op.seq }, { $set: event, $inc: { seq: 1 } }, { session })
-          // revert balance
+
+          // keep latest date latest
+          const latest = (await this.events.findOne({chatId, threadId}).sort({date: -1}).limit(1).toArray())[0];
+          latestDateCandidate = Math.max(latestDateCandidate, latest?.date)
         } else {
           throw new Error('Unknown operation modification type')
         }
 
         // bump latest index
-        await this.eventsLatest.updateOne({ chatId, threadId }, { $max: { date: event.date } }, { upsert: true });
+        await this.eventsLatest.updateOne({ chatId, threadId }, { $max: { date: latestDateCandidate } }, { upsert: true });
 
       })
 
