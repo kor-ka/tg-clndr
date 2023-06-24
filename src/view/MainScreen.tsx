@@ -167,7 +167,7 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
 
 
 let amimateDateOnce = true
-const DateView = React.memo(({ date }: { date: string }) => {
+const DateView = React.memo(({ date, isToday }: { date: string, isToday?: boolean }) => {
     const model = React.useContext(ModelContext);
     const shouldAnimate = React.useMemo(() => model && !model.ssrTimeSone() && amimateDateOnce, []);
     const [maxHeight, setMaxHeight] = React.useState(shouldAnimate ? 0 : 50);
@@ -179,30 +179,51 @@ const DateView = React.memo(({ date }: { date: string }) => {
             }, 10);
         }
     }, [shouldAnimate]);
-    return <Card key={'date'} style={{ alignSelf: 'center', margin: 0, padding: 0, fontSize: '0.7em', borderRadius: 12, position: 'sticky', top: 16, transition: "max-height ease-in 300ms", maxHeight, overflow: 'hidden' }}>
-        <ListItem titile={date} titleStyle={{ padding: 0, fontWeight: 500 }} leftStyle={{ padding: '0 4px' }} />
+    const style = React.useMemo(() => {
+        return isToday ?
+            { alignSelf: 'start', margin: 0, padding: 0, fontSize: '1.2em', borderRadius: 12, position: 'sticky', top: 16, transition: "max-height ease-in 300ms", maxHeight, overflow: 'hidden' } :
+            { alignSelf: 'center', margin: 0, padding: 0, fontSize: '0.7em', borderRadius: 12, position: 'sticky', top: 16, transition: "max-height ease-in 300ms", maxHeight, overflow: 'hidden' };
+
+    }, [isToday, maxHeight])
+    return <Card key={'date'} style={style}>
+        <ListItem titile={isToday ? "Today" : date} titleStyle={{ padding: 0, fontWeight: 500 }} leftStyle={{ padding: '0 4px' }} />
     </Card>
 });
 
 const EventsView = React.memo((({ eventsVM }: { eventsVM: VM<Map<string, VM<Event>>> }) => {
     const timeZone = React.useContext(Timezone);
     const eventsMap = useVMvalue(eventsVM);
-    const log = React.useMemo(() => [...eventsMap.values()], [eventsMap]);
+    const todayStr = React.useMemo(() => new Date().toLocaleString('en', { month: 'short', day: 'numeric', timeZone }), [timeZone]);
+    const { today, log } = React.useMemo(() => {
+        const today: { vm: VM<Event>, date: string }[] = [];
+        const log: { vm: VM<Event>, date: string }[] = [];
+        for (let vm of eventsMap.values()) {
+            const date = new Date(vm.val.date).toLocaleString('en', { month: 'short', day: 'numeric', timeZone });
+            (date === todayStr ? today : log).push({ vm, date })
+        }
+        return { today, log }
+    }, [eventsMap]);
     let prevDate: string | undefined = undefined;
-    if(log.length === 0){
-        return <Card><ListItem titile={'🗓️ no upcoming events'}/></Card>
+    if (today.length == 0 && log.length === 0) {
+        return <Card><ListItem titile={'🗓️ no upcoming events'} /></Card>
     }
     return <>
-        <CardLight key="log">{log.map((ev, i, array) => {
-            const date = timeZone && new Date(array[i].val.date).toLocaleString('en', { month: 'short', day: 'numeric', timeZone });
-            const show = date !== prevDate
-            prevDate = date
-            return <React.Fragment key={ev.val.id}>
-                {show && date && <DateView date={date} />}
-                {<EventItem key={ev.val.id} eventVM={ev as VM<Event>} />}
+        {!!today.length && <Card key="today">{today.map(({ vm, date }, i) => {
+            return <React.Fragment key={vm.val.id}>
+                {timeZone && i === 0 && <DateView date={date} isToday={true} />}
+                {<EventItem key={vm.val.id} eventVM={vm} />}
             </React.Fragment>
-        })}</CardLight>
-        {log.length === 200 && <Card><ListItem subtitle={`Maybe there are more events, who knows 🤷‍♂️\nDeveloper was too lasy to implement pagination.`} /></Card>}
+        })}</Card>}
+        {!!log.length && <CardLight key="log">{log.map(({ vm, date }) => {
+            const show = timeZone && (date !== prevDate);
+            prevDate = date;
+            return <React.Fragment key={vm.val.id}>
+                {show && date && <DateView date={date} />}
+                {<EventItem key={vm.val.id} eventVM={vm} />}
+            </React.Fragment>
+        })}</CardLight>}
+
+        {(today.length + log.length) === 200 && <Card><ListItem subtitle={`Maybe there are more events, who knows 🤷‍♂️\nDeveloper was too lasy to implement pagination.`} /></Card>}
     </>
 }))
 
