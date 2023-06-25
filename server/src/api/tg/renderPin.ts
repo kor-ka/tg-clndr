@@ -3,6 +3,7 @@ import { container } from "tsyringe";
 import { UserModule } from "../../modules/userModule/UserModule";
 import { ChatMetaModule } from "../../modules/chatMetaModule/ChatMetaModule";
 import { SavedEvent } from "../../modules/eventsModule/eventStore";
+import { getChatToken } from "../Auth";
 
 export function htmlEntities(str: string) {
   return String(str)
@@ -24,7 +25,7 @@ export const renderPin = async (chatId: number, threadId: number | undefined, ev
   });
 
   let key = [chatId, threadId].filter(Boolean).join('_');
-  const token = (await chatMetaModule.getChatMeta(chatId))?.token
+  const token = getChatToken(chatId);
   key = [key, token].filter(Boolean).join('T')
 
   lines.push(`<a href="https://tg-clndr-4023e1d4419a.herokuapp.com/ics/${key}/cal.ics">add to my calendar</a> ← tap to add or <a href="https://support.apple.com/guide/iphone/use-multiple-calendars-iph3d1110d4/ios#:~:text=Subscribe">subscribe</a>`);

@@ -22,9 +22,13 @@ import { UserModule } from "./modules/userModule/UserModule";
 import { VM } from "../../src/utils/vm/VM";
 import { ChatMetaModule } from "./modules/chatMetaModule/ChatMetaModule";
 import { ICSModule } from "./modules/icsModule/ICSModule";
+import { checkChatToken } from "./api/Auth";
+import cors from "cors";
 
 var path = require("path");
 const PORT = process.env.PORT || 5001;
+
+const SPLIT_DOMAIN = 'https://tg-split.herokuapp.com/';
 
 export const appRoot = path.resolve(__dirname);
 
@@ -108,6 +112,12 @@ initMDB().then(() => {
     .use(express.json({ limit: "500kb" }))
     .use(cookieParser());
 
+  app.get("/enabledInChat/:chatId", cors({ origin: SPLIT_DOMAIN }), async (req, res) => {
+    const chatMetaModule = container.resolve(ChatMetaModule);
+    const chatId = Number.parseInt(req.params.chatId as string);
+    res.send(!!await chatMetaModule.getChatMeta(chatId))
+  });
+
   app.use(compression()).get("/tg/", async (req, res) => {
     try {
       const eventsModule = container.resolve(EventsModule);
@@ -129,9 +139,14 @@ initMDB().then(() => {
 
       const [{ events }, chatMeta] = await Promise.all([eventsModule.getEventsCached(chatId, threadId), chatMetaModule.getChatMeta(chatId)])
 
-      if ((chatMeta?.token ?? undefined) !== token) {
-        throw new Error("unauthorized")
+      try {
+        checkChatToken(token, chatId);
+      } catch (e) {
+        if ((chatMeta?.token ?? undefined) !== token) {
+          throw new Error("unauthorized")
+        }
       }
+
       const eventsMap = new Map<string, VM<Event>>()
       savedOpsToApi(events).forEach(o => eventsMap.set(o.id, new VM(o)))
 

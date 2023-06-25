@@ -7,6 +7,7 @@ import { UsersModule } from "./UsersModule";
 import { EventsModule } from "./EventsModule";
 
 type TgWebAppInitData = { chat?: { id: number }, user: { id: number }, start_param?: string } & unknown;
+const SPLIT_DOMAIN = 'https://tg-split.herokuapp.com';
 
 export class SessionModel {
     readonly tgWebApp: TgWebAppInitData;
@@ -105,5 +106,19 @@ export class SessionModel {
 
     ssrUserId = () => {
         return Cookies.get('ssr_user_id')
+    }
+
+    splitAvailable = async () => {
+        let splitAvailable = Cookies.get('split_available') === 'true'
+        if (!splitAvailable) {
+            const [chat_descriptor, token] = (this.tgWebApp.start_param as string).split('T') ?? [];
+            const [chatId, threadId] = chat_descriptor.split('_').map(Number) ?? [];
+
+            splitAvailable = (await (await fetch(`${SPLIT_DOMAIN}/enabledInChat/${chatId}`)).text()) === 'true';
+            if (splitAvailable) {
+                Cookies.set("split_available", 'true', { path: "/", sameSite: 'None', secure: true, expires: 7 })
+            }
+        }
+        return splitAvailable;
     }
 }

@@ -108,12 +108,27 @@ const MainScreenWithModel = ({ model }: { model: SessionModel }) => {
     return <MainScreenView eventsVM={model.eventsModule.events} />
 }
 
+const ToSplit = React.memo(() => {
+    const model = React.useContext(ModelContext);
+    const [splitAvailable, setSplitAvailable] = React.useState(false);
+    React.useEffect(() => {
+        model?.splitAvailable()
+            .then(setSplitAvailable)
+            .catch(e => console.error(e));
+    }, []);
+    const onClick = React.useCallback(() => {
+        WebApp?.openTelegramLink(`https://t.me/splitsimplebot/split?startapp=${WebApp?.initDataUnsafe.start_param}&startApp=${WebApp?.initDataUnsafe.start_param}`);
+    }, []);
+    return <Card onClick={onClick} style={{ position: 'fixed', padding: 16, bottom: 24, right: 0, borderRadius: '32px 0 0 32px', marginRight: 0, transition: 'transform ease-in 300ms', transform: `translateX(${splitAvailable ? 0 : 64}px)` }}>⚡️</Card>
+});
+
 export const MainScreenView = ({ eventsVM }: { eventsVM: VM<Map<string, VM<Event>>> }) => {
     const nav = useNav()
-    return <div style={{ display: 'flex', flexDirection: 'column', padding: "8px 0px" }}>
+    return <div style={{ display: 'flex', flexDirection: 'column', padding: "8px 0px", paddingBottom: 96 }}>
         <BackButtopnController />
         <EventsView eventsVM={eventsVM} />
         <MainButtopnController onClick={() => nav("/tg/addEvent")} text={"ADD EVENT"} />
+        <ToSplit />
     </div>
 }
 
@@ -214,7 +229,7 @@ const EventsView = React.memo((({ eventsVM }: { eventsVM: VM<Map<string, VM<Even
                 {<EventItem key={vm.val.id} eventVM={vm} />}
             </React.Fragment>
         })}</Card>}
-        {!!log.length && <CardLight key="log">{log.map(({ vm, date }) => {
+        {!!log.length && <CardLight key="log" style={{ paddingTop: today.length === 0 ? 8 : 0 }}>{log.map(({ vm, date }) => {
             const show = timeZone && (date !== prevDate);
             prevDate = date;
             return <React.Fragment key={vm.val.id}>
