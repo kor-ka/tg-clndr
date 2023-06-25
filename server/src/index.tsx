@@ -140,7 +140,7 @@ initMDB().then(() => {
       const [{ events }, chatMeta] = await Promise.all([eventsModule.getEventsCached(chatId, threadId), chatMetaModule.getChatMeta(chatId)])
 
       try {
-        checkChatToken(token, chatId);
+        checkChatToken(decodeURIComponent(token), chatId);
       } catch (e) {
         if ((chatMeta?.token ?? undefined) !== token) {
           throw new Error("unauthorized")

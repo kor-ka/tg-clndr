@@ -57,7 +57,7 @@ export class ClientAPI {
                 const tokenCheckPromise = new Promise<boolean>(async (resolve, reject) => {
                     try {
                         try {
-                            checkChatToken(token, chatId);
+                            checkChatToken(decodeURIComponent(token), chatId);
                             resolve(true);
                         } catch (e) {
                             const chatMeta = await this.chatMetaModule.getChatMeta(chatId)
