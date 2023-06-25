@@ -13,6 +13,8 @@ export class SessionModel {
     readonly tgWebApp: TgWebAppInitData;
     readonly eventsModule = new EventsModule();
     readonly users: UsersModule;
+    readonly chatId: number
+
     loaded = false;
 
     private localOprationId = Date.now();
@@ -25,6 +27,10 @@ export class SessionModel {
     };
 
     constructor(params: { initDataUnsafe: TgWebAppInitData, initData: string }) {
+        const [chat_descriptor, token] = (params.initDataUnsafe.start_param ?? '').split('T') ?? [];
+        const [chatId, threadId] = chat_descriptor.split('_').map(Number) ?? [];
+        this.chatId = chatId
+
         Cookies.set("user_id", params.initDataUnsafe.user.id.toString(), { path: "/", sameSite: 'None', secure: true, expires: 7 })
         Cookies.set("time_zone", Intl.DateTimeFormat().resolvedOptions().timeZone, { path: "/", sameSite: 'None', secure: true, expires: 7 })
 
@@ -109,7 +115,7 @@ export class SessionModel {
     }
 
     splitAvailableSync = () => {
-        return Cookies.get('split_available') === 'true'
+        return Cookies.get(`split_available_${this.chatId}`) === 'true'
     }
 
     splitAvailable = async () => {
@@ -120,7 +126,7 @@ export class SessionModel {
 
             splitAvailable = (await (await fetch(`${SPLIT_DOMAIN}/enabledInChat/${chatId}`)).text()) === 'true';
             if (splitAvailable) {
-                Cookies.set("split_available", 'true', { path: "/", sameSite: 'None', secure: true, expires: 7 })
+                Cookies.set(`split_available_${this.chatId}`, 'true', { path: "/", sameSite: 'None', secure: true, expires: 7 })
             }
         }
         return splitAvailable;

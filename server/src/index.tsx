@@ -163,7 +163,7 @@ initMDB().then(() => {
       // const app = ''
       const app = ReactDOMServer.renderToString(
         <Timezone.Provider value={timeZone}>
-          <SplitAvailable.Provider value={!!req.cookies.split_available}>
+          <SplitAvailable.Provider value={req.cookies[`split_available_${chatId}`] === 'true'}>
             <UserContext.Provider
               value={userId}
             >
