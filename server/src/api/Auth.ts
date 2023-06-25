@@ -3,7 +3,7 @@ const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
 
 export const getChatToken = (chatId: number) => {
     return crypto
-        .createHmac("sha256", ACCESS_TOKEN_SECRET)
+        .createHmac("sha1", ACCESS_TOKEN_SECRET)
         .update(chatId + '')
         .digest("hex")
 }
