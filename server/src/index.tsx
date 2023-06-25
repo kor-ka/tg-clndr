@@ -28,7 +28,7 @@ import cors from "cors";
 var path = require("path");
 const PORT = process.env.PORT || 5001;
 
-const SPLIT_DOMAIN = 'https://tg-split.herokuapp.com/';
+const SPLIT_DOMAIN = 'https://tg-split.herokuapp.com';
 
 export const appRoot = path.resolve(__dirname);
 
