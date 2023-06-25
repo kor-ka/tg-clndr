@@ -90,8 +90,12 @@ initMDB().then(() => {
         const [chatId, threadId] = chat_descriptor.split('_').map(Number) ?? [];
         const [data, chatMeta] = await Promise.all([icsModule.getIcs(chatId, threadId), chatMetaModule.getChatMeta(chatId)]);
 
-        if ((chatMeta?.token ?? undefined) !== token) {
-          throw new Error("unauthorized")
+        try {
+          checkChatToken(token, chatId);
+        } catch (e) {
+          if ((chatMeta?.token ?? undefined) !== token) {
+            throw new Error("unauthorized")
+          }
         }
 
         res.set('Content-disposition', 'attachment; filename=cal.ics');
