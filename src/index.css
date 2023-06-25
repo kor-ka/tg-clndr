@@ -99,3 +99,11 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.card:active {
+  opacity: 0.8;
+}
+
+.list_item:active {
+  opacity: 0.8;
+}
