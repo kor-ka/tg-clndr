@@ -13,7 +13,7 @@ import { SocketApi } from "./api/socket";
 import { container } from "tsyringe";
 import * as fs from "fs";
 import { initMDB } from "./utils/MDB";
-import { MainScreenView, Timezone, UserContext, UsersProvider } from "../../src/view/MainScreen";
+import { MainScreenView, SplitAvailable, Timezone, UserContext, UsersProvider } from "../../src/view/MainScreen";
 import { Event } from "../../src/shared/entity";
 import { EventsModule } from "./modules/eventsModule/EventsModule";
 import { savedOpsToApi, savedUserToApi } from "./api/ClientAPI";
@@ -163,13 +163,15 @@ initMDB().then(() => {
       // const app = ''
       const app = ReactDOMServer.renderToString(
         <Timezone.Provider value={timeZone}>
-          <UserContext.Provider
-            value={userId}
-          >
-            <UsersProvider.Provider value={usersProvider}>
-              <MainScreenView eventsVM={new VM(eventsMap)} />
-            </UsersProvider.Provider>
-          </UserContext.Provider>
+          <SplitAvailable.Provider value={!!req.cookies.split_available}>
+            <UserContext.Provider
+              value={userId}
+            >
+              <UsersProvider.Provider value={usersProvider}>
+                <MainScreenView eventsVM={new VM(eventsMap)} />
+              </UsersProvider.Provider>
+            </UserContext.Provider>
+          </SplitAvailable.Provider>
         </Timezone.Provider>
       );
       const data = await getIndexStr();

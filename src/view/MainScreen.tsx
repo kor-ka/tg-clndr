@@ -40,8 +40,10 @@ export const showConfirm = (message: string, callback: (confirmed: boolean) => v
 export const ModelContext = React.createContext<SessionModel | undefined>(undefined);
 export const UserContext = React.createContext<number | undefined>(undefined);
 export const UsersProvider = React.createContext<UsersModule>(new UsersModule());
+export const SplitAvailable = React.createContext(false);
 export const Timezone = React.createContext<string | undefined>(undefined);
 export const HomeLoc = React.createContext<{ loc: Location | undefined }>({ loc: undefined });
+
 
 export const useNav = () => {
     if (typeof window !== "undefined") {
@@ -83,15 +85,17 @@ export const renderApp = (model: SessionModel) => {
     ]);
 
     return <Timezone.Provider value={Intl.DateTimeFormat().resolvedOptions().timeZone}>
-        <ModelContext.Provider value={model}>
-            <UserContext.Provider value={model.tgWebApp.user.id}>
-                <UsersProvider.Provider value={model.users}>
-                    <HomeLoc.Provider value={{ loc: undefined }}>
-                        <RouterProvider router={router} />
-                    </HomeLoc.Provider>
-                </UsersProvider.Provider>
-            </UserContext.Provider>
-        </ModelContext.Provider>
+        <SplitAvailable.Provider value={model.splitAvailableSync()}>
+            <ModelContext.Provider value={model}>
+                <UserContext.Provider value={model.tgWebApp.user.id}>
+                    <UsersProvider.Provider value={model.users}>
+                        <HomeLoc.Provider value={{ loc: undefined }}>
+                            <RouterProvider router={router} />
+                        </HomeLoc.Provider>
+                    </UsersProvider.Provider>
+                </UserContext.Provider>
+            </ModelContext.Provider>
+        </SplitAvailable.Provider>
     </Timezone.Provider>
 }
 
@@ -110,7 +114,8 @@ const MainScreenWithModel = ({ model }: { model: SessionModel }) => {
 
 const ToSplit = React.memo(() => {
     const model = React.useContext(ModelContext);
-    const [splitAvailable, setSplitAvailable] = React.useState(!!model?.splitAvailableSync());
+    const splitAvailableSync = React.useContext(SplitAvailable)
+    const [splitAvailable, setSplitAvailable] = React.useState(splitAvailableSync);
     React.useEffect(() => {
         if (!splitAvailable) {
             model?.splitAvailable()
