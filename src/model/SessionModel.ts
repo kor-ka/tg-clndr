@@ -108,8 +108,12 @@ export class SessionModel {
         return Cookies.get('ssr_user_id')
     }
 
+    splitAvailableSync = () => {
+        return Cookies.get('split_available') === 'true'
+    }
+
     splitAvailable = async () => {
-        let splitAvailable = Cookies.get('split_available') === 'true'
+        let splitAvailable = this.splitAvailableSync()
         if (!splitAvailable) {
             const [chat_descriptor, token] = (this.tgWebApp.start_param as string).split('T') ?? [];
             const [chatId, threadId] = chat_descriptor.split('_').map(Number) ?? [];

@@ -110,11 +110,13 @@ const MainScreenWithModel = ({ model }: { model: SessionModel }) => {
 
 const ToSplit = React.memo(() => {
     const model = React.useContext(ModelContext);
-    const [splitAvailable, setSplitAvailable] = React.useState(false);
+    const [splitAvailable, setSplitAvailable] = React.useState(!!model?.splitAvailableSync());
     React.useEffect(() => {
-        model?.splitAvailable()
-            .then(setSplitAvailable)
-            .catch(e => console.error(e));
+        if (!splitAvailable) {
+            model?.splitAvailable()
+                .then(setSplitAvailable)
+                .catch(e => console.error(e));
+        }
     }, []);
     const onClick = React.useCallback(() => {
         WebApp?.openTelegramLink(`https://t.me/splitsimplebot/split?startapp=${WebApp?.initDataUnsafe.start_param}&startApp=${WebApp?.initDataUnsafe.start_param}`);
