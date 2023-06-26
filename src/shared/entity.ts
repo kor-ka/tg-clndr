@@ -15,6 +15,7 @@ export type Event = {
     uid: number;
     date: number;
     tz: string;
+    title: string;
     description: string;
     deleted?: boolean;
     seq: number

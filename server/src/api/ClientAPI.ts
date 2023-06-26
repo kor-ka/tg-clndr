@@ -137,7 +137,7 @@ export class ClientAPI {
 
 export const savedOpToApi = (saved: SavedEvent): Event => {
     const { _id, ...event } = saved
-    return { ...event, id: _id.toHexString() }
+    return { ...event, id: _id.toHexString(), title: event.title || event.description }
 }
 
 export const savedOpsToApi = (saved: SavedEvent[]): Event[] => {

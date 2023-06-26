@@ -180,7 +180,7 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
 
     return <div onClick={onClick} style={event.deleted ? { textDecoration: 'line-through' } : undefined}>
         <ListItem
-            titile={event.description}
+            titile={event.title}
             subtitle={user.fullName}
             right={<span style={{ fontSize: '1.2em' }}> {time} </span>}
         />

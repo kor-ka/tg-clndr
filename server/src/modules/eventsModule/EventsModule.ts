@@ -37,7 +37,7 @@ export class EventsModule {
           await this.events.updateOne({ _id, seq: op.seq }, { $set: event, $inc: { seq: 1 } }, { session })
 
           // keep latest date latest
-          const latest = (await this.events.find({chatId, threadId}).sort({date: -1}).limit(1).toArray())[0];
+          const latest = (await this.events.find({ chatId, threadId }).sort({ date: -1 }).limit(1).toArray())[0];
           latestDateCandidate = Math.max(latestDateCandidate, latest?.date)
         } else {
           throw new Error('Unknown operation modification type')
@@ -61,7 +61,7 @@ export class EventsModule {
     }
     // notify all
     this.upateSubject.next({ chatId, threadId, event: updatedEvent, type });
-    
+
     return updatedEvent;
   };
 

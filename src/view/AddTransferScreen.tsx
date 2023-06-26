@@ -16,9 +16,9 @@ export const AddTransferScreen = () => {
 
     let disable = !!editEv?.deleted;
 
-    const [description, setDescription] = React.useState(editEv?.description ?? '')
-    const onDescriptionInputChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        setDescription(e.target.value);
+    const [title, setTitle] = React.useState(editEv?.title ?? '')
+    const onTitleInputChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setTitle(e.target.value);
     }, [])
 
     const [date, setDate] = React.useState(new Date(editEv?.date ?? Date.now() + 1000 * 60 * 60));
@@ -39,13 +39,14 @@ export const AddTransferScreen = () => {
                     event: {
                         tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
                         id: editEv?.id ?? model.nextId() + '',
-                        description: description.trim(),
+                        title: title.trim(),
+                        description: '',
                         date: date.getTime(),
                     }
                 }))
         }
 
-    }, [date, description, model, editEv, handleOperation]);
+    }, [date, title, model, editEv, handleOperation]);
 
     const onDeleteClick = React.useCallback(() => {
         showConfirm("Delete event? This can not be undone.", (confirmed) => {
@@ -69,7 +70,7 @@ export const AddTransferScreen = () => {
         <BackButtopnController />
         <div style={{ display: 'flex', flexDirection: 'column', padding: '20px 0px' }}>
 
-            <input value={description} onChange={onDescriptionInputChange} autoFocus={true} disabled={disable} style={{ flexGrow: 1, padding: '8px 28px' }} placeholder="Description" />
+            <input value={title} onChange={onTitleInputChange} autoFocus={true} disabled={disable} style={{ flexGrow: 1, padding: '8px 28px' }} placeholder="Description" />
             <input value={crazyDateFormat} onChange={onDateInputChange} disabled={disable} type="datetime-local" style={{ flexGrow: 1, padding: '8px 28px' }} />
             {editEv && <Button disabled={disable} onClick={onDeleteClick}><ListItem titleStyle={{ color: "var(--text-destructive-color)", alignSelf: 'center' }} titile="DELETE EVENT" /></Button>}
         </div>
