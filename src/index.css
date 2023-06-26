@@ -70,6 +70,10 @@ button {
   color: var(--tg-theme-button-text-color);
 }
 
+a {
+  color: var(--tg-theme-link-color);
+}
+
 button:disabled {
   opacity: 0.7;
 }
@@ -84,6 +88,11 @@ textarea {
   outline: none;
 }
 
+textarea {
+  font-size: 1.2em;
+  font-family: sans-serif;
+}
+
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -93,11 +102,6 @@ input::-webkit-inner-spin-button {
 /* Firefox */
 input[type=number] {
   -moz-appearance: textfield;
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
 }
 
 .card:active {

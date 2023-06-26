@@ -21,6 +21,11 @@ export const AddTransferScreen = () => {
         setTitle(e.target.value);
     }, [])
 
+    const [description, setDscription] = React.useState(editEv?.description ?? '')
+    const onDescriptionInputChange = React.useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setDscription(e.target.value);
+    }, [])
+
     const [date, setDate] = React.useState(new Date(editEv?.date ?? Date.now() + 1000 * 60 * 60));
     const onDateInputChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setDate(new Date(e.target.value));
@@ -40,13 +45,13 @@ export const AddTransferScreen = () => {
                         tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
                         id: editEv?.id ?? model.nextId() + '',
                         title: title.trim(),
-                        description: '',
+                        description: description.trim(),
                         date: date.getTime(),
                     }
                 }))
         }
 
-    }, [date, title, model, editEv, handleOperation]);
+    }, [date, title, description, model, editEv, handleOperation]);
 
     const onDeleteClick = React.useCallback(() => {
         showConfirm("Delete event? This can not be undone.", (confirmed) => {
@@ -70,8 +75,10 @@ export const AddTransferScreen = () => {
         <BackButtopnController />
         <div style={{ display: 'flex', flexDirection: 'column', padding: '20px 0px' }}>
 
-            <input value={title} onChange={onTitleInputChange} autoFocus={true} disabled={disable} style={{ flexGrow: 1, padding: '8px 28px' }} placeholder="Description" />
+            <input value={title} onChange={onTitleInputChange} autoFocus={true} disabled={disable} style={{ flexGrow: 1, padding: '8px 28px' }} placeholder="Title" />
             <input value={crazyDateFormat} onChange={onDateInputChange} disabled={disable} type="datetime-local" style={{ flexGrow: 1, padding: '8px 28px' }} />
+            <textarea value={description} onChange={onDescriptionInputChange} disabled={disable} style={{ flexGrow: 1, padding: '8px 28px', height: 128 }} placeholder="Description" />
+
             {editEv && <Button disabled={disable} onClick={onDeleteClick}><ListItem titleStyle={{ color: "var(--text-destructive-color)", alignSelf: 'center' }} titile="DELETE EVENT" /></Button>}
         </div>
         <MainButtopnController onClick={onClick} text={(editEv ? "EDIT" : "ADD") + " EVENT"} progress={loading} />

@@ -18,10 +18,14 @@ export const renderPin = async (chatId: number, threadId: number | undefined, ev
   const chatMetaModule = container.resolve(ChatMetaModule);
   const timeZones = new Set<string>();
   events.forEach(e => timeZones.add(e.tz));
-  const lines = events.map(({ date, tz, title, description, }) => {
+  const lines = events.flatMap(({ date, tz, title, description, }) => {
     const dateStr = new Date(date).toLocaleString('en', { month: 'short', day: 'numeric', timeZone: tz })
     const timeStr = new Date(date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h24', timeZone: tz })
-    return `🗓️ ${dateStr} - ${title}, ${timeStr} ${timeZones.size > 1 ? `(${tz})` : ''}`;
+    const lines = [`🗓️ ${dateStr} - <b>${htmlEntities(title.trim())}</b>, ${timeStr} ${timeZones.size > 1 ? `(${tz})` : ''}`];
+    if (description.trim()) {
+      lines.push(`✏️ ${htmlEntities(description.trim())}`);
+    }
+    return lines
   });
 
   let key = [chatId, threadId].filter(Boolean).join('_');

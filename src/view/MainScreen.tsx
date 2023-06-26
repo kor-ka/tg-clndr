@@ -12,6 +12,7 @@ import {
 } from "react-router-dom";
 import { AddTransferScreen } from "./AddTransferScreen";
 import { VM } from "../utils/vm/VM";
+import Linkify from "linkify-react";
 
 export let __DEV__ = false
 export let WebApp: any = undefined
@@ -140,7 +141,7 @@ export const MainScreenView = ({ eventsVM }: { eventsVM: VM<Map<string, VM<Event
 }
 
 export const Card = ({ children, style, onClick }: { children: any, style?: any, onClick?: React.MouseEventHandler<HTMLDivElement> }) => {
-    return <div onClick={onClick} className="card" style={{ display: 'flex', flexDirection: 'column', margin: '8px 16px', padding: 4, backgroundColor: "var(--tg-theme-secondary-bg-color)", borderRadius: 16, ...style }}>{children}</div>
+    return <div onClick={onClick} className={onClick ? "card" : undefined} style={{ display: 'flex', flexDirection: 'column', margin: '8px 16px', padding: 4, backgroundColor: "var(--tg-theme-secondary-bg-color)", borderRadius: 16, ...style }}>{children}</div>
 }
 
 export const Button = ({ children, style, onClick, disabled }: { children: any, style?: any, onClick?: React.MouseEventHandler<HTMLButtonElement>, disabled?: boolean }) => {
@@ -154,11 +155,23 @@ export const CardLight = ({ children, style }: { children: any, style?: any }) =
     return <div style={{ display: 'flex', flexDirection: 'column', margin: '0px 20px', ...style }}>{children}</div>
 }
 
+const Link = ({ attributes, content }: { attributes: any, content: any }) => {
+    const { href, ...props } = attributes;
+    const onClick = React.useCallback((e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        WebApp?.openLink(href)
+    }, [href])
+    return <a onClick={onClick} href={href} {...props}>{content}</a>;
+};
+
 export const ListItem = React.memo(({ titile: title, subtitle, right, style, titleStyle, subTitleStyle, rightStyle, leftStyle, onClick, onSubtitleClick }: { titile?: string, subtitle?: string, right?: React.ReactNode, style?: any, titleStyle?: any, subTitleStyle?: any, rightStyle?: any, leftStyle?: any, onClick?: React.MouseEventHandler<HTMLDivElement>, onSubtitleClick?: React.MouseEventHandler<HTMLDivElement> }) => {
-    return <div className="list_item" onClick={onClick} style={{ display: 'flex', flexDirection: "row", justifyContent: 'space-between', padding: 4, alignItems: 'center', ...style }}>
+    return <div className={onClick ? "list_item" : undefined} onClick={onClick} style={{ display: 'flex', flexDirection: "row", justifyContent: 'space-between', padding: 4, alignItems: 'center', ...style }}>
         <div style={{ display: 'flex', padding: '2px 0px', flexDirection: "column", flexGrow: 1, flexShrink: 1, minWidth: 0, ...leftStyle }}>
             {!!title && <div style={{ padding: '2px 4px', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', ...titleStyle }}>{title}</div>}
-            {!!subtitle && <div onClick={onSubtitleClick} style={{ padding: '2px 4px', fontSize: '0.8em', color: "var(--tg-theme-hint-color)", ...subTitleStyle }}>{subtitle}</div>}
+            {!!subtitle && <Linkify options={{ render: Link }}>
+                <div onClick={onSubtitleClick} style={{ padding: '2px 4px', fontSize: '0.8em', color: "var(--tg-theme-hint-color)", whiteSpace: 'pre-wrap', ...subTitleStyle }}>{subtitle}</div>
+            </Linkify>}
         </div>
         {!!right && <div style={{ display: 'flex', padding: '4px 16px', flexShrink: 0, alignItems: 'center', ...rightStyle }}>{right}</div>}
     </div>
@@ -178,13 +191,13 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
     const timeZone = React.useContext(Timezone);
     const time = React.useMemo(() => new Date(event.date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h24', timeZone }), [event.date]);
 
-    return <div onClick={onClick} style={event.deleted ? { textDecoration: 'line-through' } : undefined}>
-        <ListItem
-            titile={event.title}
-            subtitle={user.fullName}
-            right={<span style={{ fontSize: '1.2em' }}> {time} </span>}
-        />
-    </div>
+    const description = React.useMemo(() => [event.description, user.fullName].filter(Boolean).join('\n'), [event.description, user.name])
+    return <ListItem
+        onClick={onClick} style={event.deleted ? { textDecoration: 'line-through' } : undefined}
+        titile={event.title}
+        subtitle={description}
+        right={<span style={{ fontSize: '1.2em' }}> {time} </span>}
+    />
 })
 
 
