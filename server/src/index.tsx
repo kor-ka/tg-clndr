@@ -99,7 +99,7 @@ initMDB().then(() => {
         }
 
         res.set('Content-disposition', 'attachment; filename=cal.ics');
-        res.set('Content-Type', 'text/calendar; method=PUBLISH');
+        res.set('Content-Type', 'text/calendar; method="PUBLISH"');
 
         res.send(data)
       } catch (e) {
