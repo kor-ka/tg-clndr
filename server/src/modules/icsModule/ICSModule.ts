@@ -22,7 +22,8 @@ export class ICSModule {
       return {
         calName: chat?.name ?? undefined,
         uid: e._id.toHexString(),
-        title: e.description,
+        title: e.title,
+        description: e.description,
         start: [date.getFullYear(), date.getMonth() + 1, date.getDate(), date.getHours(), date.getMinutes()],
         duration: { minutes: 60 }
       }
