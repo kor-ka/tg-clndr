@@ -86,14 +86,14 @@ input,
 select,
 textarea {
   color: var(--tg-theme-text-color);
-  font-size: 2em;
+  font-size: 1.2em;
   background-color: var(--tg-theme-bg-color);
   border: none;
   outline: none;
 }
 
 textarea {
-  font-size: 1.2em;
+  font-size: 1em;
   font-family: sans-serif;
 }
 
