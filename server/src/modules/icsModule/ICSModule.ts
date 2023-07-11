@@ -17,11 +17,12 @@ export class ICSModule {
     const chat = await this.chatMetaModule.getChatMeta(chatId);
 
     // TODO: migrate description - title
-    const { error, value } = ics.createEvents(events.map(e => {
+    let { error, value } = ics.createEvents(events.map(e => {
       const date = new Date(e.date);
       return {
         calName: chat?.name ?? undefined,
         uid: e._id.toHexString(),
+        sequence: e.seq,
         title: e.title,
         description: e.description,
         start: [date.getFullYear(), date.getMonth() + 1, date.getDate(), date.getHours(), date.getMinutes()],
@@ -30,6 +31,7 @@ export class ICSModule {
     }));
 
     if (value) {
+      value = value.replace('X-PUBLISHED-TTL:PT1H', 'X-PUBLISHED-TTL:PT1M')
       await this.db.updateOne({ chatId, threadId }, { $set: { chatId, threadId, data: value } }, { upsert: true });
     } else if (error) {
       console.log(error)
