@@ -12,6 +12,17 @@ export class EventsModule {
 
   readonly upateSubject = new Subject<{ chatId: number, threadId: number | undefined, event: SavedEvent, type: 'create' | 'update' | 'delete' }>;
 
+  // constructor() {
+  //   (async () => {
+  //     const a = this.events
+  //       .find()
+  //       .map(e => this.events.updateOne({ _id: e._id }, { $set: { 'attendees.yes': [e.uid], 'attendees.no': [], 'attendees.maybe': [] } }))
+  //       .toArray()
+  //     await Promise.all((await a).flat())
+  //     console.log('migrated')
+  //   })()
+  // }
+
   commitOperation = async (chatId: number, threadId: number | undefined, uid: number, command: ClientApiUpsertCommand) => {
     const { type, event } = command;
     const session = MDBClient.startSession()
@@ -25,7 +36,7 @@ export class EventsModule {
           const { id, ...event } = command.event
           const eventData = { ...event, uid, chatId, threadId };
           // create new event
-          _id = (await this.events.insertOne({ ...eventData, seq: 0, idempotencyKey: `${uid}_${id}` }, { session })).insertedId
+          _id = (await this.events.insertOne({ ...eventData, seq: 0, idempotencyKey: `${uid}_${id}`, attendees: { yes: [uid], no: [], maybe: [] } }, { session })).insertedId
         } else if (type === 'update') {
           const { id, ...event } = command.event
           _id = new ObjectId(id)
@@ -96,6 +107,25 @@ export class EventsModule {
     let date = new Date(new Date().getTime() - (1000 * 60 * 60 * 24) / 2);
     date.setUTCHours(0, 0, 0, 0);
     return date.getTime();
+  }
+
+  updateAtendeeStatus = async (chatId: number, threadId: number | undefined, eventId: string, uid: number, status: 'yes' | 'no' | 'maybe') => {
+    const _id = new ObjectId(eventId);
+    const addTo = status
+    const pullFrom = ['yes', 'no', 'maybe'].filter(s => s != addTo).map(k => `attendees.${k}`)
+    await this.events.updateOne({ _id }, { $pull: { [pullFrom[0]]: uid, [pullFrom[1]]: uid }, $addToSet: { [`attendees.${addTo}`]: uid }, $inc: { seq: 1 } })
+
+    // non-blocking cache update
+    this.getEvents(chatId, threadId).catch((e) => console.error(e));
+
+    const updatedEvent = await this.events.findOne({ _id });
+    if (!updatedEvent) {
+      throw new Error("operation lost during updateAtendeeStatus");
+    }
+    // notify all
+    this.upateSubject.next({ chatId, threadId, event: updatedEvent, type: 'update' });
+
+    return updatedEvent;
   }
 
   logCache = new Map<string, SavedEvent[]>();

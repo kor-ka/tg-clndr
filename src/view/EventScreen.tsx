@@ -2,12 +2,13 @@ import React from "react";
 import { useSearchParams } from "react-router-dom";
 import { Event } from "../shared/entity";
 import { useVMvalue } from "../utils/vm/useVM";
-import { UsersProvider, ModelContext, BackButtopnController, CardLight, ListItem, MainButtopnController, showConfirm, Button, HomeLoc } from "./MainScreen";
+import { UsersProvider, ModelContext, BackButtopnController, CardLight, ListItem, MainButtopnController, showConfirm, Button, HomeLoc, UserContext } from "./MainScreen";
 import { useHandleOperation } from "./useHandleOperation";
 import { useGoHome } from "./utils/useGoHome";
 
 export const EventScreen = () => {
     const model = React.useContext(ModelContext);
+    const uid = React.useContext(UserContext);
 
     let [searchParams] = useSearchParams();
 
@@ -41,6 +42,9 @@ export const EventScreen = () => {
 
     disable = disable || loading;
 
+    // 
+    // ADD/SAVE
+    // 
     const onClick = React.useCallback(() => {
         if (model) {
             handleOperation(
@@ -58,6 +62,30 @@ export const EventScreen = () => {
 
     }, [date, title, description, model, editEv, handleOperation]);
 
+    // 
+    // STATUS
+    // 
+
+    const status = React.useMemo(() => {
+        if (editEv !== undefined && uid !== undefined) {
+            return editEv.attendees.yes.includes(uid) ? 'yes' : editEv.attendees.no.includes(uid) ? 'no' : editEv.attendees.maybe.includes(uid) ? 'maybe' : undefined
+        }
+    }, [editEv?.attendees, uid]);
+
+    const onStatusChange = React.useCallback((s: 'yes' | 'no' | 'maybe') => {
+        if (model && editEvId && s !== status) {
+            handleOperation(
+                model.updateStatus(editEvId, s));
+        }
+    }, [model, editEvId, status]);
+    const onStatusChangeYes = React.useCallback(() => onStatusChange('yes'), [onStatusChange]);
+    const onStatusChangeNo = React.useCallback(() => onStatusChange('no'), [onStatusChange]);
+    const onStatusChangeMaybe = React.useCallback(() => onStatusChange('maybe'), [onStatusChange]);
+
+
+    // 
+    // DELETE
+    // 
     const onDeleteClick = React.useCallback(() => {
         showConfirm("Delete event? This can not be undone.", (confirmed) => {
             if (confirmed && model && editEvId) {
@@ -85,6 +113,11 @@ export const EventScreen = () => {
             <input value={crazyDateFormat} onChange={onDateInputChange} disabled={disable} type="datetime-local" style={{ flexGrow: 1, margin: '8px 12px', padding: '0px 12px' }} />
             <textarea value={description} onChange={onDescriptionInputChange} disabled={disable} style={{ flexGrow: 1, padding: '8px 28px', height: 128 }} placeholder="Description" />
 
+            {editEv && <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Button onClick={onStatusChangeYes} style={status === 'yes' ? { backgroundColor: '--tg-theme-button-color' } : undefined}><ListItem titleStyle={{ color: "var(--tg-theme-button-text-color)", alignSelf: 'center' }} titile="Accept" /></Button>
+                <Button onClick={onStatusChangeMaybe} style={status === 'maybe' ? { backgroundColor: '--tg-theme-button-color' } : undefined}><ListItem titleStyle={{ color: "var(--tg-theme-button-text-color)", alignSelf: 'center' }} titile="Maybe" /></Button>
+                <Button onClick={onStatusChangeNo} style={status === 'no' ? { backgroundColor: '--tg-theme-button-color' } : undefined}><ListItem titleStyle={{ color: "var(--tg-theme-button-text-color)", alignSelf: 'center' }} titile="Decline" /></Button>
+            </div>}
             {editEv && <Button disabled={disable} onClick={onDeleteClick}><ListItem titleStyle={{ color: "var(--text-destructive-color)", alignSelf: 'center' }} titile="DELETE EVENT" /></Button>}
         </div>
         <MainButtopnController isVisible={showButton} onClick={onClick} text={(editEv ? "SAVE" : "ADD") + " EVENT"} progress={loading} />

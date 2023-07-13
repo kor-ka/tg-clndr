@@ -104,6 +104,25 @@ export class ClientAPI {
                         ack({ error: message })
                     }
                 });
+                socket.on("status", async (
+                    { eventId, status }: {
+                        eventId: string,
+                        status: 'yes' | 'no' | 'maybe',
+                    },
+                    ack: (res: { updated: Event, error?: never } | { error: string, updated?: never }) => void) => {
+                    try {
+                        await checkAuth()
+                        const event = await this.splitModule.updateAtendeeStatus(chatId, threadId, eventId, tgData.user.id, status);
+                        ack({ updated: savedOpToApi(event) });
+                    } catch (e) {
+                        console.error(e)
+                        let message = 'unknown error'
+                        if (e instanceof Error) {
+                            message = e.message
+                        }
+                        ack({ error: message })
+                    }
+                });
                 (async () => {
                     try {
                         await checkAuth()

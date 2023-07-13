@@ -9,6 +9,9 @@ export class EventsModule {
         if (!vm) {
             vm = new VM(operation)
             this.events.val.set(operation.id, vm)
+        } else if (vm.val.seq >= operation.seq) {
+            // skip outdated seq update
+            return vm
         }
         vm.next(operation);
         const nextMapEntries = [...this.events.val.entries(), [operation.id, vm] as const].sort((a, b) => a[1].val.date - b[1].val.date)

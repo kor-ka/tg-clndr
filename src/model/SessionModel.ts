@@ -106,6 +106,21 @@ export class SessionModel {
         return d.promise
     };
 
+    updateStatus = (eventId: string, status: 'yes' | 'no' | 'maybe'): Promise<Event> => {
+        const d = new Deffered<Event>()
+        this.emit("status", { eventId, status }, (res: { updated: Event, error: never } | { error: string, updated: never }) => {
+            console.log("on_status_ack", res)
+            const { updated, error } = res
+            if (updated) {
+                this.addOperation(updated)
+                d.resolve(updated)
+            } else {
+                d.reject(new Error(error))
+            }
+        });
+        return d.promise
+    };
+
     ssrTimeSone = () => {
         return Cookies.get('ssr_time_zone')
     }

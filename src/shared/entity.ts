@@ -18,11 +18,12 @@ export type Event = {
     title: string;
     description: string;
     deleted?: boolean;
-    seq: number
+    seq: number;
+    attendees: { yes: number[], no: number[], maybe: number[] }
 }
 
 
-type ClientCommandEvent = Omit<Event, 'uid' | 'deleted' | 'seq'>
+type ClientCommandEvent = Omit<Event, 'uid' | 'deleted' | 'seq' | 'attendees'>
 export type ClientApiCreateEventCommand = {
     type: 'create';
     event: ClientCommandEvent
