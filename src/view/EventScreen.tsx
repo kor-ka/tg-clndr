@@ -114,9 +114,9 @@ export const EventScreen = () => {
             <textarea value={description} onChange={onDescriptionInputChange} disabled={disable} style={{ flexGrow: 1, padding: '8px 28px', height: 128 }} placeholder="Description" />
 
             {editEv && <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Button onClick={onStatusChangeYes} style={status === 'yes' ? { backgroundColor: '--tg-theme-button-color' } : undefined}><ListItem titleStyle={{ color: "var(--tg-theme-button-text-color)", alignSelf: 'center' }} titile="Accept" /></Button>
-                <Button onClick={onStatusChangeMaybe} style={status === 'maybe' ? { backgroundColor: '--tg-theme-button-color' } : undefined}><ListItem titleStyle={{ color: "var(--tg-theme-button-text-color)", alignSelf: 'center' }} titile="Maybe" /></Button>
-                <Button onClick={onStatusChangeNo} style={status === 'no' ? { backgroundColor: '--tg-theme-button-color' } : undefined}><ListItem titleStyle={{ color: "var(--tg-theme-button-text-color)", alignSelf: 'center' }} titile="Decline" /></Button>
+                <Button onClick={onStatusChangeYes} style={status === 'yes' ? { backgroundColor: '--tg-theme-button-color' } : undefined}><ListItem titleStyle={{ color: status === 'yes' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} titile="Accept" /></Button>
+                <Button onClick={onStatusChangeMaybe} style={status === 'maybe' ? { backgroundColor: '--tg-theme-button-color' } : undefined}><ListItem titleStyle={{ color: status === 'maybe' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} titile="Maybe" /></Button>
+                <Button onClick={onStatusChangeNo} style={status === 'no' ? { backgroundColor: '--tg-theme-button-color' } : undefined}><ListItem titleStyle={{ color: status === 'no' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} titile="Decline" /></Button>
             </div>}
             {editEv && <Button disabled={disable} onClick={onDeleteClick}><ListItem titleStyle={{ color: "var(--text-destructive-color)", alignSelf: 'center' }} titile="DELETE EVENT" /></Button>}
         </div>
