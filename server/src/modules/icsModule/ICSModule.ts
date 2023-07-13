@@ -15,7 +15,7 @@ const uidToAttendee = async (uid: number, status: ParticipationStatus): Promise<
     if (user) {
       return {
         name: [user.name, user.lastname].filter(Boolean).join(' '),
-        email: "stupid.ios.needs@email.here",
+        email: `${uid}-stupid.ios.needs@email.here`,
         partstat: status
       }
     }
