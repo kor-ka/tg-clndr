@@ -24,7 +24,6 @@ const usersListStr = async (uids: number[]) => {
 }
 
 export const renderPin = async (chatId: number, threadId: number | undefined, events: SavedEvent[]) => {
-  const chatMetaModule = container.resolve(ChatMetaModule);
   const timeZones = new Set<string>();
   events.forEach(e => timeZones.add(e.tz));
   const lines = (await Promise.all(events.map(async ({ date, tz, title, description, attendees }) => {
@@ -47,7 +46,7 @@ export const renderPin = async (chatId: number, threadId: number | undefined, ev
     if (maybeUsers) {
       lines.push(maybeUsers)
     }
-
+    lines.push('')
     return lines
   }))).flat();
 
