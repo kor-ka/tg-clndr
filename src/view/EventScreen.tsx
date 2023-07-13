@@ -6,7 +6,7 @@ import { UsersProvider, ModelContext, BackButtopnController, CardLight, ListItem
 import { useHandleOperation } from "./useHandleOperation";
 import { useGoHome } from "./utils/useGoHome";
 
-export const AddTransferScreen = () => {
+export const EventScreen = () => {
     const model = React.useContext(ModelContext);
 
     let [searchParams] = useSearchParams();
@@ -16,25 +16,30 @@ export const AddTransferScreen = () => {
 
     let disable = !!editEv?.deleted;
 
-    const [title, setTitle] = React.useState(editEv?.title ?? '')
+    const [edited, setEdited] = React.useState(false);
+
+    const [title, setTitle] = React.useState(editEv?.title ?? '');
     const onTitleInputChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setTitle(e.target.value);
-    }, [])
+        setEdited(true);
+    }, []);
 
-    const [description, setDscription] = React.useState(editEv?.description ?? '')
+    const [description, setDscription] = React.useState(editEv?.description ?? '');
     const onDescriptionInputChange = React.useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setDscription(e.target.value);
-    }, [])
+        setEdited(true);
+    }, []);
 
     const [date, setDate] = React.useState(new Date(editEv?.date ?? Date.now() + 1000 * 60 * 60));
     const onDateInputChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setDate(new Date(e.target.value));
-    }, [])
+        setEdited(true);
+    }, []);
 
-    const goHome = useGoHome()
+    const goHome = useGoHome();
     const [handleOperation, loading] = useHandleOperation(goHome);
 
-    disable = disable || loading
+    disable = disable || loading;
 
     const onClick = React.useCallback(() => {
         if (model) {
@@ -63,14 +68,15 @@ export const AddTransferScreen = () => {
                     }))
             }
         })
-    }, [model, editEvId, handleOperation])
+    }, [model, editEvId, handleOperation]);
 
-    console.log(date.toISOString().slice(0, 19))
+    const showButton = !editEv || edited;
 
     const crazyDateFormat = React.useMemo(() => {
         var tzoffset = (new Date()).getTimezoneOffset() * 60000; //offset in milliseconds
         return (new Date(date.getTime() - tzoffset)).toISOString().slice(0, -8);
-    }, [date])
+    }, [date]);
+
     return <>
         <BackButtopnController />
         <div style={{ display: 'flex', flexDirection: 'column', padding: '20px 0px' }}>
@@ -81,6 +87,6 @@ export const AddTransferScreen = () => {
 
             {editEv && <Button disabled={disable} onClick={onDeleteClick}><ListItem titleStyle={{ color: "var(--text-destructive-color)", alignSelf: 'center' }} titile="DELETE EVENT" /></Button>}
         </div>
-        <MainButtopnController onClick={onClick} text={(editEv ? "EDIT" : "ADD") + " EVENT"} progress={loading} />
+        <MainButtopnController isVisible={showButton} onClick={onClick} text={(editEv ? "SAVE" : "ADD") + " EVENT"} progress={loading} />
     </>
 }

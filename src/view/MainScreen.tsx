@@ -10,7 +10,7 @@ import {
     useLocation as loc,
     useNavigate as nav, useResolvedPath, useSearchParams
 } from "react-router-dom";
-import { AddTransferScreen } from "./AddTransferScreen";
+import { EventScreen } from "./EventScreen";
 import { VM } from "../utils/vm/VM";
 import Linkify from "linkify-react";
 
@@ -77,11 +77,11 @@ export const renderApp = (model: SessionModel) => {
         },
         {
             path: "/tg/addEvent",
-            element: <AddTransferScreen />,
+            element: <EventScreen />,
         },
         {
             path: "/tg/editEvent",
-            element: <AddTransferScreen />,
+            element: <EventScreen />,
         },
     ]);
 
