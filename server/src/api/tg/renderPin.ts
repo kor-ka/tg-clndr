@@ -46,6 +46,13 @@ export const renderPin = async (chatId: number, threadId: number | undefined, ev
     if (maybeUsers) {
       lines.push(maybeUsers)
     }
+
+    let noUsers = await usersListStr(attendees.no);
+    noUsers = noUsers ? '🙅 ' + noUsers : '';
+    if (noUsers) {
+      lines.push(noUsers)
+    }
+
     lines.push('')
     return lines
   }))).flat();
