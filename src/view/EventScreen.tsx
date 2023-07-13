@@ -119,7 +119,7 @@ export const EventScreen = () => {
             </Card>
 
             <Card>
-                <input value={crazyDateFormat} onChange={onDateInputChange} disabled={disable} type="datetime-local" style={{ flexGrow: 1, margin: '8px 3px', background: 'var(--tg-theme-secondary-bg-color)', padding: '0px 3px' }} />
+                <input value={crazyDateFormat} onChange={onDateInputChange} disabled={disable} type="datetime-local" style={{ flexGrow: 1, background: 'var(--tg-theme-secondary-bg-color)', padding: '8px 8px', margin: '0px 0px' }} />
             </Card>
 
 
