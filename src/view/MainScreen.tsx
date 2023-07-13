@@ -181,7 +181,6 @@ export const ListItem = React.memo(({ titile: title, subtitle, right, style, tit
 const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
     const event = useVMvalue(eventVM)
     const usersModule = React.useContext(UsersProvider)
-    const uid = React.useContext(UserContext);
     const user = useVMvalue(usersModule.getUser(event.uid))
 
     const nav = useNav()
@@ -192,24 +191,8 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
     const timeZone = React.useContext(Timezone);
     const time = React.useMemo(() => new Date(event.date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h24', timeZone }), [event.date]);
 
-    const attendees = React.useMemo(
-        () => {
-            const res = event.attendees.yes.map(uid => usersModule.getUser(uid).val)
-                .sort((a, b) => (a.id === uid) ? -1 : (b.id === uid) ? 1 : a.fullName.localeCompare(b.fullName))
-                .map(u => u.fullName).join(', ')
-            return res ? '✅ ' + res : ''
-        }, [event]
-    )
 
-    const mbAttendees = React.useMemo(
-        () => {
-            const res = event.attendees.maybe.map(uid => usersModule.getUser(uid).val)
-                .sort((a, b) => (a.id === uid) ? -1 : (b.id === uid) ? 1 : a.fullName.localeCompare(b.fullName))
-                .map(u => u.fullName).join(', ')
-            return res ? '🤔 ' + res : ''
-        }, [event]
-    )
-    const description = React.useMemo(() => [event.description, attendees, mbAttendees].filter(Boolean).join('\n'), [event.description, user.name])
+    const description = React.useMemo(() => [event.description, user.fullName].filter(Boolean).join('\n'), [event.description, user.name])
     return <ListItem
         onClick={onClick} style={event.deleted ? { textDecoration: 'line-through' } : undefined}
         titile={event.title}

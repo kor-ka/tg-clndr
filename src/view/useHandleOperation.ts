@@ -1,11 +1,10 @@
 import React from "react";
 import { WebApp, showAlert, useNav } from "./MainScreen";
-export const useHandleOperation = (onComplete?: () => void) => {
-    const nav = useNav();
+export const useHandleOperation = () => {
 
     const [loading, setLoading] = React.useState(false);
 
-    const callback = React.useCallback(<T,>(promise: Promise<T>) => {
+    const callback = React.useCallback(<T,>(promise: Promise<T>, onComplete?: () => void) => {
         if (loading) {
             return Promise.reject(new Error("operation already in progress"))
         }
@@ -14,8 +13,6 @@ export const useHandleOperation = (onComplete?: () => void) => {
             WebApp?.HapticFeedback.notificationOccurred("success");
             if (onComplete) {
                 onComplete()
-            } else {
-                nav(-1);
             }
             return res
         })
@@ -28,7 +25,7 @@ export const useHandleOperation = (onComplete?: () => void) => {
                 }
             })
             .finally(() => setLoading(false));
-    }, [loading, onComplete])
+    }, [loading])
 
     return [callback, loading] as const
 }

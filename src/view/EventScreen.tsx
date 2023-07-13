@@ -2,9 +2,15 @@ import React from "react";
 import { useSearchParams } from "react-router-dom";
 import { Event } from "../shared/entity";
 import { useVMvalue } from "../utils/vm/useVM";
-import { UsersProvider, ModelContext, BackButtopnController, CardLight, ListItem, MainButtopnController, showConfirm, Button, HomeLoc, UserContext } from "./MainScreen";
+import { UsersProvider, ModelContext, BackButtopnController, CardLight, ListItem, MainButtopnController, showConfirm, Button, HomeLoc, UserContext, Card } from "./MainScreen";
 import { useHandleOperation } from "./useHandleOperation";
 import { useGoHome } from "./utils/useGoHome";
+
+const Attendee = React.memo(({ uid, status }: { uid: number, status: 'yes' | 'no' | 'maybe' }) => {
+    const usersModule = React.useContext(UsersProvider)
+    const user = useVMvalue(usersModule.getUser(uid))
+    return <ListItem titile={user.fullName} right={status === 'yes' ? '✅' : status === 'no' ? '🙅' : status === 'maybe' ? '🤔' : ''} />
+})
 
 export const EventScreen = () => {
     const model = React.useContext(ModelContext);
@@ -38,7 +44,7 @@ export const EventScreen = () => {
     }, []);
 
     const goHome = useGoHome();
-    const [handleOperation, loading] = useHandleOperation(goHome);
+    const [handleOperation, loading] = useHandleOperation();
 
     disable = disable || loading;
 
@@ -57,10 +63,10 @@ export const EventScreen = () => {
                         description: description.trim(),
                         date: date.getTime(),
                     }
-                }))
+                }), goHome)
         }
 
-    }, [date, title, description, model, editEv, handleOperation]);
+    }, [date, title, description, model, editEv, handleOperation, goHome]);
 
     // 
     // STATUS
@@ -74,8 +80,7 @@ export const EventScreen = () => {
 
     const onStatusChange = React.useCallback((s: 'yes' | 'no' | 'maybe') => {
         if (model && editEvId && s !== status) {
-            handleOperation(
-                model.updateStatus(editEvId, s));
+            handleOperation(model.updateStatus(editEvId, s));
         }
     }, [model, editEvId, status]);
     const onStatusChangeYes = React.useCallback(() => onStatusChange('yes'), [onStatusChange]);
@@ -93,10 +98,10 @@ export const EventScreen = () => {
                     model.commitCommand({
                         type: 'delete',
                         id: editEvId
-                    }))
+                    }), goHome)
             }
         })
-    }, [model, editEvId, handleOperation]);
+    }, [model, editEvId, handleOperation, goHome]);
 
     const showButton = !editEv || edited;
 
@@ -113,13 +118,18 @@ export const EventScreen = () => {
             <input value={crazyDateFormat} onChange={onDateInputChange} disabled={disable} type="datetime-local" style={{ flexGrow: 1, margin: '8px 12px', padding: '0px 12px' }} />
             <textarea value={description} onChange={onDescriptionInputChange} disabled={disable} style={{ flexGrow: 1, padding: '8px 28px', height: 128 }} placeholder="Description" />
 
-            {editEv && <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Button onClick={onStatusChangeYes} style={status === 'yes' ? { backgroundColor: '--tg-theme-button-color' } : undefined}><ListItem titleStyle={{ color: status === 'yes' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} titile="Accept" /></Button>
-                <Button onClick={onStatusChangeMaybe} style={status === 'maybe' ? { backgroundColor: '--tg-theme-button-color' } : undefined}><ListItem titleStyle={{ color: status === 'maybe' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} titile="Maybe" /></Button>
-                <Button onClick={onStatusChangeNo} style={status === 'no' ? { backgroundColor: '--tg-theme-button-color' } : undefined}><ListItem titleStyle={{ color: status === 'no' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} titile="Decline" /></Button>
+            {editEv && <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <Button key={'yes'} onClick={onStatusChangeYes} disabled={disable} style={status === 'yes' ? { backgroundColor: 'var(--tg-theme-button-color)' } : undefined}><ListItem titleStyle={{ color: status === 'yes' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} titile="Accept" /></Button>
+                <Button key={'maybe'} onClick={onStatusChangeMaybe} disabled={disable} style={status === 'maybe' ? { backgroundColor: 'var(--tg-theme-button-color)' } : undefined}><ListItem titleStyle={{ color: status === 'maybe' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} titile="Maybe" /></Button>
+                <Button key={'no'} onClick={onStatusChangeNo} disabled={disable} style={status === 'no' ? { backgroundColor: 'var(--tg-theme-button-color)' } : undefined}><ListItem titleStyle={{ color: status === 'no' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} titile="Decline" /></Button>
             </div>}
+
+            {((editEv?.attendees.yes.length ?? 0) > 0) && <Card key={'yes'}>{editEv?.attendees.yes.map(uid => <Attendee key={uid} uid={uid} status="yes" />)}</Card>}
+            {((editEv?.attendees.maybe.length ?? 0) > 0) && <Card key={'maybe'}>{editEv?.attendees.maybe.map(uid => <Attendee key={uid} uid={uid} status="maybe" />)}</Card>}
+            {((editEv?.attendees.no.length ?? 0) > 0) && <Card key={'no'}>{editEv?.attendees.no.map(uid => <Attendee key={uid} uid={uid} status="no" />)}</Card>}
+
             {editEv && <Button disabled={disable} onClick={onDeleteClick}><ListItem titleStyle={{ color: "var(--text-destructive-color)", alignSelf: 'center' }} titile="DELETE EVENT" /></Button>}
         </div>
-        <MainButtopnController isVisible={showButton} onClick={onClick} text={(editEv ? "SAVE" : "ADD") + " EVENT"} progress={loading} />
+        <MainButtopnController isVisible={showButton} onClick={onClick} text={editEv ? "SAVE" : "ADD EVENT"} progress={loading} />
     </>
 }
