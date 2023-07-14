@@ -115,7 +115,7 @@ export const EventScreen = () => {
         <div style={{ display: 'flex', flexDirection: 'column', padding: '20px 0px' }}>
 
             <Card>
-                <input value={title} onChange={onTitleInputChange} autoFocus={true} disabled={disable} style={{ flexGrow: 1, padding: '8px 8px', background: 'var(--tg-theme-secondary-bg-color)' }} placeholder="Title" />
+                <input value={title} onChange={onTitleInputChange} autoFocus={!editEv} disabled={disable} style={{ flexGrow: 1, padding: '8px 8px', background: 'var(--tg-theme-secondary-bg-color)' }} placeholder="Title" />
             </Card>
 
             <Card>
