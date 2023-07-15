@@ -84,6 +84,7 @@ And don't forget to pin the message with the button, so everyone can open the ap
           try {
             await session.withTransaction(async () => {
               await EVENTS().updateMany({ chatId: fromId }, { $set: { chatId: toId } }, { session });
+              await LATEST_EVENTS().updateMany({ chatId: fromId }, { $set: { chatId: toId } }, { session });
             });
           } finally {
             await session.endSession();
