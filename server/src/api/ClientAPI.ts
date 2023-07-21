@@ -127,7 +127,7 @@ export class ClientAPI {
                     try {
                         await checkAuth()
 
-                        socket.join(`chatClient_${tgData.start_param}`);
+                        socket.join(`chatClient_${[chatId, threadId].filter(Boolean).join('_')}`);
                         socket.join(`chatUsersClient_${chatId}`);
 
                         this.userModule.updateUser(chatId, threadId, { id: tgData.user.id, name: tgData.user.first_name, lastname: tgData.user.last_name, username: tgData.user.username, disabled: false });
