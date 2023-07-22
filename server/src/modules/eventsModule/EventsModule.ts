@@ -130,10 +130,11 @@ export class EventsModule {
 
   logCache = new Map<string, SavedEvent[]>();
   getEvents = async (chatId: number, threadId: number | undefined, limit = 200): Promise<SavedEvent[]> => {
-    const now = new Date().getTime()
-    const prevDayStart = this.prevDayStart()
+    const now = new Date().getTime();
+    const freshEnough = now - 1000 * 60 * 60 * 4;
+    const prevDayStart = this.prevDayStart();
     let res = await this.events.find({ chatId, threadId, date: { $gt: prevDayStart }, deleted: { $ne: true } }, { limit, sort: { date: 1 } }).toArray();
-    res = res.filter(e => e.date >= now);
+    res = res.filter(e => e.date >= freshEnough);
     this.logCache.set(`${chatId}-${threadId ?? undefined}-${limit}-${prevDayStart}`, res)
     return res
   }
