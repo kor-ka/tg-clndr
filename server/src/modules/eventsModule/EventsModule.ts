@@ -140,10 +140,11 @@ export class EventsModule {
   }
 
   getEventsCached = async (chatId: number, threadId: number | undefined, limit = 200) => {
-    const now = new Date().getTime()
-    const prevDayStart = this.prevDayStart()
+    const now = new Date().getTime();
+    const freshEnough = now - 1000 * 60 * 60 * 4;
+    const prevDayStart = this.prevDayStart();
 
-    let events = this.logCache.get(`${chatId}-${threadId ?? undefined}-${limit}-${prevDayStart}`)?.filter(e => e.date >= now)
+    let events = this.logCache.get(`${chatId}-${threadId ?? undefined}-${limit}-${prevDayStart}`)?.filter(e => e.date >= freshEnough)
     const eventsPromise = this.getEvents(chatId, threadId, limit)
     if (!events) {
       events = await eventsPromise
