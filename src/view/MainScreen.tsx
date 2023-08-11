@@ -165,10 +165,13 @@ const Link = ({ attributes, content }: { attributes: any, content: any }) => {
     return <a onClick={onClick} href={href} {...props}>{content}</a>;
 };
 
-export const ListItem = React.memo(({ titile: title, subtitle, subtitleView, right, style, titleStyle, subTitleStyle, rightStyle, leftStyle, onClick, onSubtitleClick }: { titile?: string, subtitle?: string, subtitleView?: React.ReactNode, right?: React.ReactNode, style?: any, titleStyle?: any, subTitleStyle?: any, rightStyle?: any, leftStyle?: any, onClick?: React.MouseEventHandler<HTMLDivElement>, onSubtitleClick?: React.MouseEventHandler<HTMLDivElement> }) => {
+export const ListItem = React.memo(({ titile: title, titleView, subtitle, subtitleView, right, style, titleStyle, subTitleStyle, rightStyle, leftStyle, onClick, onSubtitleClick }: { titile?: string, titleView?: React.ReactNode, subtitle?: string, subtitleView?: React.ReactNode, right?: React.ReactNode, style?: any, titleStyle?: any, subTitleStyle?: any, rightStyle?: any, leftStyle?: any, onClick?: React.MouseEventHandler<HTMLDivElement>, onSubtitleClick?: React.MouseEventHandler<HTMLDivElement> }) => {
     return <div className={onClick ? "list_item" : undefined} onClick={onClick} style={{ display: 'flex', flexDirection: "row", justifyContent: 'space-between', padding: 4, alignItems: 'center', ...style }}>
         <div style={{ display: 'flex', padding: '2px 0px', flexDirection: "column", flexGrow: 1, flexShrink: 1, minWidth: 0, ...leftStyle }}>
             {!!title && <div style={{ padding: '2px 4px', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', ...titleStyle }}>{title}</div>}
+            {titleView && <div style={{ padding: '2px 4px' }}>
+                {titleView}
+            </div>}
             {!!subtitle && <Linkify options={{ render: Link }}>
                 <div onClick={onSubtitleClick} style={{ padding: '2px 4px', fontSize: '0.8em', color: "var(--tg-theme-hint-color)", whiteSpace: 'pre-wrap', textOverflow: 'ellipsis', overflow: 'hidden', ...subTitleStyle }}>{subtitle}</div>
             </Linkify>}
@@ -190,20 +193,20 @@ const colors = [
     'var(--color-user-7)',
     'var(--color-user-8)',
 ]
-export const UserPic = React.memo(({ uid }: { uid: number }) => {
+export const UserPic = React.memo(({ uid, style }: { uid: number, style?: any }) => {
     const usersModule = React.useContext(UsersProvider)
     const user = useVMvalue(usersModule.getUser(uid))
     if (user.imageUrl) {
-        return <img style={{ width: 24, height: 24, border: "2px solid var(--tg-theme-bg-color)", borderRadius: 24, marginRight: -8 }} src={user.imageUrl} />
+        return <img style={{ width: 24, height: 24, border: "2px solid var(--tg-theme-bg-color)", borderRadius: 24, ...style }} src={user.imageUrl} />
     }
 
-    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: 24, height: 24, border: `2px solid var(--tg-theme-bg-color)`, backgroundColor: colors[uid % colors.length], borderRadius: 24, marginRight: -8 }}  >
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: 24, height: 24, border: `2px solid var(--tg-theme-bg-color)`, backgroundColor: colors[uid % colors.length], borderRadius: 24, ...style }}  >
         <div style={{ fontSize: '12px' }} >{[user.firstName, user.lastname].filter(Boolean).map(e => e?.charAt(0)).join('')} </div>
     </div>
 })
 
 const UsersPics = React.memo(({ uids }: { uids: number[] }) => {
-    return <div style={{ display: 'flex', flexDirection: 'row' }}>{uids.map(uid => <UserPic key={uid} uid={uid} />)}</div>
+    return <div style={{ display: 'flex', flexDirection: 'row' }}>{uids.map(uid => <UserPic key={uid} uid={uid} style={{ marginRight: -8 }} />)}</div>
 })
 
 const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {

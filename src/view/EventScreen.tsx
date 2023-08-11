@@ -2,14 +2,14 @@ import React from "react";
 import { useSearchParams } from "react-router-dom";
 import { Event } from "../shared/entity";
 import { useVMvalue } from "../utils/vm/useVM";
-import { UsersProvider, ModelContext, BackButtopnController, CardLight, ListItem, MainButtopnController, showConfirm, Button, HomeLoc, UserContext, Card } from "./MainScreen";
+import { UsersProvider, ModelContext, BackButtopnController, CardLight, ListItem, MainButtopnController, showConfirm, Button, HomeLoc, UserContext, Card, UserPic } from "./MainScreen";
 import { useHandleOperation } from "./useHandleOperation";
 import { useGoHome } from "./utils/useGoHome";
 
 const Attendee = React.memo(({ uid, status }: { uid: number, status: 'yes' | 'no' | 'maybe' }) => {
     const usersModule = React.useContext(UsersProvider)
     const user = useVMvalue(usersModule.getUser(uid))
-    return <ListItem titile={user.fullName} right={status === 'yes' ? '✅' : status === 'no' ? '🙅' : status === 'maybe' ? '🤔' : ''} />
+    return <ListItem titleView={<div style={{ display: 'flex', flexDirection: "row", alignItems: 'center' }}><UserPic uid={uid} style={{ marginRight: 8 }} />{user.fullName}</div>} right={status === 'yes' ? '✅' : status === 'no' ? '🙅' : status === 'maybe' ? '🤔' : ''} />
 })
 
 export const EventScreen = () => {
