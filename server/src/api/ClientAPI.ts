@@ -29,7 +29,7 @@ export class ClientAPI {
         })
 
         this.userModule.userUpdated.subscribe(({ user, chatId }) => {
-            const upd: User = user
+            const upd: User = savedUserToApi(user, chatId)
             this.io.to('chatUsersClient_' + chatId).emit('user', upd)
         })
 
@@ -132,7 +132,7 @@ export class ClientAPI {
 
                         this.userModule.updateUser(chatId, threadId, { id: tgData.user.id, name: tgData.user.first_name, lastname: tgData.user.last_name, username: tgData.user.username, disabled: false });
 
-                        const users = savedUserToApi(await this.userModule.getUsersCached(chatId), chatId, threadId);
+                        const users = savedUsersToApi(await this.userModule.getUsersCached(chatId), chatId, threadId);
                         const { events, eventsPromise } = await this.splitModule.getEventsCached(chatId, threadId);
                         // emit cached
                         socket.emit("state", { events: savedOpsToApi(events), users });
@@ -163,9 +163,11 @@ export const savedOpsToApi = (saved: SavedEvent[]): Event[] => {
     return saved.map(savedOpToApi)
 }
 
-export const savedUserToApi = (saved: SavedUser[], chatId: number, threadId?: number): User[] => {
-    return saved.map(s => {
-        const { _id, chatIds, disabledChatIds, threadIds, ...u } = s
-        return { ...u, disabled: !!disabledChatIds?.includes(chatId) || (!!threadId && !threadIds?.includes(threadId)) }
-    })
+export const savedUserToApi = (saved: SavedUser, chatId: number, threadId?: number): User => {
+    const { _id, chatIds, disabledChatIds, threadIds, ...u } = saved
+    return { ...u, disabled: !!disabledChatIds?.includes(chatId) || (!!threadId && !threadIds?.includes(threadId)) }
+}
+
+export const savedUsersToApi = (saved: SavedUser[], chatId: number, threadId?: number): User[] => {
+    return saved.map(s => savedUserToApi(s, chatId, threadId))
 }

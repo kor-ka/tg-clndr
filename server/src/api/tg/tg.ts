@@ -1,13 +1,15 @@
 import TB from "node-telegram-bot-api";
 import { PinsModule } from "../../modules/pinsModule/PinsModule";
 import { renderPin } from "./renderPin";
-import { container } from "tsyringe";
+import { container, singleton } from "tsyringe";
 import { ChatMetaModule } from "../../modules/chatMetaModule/ChatMetaModule";
 import { EventsModule } from "../../modules/eventsModule/EventsModule";
 import { UserModule } from "../../modules/userModule/UserModule";
 import { EVENTS, LATEST_EVENTS } from "../../modules/eventsModule/eventStore";
 import { MDBClient } from "../../utils/MDB";
 import { CronJob } from "cron";
+
+@singleton()
 export class TelegramBot {
   private pinModule = container.resolve(PinsModule);
   private chatMetaModule = container.resolve(ChatMetaModule);
@@ -15,7 +17,7 @@ export class TelegramBot {
   private eventsModule = container.resolve(EventsModule)
 
   private token = process.env.TELEGRAM_BOT_TOKEN!;
-  private bot = new TB(this.token, {
+  readonly bot = new TB(this.token, {
     polling: true,
   });
 

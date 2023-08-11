@@ -16,7 +16,7 @@ import { initMDB } from "./utils/MDB";
 import { MainScreenView, SplitAvailable, Timezone, UserContext, UsersProvider } from "../../src/view/MainScreen";
 import { Event } from "../../src/shared/entity";
 import { EventsModule } from "./modules/eventsModule/EventsModule";
-import { savedOpsToApi, savedUserToApi } from "./api/ClientAPI";
+import { savedOpsToApi, savedUsersToApi } from "./api/ClientAPI";
 import { UsersModule as UsersClientModule } from "../../src/model/UsersModule";
 import { UserModule } from "./modules/userModule/UserModule";
 import { VM } from "../../src/utils/vm/VM";
@@ -79,6 +79,21 @@ initMDB().then(() => {
     })
     .get("/favicon.ico", async (_, res) => {
       res.sendFile(path.resolve(__dirname + "/../../../../public/favicon.ico"));
+    })
+
+    .get("/tgFile/:id", async (req, res) => {
+      try {
+        const p = await container.resolve(UserModule).getFile(req.params.id);
+        if (p) {
+          res.sendFile(path.resolve(p));
+        } else {
+          res.status(404).send('file not found');
+        }
+      } catch (e) {
+        console.error(e)
+        res.status(500).send("unknown error");
+      }
+
     })
 
     .get("/ics/:key/cal.ics", async (req, res) => {
@@ -156,7 +171,7 @@ initMDB().then(() => {
 
       const users = await container.resolve(UserModule).getUsersCached(chatId)
       const usersProvider = new UsersClientModule(userId)
-      savedUserToApi(users, chatId).forEach(usersProvider.updateUser)
+      savedUsersToApi(users, chatId).forEach(usersProvider.updateUser)
 
 
 
@@ -203,7 +218,7 @@ initMDB().then(() => {
   });
 
   new SocketApi(io).init();
-  new TelegramBot().init();
+  container.resolve(TelegramBot).init()
   container.resolve(ICSModule).init();
 
   server.listen(PORT, () => console.log(`lll- on ${PORT}`));
