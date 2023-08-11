@@ -181,6 +181,15 @@ export const ListItem = React.memo(({ titile: title, subtitle, subtitleView, rig
 }
 )
 
+const colors = [
+    'var(--color-user-1)',
+    'var(--color-user-2)',
+    'var(--color-user-4)',
+    'var(--color-user-5)',
+    'var(--color-user-6)',
+    'var(--color-user-7)',
+    'var(--color-user-8)',
+]
 export const UserPic = React.memo(({ uid }: { uid: number }) => {
     const usersModule = React.useContext(UsersProvider)
     const user = useVMvalue(usersModule.getUser(uid))
@@ -188,7 +197,7 @@ export const UserPic = React.memo(({ uid }: { uid: number }) => {
         return <img style={{ width: 24, height: 24, border: "2px solid var(--tg-theme-bg-color)", borderRadius: 24, marginRight: -8 }} src={user.imageUrl} />
     }
 
-    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: 24, height: 24, border: `2px solid var(--tg-theme-bg-color)`, backgroundColor: `var(--color-user-${(uid % 8) + 1})`, borderRadius: 24, marginRight: -8 }}  >
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: 24, height: 24, border: `2px solid var(--tg-theme-bg-color)`, backgroundColor: colors[uid % colors.length], borderRadius: 24, marginRight: -8 }}  >
         <div style={{ fontSize: '12px' }} >{[user.firstName, user.lastname].filter(Boolean).map(e => e?.charAt(0)).join('')} </div>
     </div>
 })
