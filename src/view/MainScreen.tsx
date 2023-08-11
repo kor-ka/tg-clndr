@@ -1,7 +1,7 @@
 import React, { useCallback } from "react";
 import { Event } from "../shared/entity"
 import { SessionModel } from "../model/SessionModel"
-import { UsersModule } from "../model/UsersModule";
+import { UserClient, UsersModule } from "../model/UsersModule";
 import { useVMvalue } from "../utils/vm/useVM"
 import {
     createBrowserRouter,
@@ -165,18 +165,37 @@ const Link = ({ attributes, content }: { attributes: any, content: any }) => {
     return <a onClick={onClick} href={href} {...props}>{content}</a>;
 };
 
-export const ListItem = React.memo(({ titile: title, subtitle, right, style, titleStyle, subTitleStyle, rightStyle, leftStyle, onClick, onSubtitleClick }: { titile?: string, subtitle?: string, right?: React.ReactNode, style?: any, titleStyle?: any, subTitleStyle?: any, rightStyle?: any, leftStyle?: any, onClick?: React.MouseEventHandler<HTMLDivElement>, onSubtitleClick?: React.MouseEventHandler<HTMLDivElement> }) => {
+export const ListItem = React.memo(({ titile: title, subtitle, subtitleView, right, style, titleStyle, subTitleStyle, rightStyle, leftStyle, onClick, onSubtitleClick }: { titile?: string, subtitle?: string, subtitleView?: React.ReactNode, right?: React.ReactNode, style?: any, titleStyle?: any, subTitleStyle?: any, rightStyle?: any, leftStyle?: any, onClick?: React.MouseEventHandler<HTMLDivElement>, onSubtitleClick?: React.MouseEventHandler<HTMLDivElement> }) => {
     return <div className={onClick ? "list_item" : undefined} onClick={onClick} style={{ display: 'flex', flexDirection: "row", justifyContent: 'space-between', padding: 4, alignItems: 'center', ...style }}>
         <div style={{ display: 'flex', padding: '2px 0px', flexDirection: "column", flexGrow: 1, flexShrink: 1, minWidth: 0, ...leftStyle }}>
             {!!title && <div style={{ padding: '2px 4px', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', ...titleStyle }}>{title}</div>}
             {!!subtitle && <Linkify options={{ render: Link }}>
                 <div onClick={onSubtitleClick} style={{ padding: '2px 4px', fontSize: '0.8em', color: "var(--tg-theme-hint-color)", whiteSpace: 'pre-wrap', textOverflow: 'ellipsis', overflow: 'hidden', ...subTitleStyle }}>{subtitle}</div>
             </Linkify>}
+            {subtitleView && <div style={{ padding: '2px 4px' }}>
+                {subtitleView}
+            </div>}
         </div>
         {!!right && <div style={{ display: 'flex', padding: '4px 16px', flexShrink: 0, alignItems: 'center', ...rightStyle }}>{right}</div>}
     </div>
 }
 )
+
+export const UserPic = React.memo(({ uid }: { uid: number }) => {
+    const usersModule = React.useContext(UsersProvider)
+    const user = useVMvalue(usersModule.getUser(uid))
+    if (user.imageUrl) {
+        return <img style={{ width: 24, height: 24, border: "2px solid var(--tg-theme-bg-color)", borderRadius: 24, marginRight: -8 }} src={user.imageUrl} />
+    }
+
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: 24, height: 24, border: `2px solid var(--tg-theme-bg-color)`, backgroundColor: `var(--color-user-${(uid % 8) + 1})`, borderRadius: 24, marginRight: -8 }}  >
+        <div style={{ fontSize: '12px' }} >{[user.firstName, user.lastname].filter(Boolean).map(e => e?.charAt(0)).join('')} </div>
+    </div>
+})
+
+const UsersPics = React.memo(({ uids }: { uids: number[] }) => {
+    return <div style={{ display: 'flex', flexDirection: 'row' }}>{uids.map(uid => <UserPic key={uid} uid={uid} />)}</div>
+})
 
 const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
     const event = useVMvalue(eventVM)
@@ -191,12 +210,11 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
     const timeZone = React.useContext(Timezone);
     const time = React.useMemo(() => new Date(event.date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h24', timeZone }), [event.date]);
 
-
-    const description = React.useMemo(() => [event.description, user.fullName].filter(Boolean).join('\n'), [event.description, user.name])
     return <ListItem
         onClick={onClick} style={event.deleted ? { textDecoration: 'line-through' } : undefined}
         titile={event.title}
-        subtitle={description}
+        subtitle={event.description}
+        subtitleView={<UsersPics uids={event.attendees.yes} />}
         subTitleStyle={{ filter: 'grayscale(1)' }}
         right={<span style={{ fontSize: '1.2em' }}> {time} </span>}
     />
