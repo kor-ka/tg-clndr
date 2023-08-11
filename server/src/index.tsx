@@ -85,6 +85,7 @@ initMDB().then(() => {
       try {
         const p = await container.resolve(UserModule).getFile(req.params.id);
         if (p) {
+          res.set('Cache-control', `public, max-age=${60 * 60 * 24 * 7}`)
           res.sendFile(path.resolve(p));
         } else {
           res.status(404).send('file not found');
