@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useContext } from "react";
 import { Event } from "../shared/entity"
 import { SessionModel } from "../model/SessionModel"
 import { UserClient, UsersModule } from "../model/UsersModule";
@@ -45,6 +45,7 @@ export const SplitAvailable = React.createContext(false);
 export const Timezone = React.createContext<string | undefined>(undefined);
 export const HomeLoc = React.createContext<{ loc: Location | undefined }>({ loc: undefined });
 
+export const BackgroundContext = React.createContext("var(--tg-theme-bg-color)")
 
 export const useNav = () => {
     if (typeof window !== "undefined") {
@@ -141,7 +142,11 @@ export const MainScreenView = ({ eventsVM }: { eventsVM: VM<Map<string, VM<Event
 }
 
 export const Card = ({ children, style, onClick }: { children: any, style?: any, onClick?: React.MouseEventHandler<HTMLDivElement> }) => {
-    return <div onClick={onClick} className={onClick ? "card" : undefined} style={{ display: 'flex', flexDirection: 'column', margin: '8px 16px', padding: 4, backgroundColor: "var(--tg-theme-secondary-bg-color)", borderRadius: 16, ...style }}>{children}</div>
+    return <div onClick={onClick} className={onClick ? "card" : undefined} style={{ display: 'flex', flexDirection: 'column', margin: '8px 16px', padding: 4, backgroundColor: "var(--tg-theme-secondary-bg-color)", borderRadius: 16, ...style }}>
+        <BackgroundContext.Provider value="var(--tg-theme-secondary-bg-color)">
+            {children}
+        </BackgroundContext.Provider>
+    </div>
 }
 
 export const Button = ({ children, style, onClick, disabled }: { children: any, style?: any, onClick?: React.MouseEventHandler<HTMLButtonElement>, disabled?: boolean }) => {
@@ -196,6 +201,7 @@ const colors = [
 export const UserPic = React.memo(({ uid, style }: { uid: number, style?: any }) => {
     const usersModule = React.useContext(UsersProvider)
     const user = useVMvalue(usersModule.getUser(uid))
+    const backgroundColor = useContext(BackgroundContext)
     const color = colors[uid % colors.length]
 
     return <div style={{
@@ -204,7 +210,7 @@ export const UserPic = React.memo(({ uid, style }: { uid: number, style?: any })
         alignItems: 'center',
         width: 24,
         height: 24,
-        border: `2px solid var(--tg-theme-bg-color)`,
+        border: `2px solid ${backgroundColor}`,
         backgroundColor: color,
         backgroundImage: user.imageUrl ? `url(${user.imageUrl})` : `linear-gradient(white -125%, ${color})`,
         backgroundSize: 'cover',
