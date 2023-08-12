@@ -196,17 +196,27 @@ const colors = [
 export const UserPic = React.memo(({ uid, style }: { uid: number, style?: any }) => {
     const usersModule = React.useContext(UsersProvider)
     const user = useVMvalue(usersModule.getUser(uid))
-    if (user.imageUrl) {
-        return <img style={{ width: 24, height: 24, border: "2px solid var(--tg-theme-bg-color)", borderRadius: 24, ...style }} src={user.imageUrl} />
-    }
+    const color = colors[uid % colors.length]
 
-    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: 24, height: 24, border: `2px solid var(--tg-theme-bg-color)`, backgroundColor: colors[uid % colors.length], borderRadius: 24, ...style }}  >
-        <div style={{ fontSize: '12px' }} >{[user.firstName, user.lastname].filter(Boolean).map(e => e?.charAt(0)).join('')} </div>
+    return <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 24,
+        height: 24,
+        border: `2px solid var(--tg-theme-bg-color)`,
+        backgroundColor: color,
+        backgroundImage: user.imageUrl ? `url(${user.imageUrl})` : `linear-gradient(white -125%, ${color})`,
+        backgroundSize: 'cover',
+        borderRadius: 24,
+        ...style
+    }}  >
+        {!user.imageUrl && <div style={{ fontSize: '12px' }} >{[user.firstName, user.lastname].filter(Boolean).map(e => e?.charAt(0)).join('')} </div>}
     </div>
 })
 
 const UsersPics = React.memo(({ uids }: { uids: number[] }) => {
-    return <div style={{ display: 'flex', flexDirection: 'row' }}>{uids.map(uid => <UserPic key={uid} uid={uid} style={{ marginRight: -8 }} />)}</div>
+    return <div style={{ display: 'flex', flexDirection: 'row' }}>{uids.map((uid, index) => <UserPic key={uid} uid={uid} style={{ marginRight: -8, zIndex: uids.length - index }} />)}</div>
 })
 
 const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
