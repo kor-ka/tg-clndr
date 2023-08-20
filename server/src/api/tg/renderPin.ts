@@ -79,5 +79,5 @@ export const renderPin = async (chatId: number, threadId: number | undefined, ev
 };
 
 const getAndroidLink = (url: string) => {
-  return `https://calendar.google.com/calendar/u/0/r?cid=${url.replace('https://', 'webcal://')}`
+  return `https://calendar.google.com/calendar/u/0/r?cid=${url.replace('https://', 'webcal://') + '?s=0'}`
 }
