@@ -1,7 +1,6 @@
 import TB from "node-telegram-bot-api";
 import { container } from "tsyringe";
 import { UserModule } from "../../modules/userModule/UserModule";
-import { ChatMetaModule } from "../../modules/chatMetaModule/ChatMetaModule";
 import { SavedEvent } from "../../modules/eventsModule/eventStore";
 import { getChatToken } from "../Auth";
 import { SavedUser } from "../../modules/userModule/userStore";
@@ -61,7 +60,9 @@ export const renderPin = async (chatId: number, threadId: number | undefined, ev
   const token = getChatToken(chatId);
   key = [key, token].filter(Boolean).join('T');
 
-  lines.push(`\n<a href="https://tg-clndr-4023e1d4419a.herokuapp.com/ics/${key}/cal.ics">add to my calendar</a> (hold → open in Safari to subscribe)`);
+  const webcalUrl = `https://tg-clndr-4023e1d4419a.herokuapp.com/ics/${key}/cal.ics`
+  lines.push(`\n<a href="${webcalUrl}">add to iOS calendar</a> (hold → open in Safari)`);
+  lines.push(`\n<a href="${getAndroidLink(webcalUrl)}">add to Android calendar</a>`);
 
   const text = lines.length > 1 ? lines.join('\n').trim() : '🗓️ no upcoming events';
 
@@ -76,3 +77,7 @@ export const renderPin = async (chatId: number, threadId: number | undefined, ev
 
   return { text, buttonsRows };
 };
+
+const getAndroidLink = (url: string) => {
+  return `https://calendar.google.com/calendar/u/0/r?cid=${url.replace('https://', 'webcal://')}`
+}
