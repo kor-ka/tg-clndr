@@ -61,8 +61,8 @@ export const renderPin = async (chatId: number, threadId: number | undefined, ev
   key = [key, token].filter(Boolean).join('T');
 
   const webcalUrl = `https://tg-clndr-4023e1d4419a.herokuapp.com/ics/${key}/cal.ics`
-  lines.push(`\n<a href="${webcalUrl}">add to iOS calendar</a> (hold → open in Safari)`);
-  lines.push(`\n<a href="${getAndroidLink(webcalUrl)}">add to Android calendar</a>`);
+  lines.push(`<a href="${webcalUrl}">add to iOS calendar</a> (hold → open in Safari)`);
+  lines.push(`<a href="${getAndroidLink(webcalUrl)}">add to Android calendar</a>`);
 
   const text = lines.length > 1 ? lines.join('\n').trim() : '🗓️ no upcoming events';
 
