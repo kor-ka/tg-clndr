@@ -165,7 +165,12 @@ const Link = ({ attributes, content }: { attributes: any, content: any }) => {
     const onClick = React.useCallback((e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
         e.preventDefault();
         e.stopPropagation();
-        WebApp?.openLink(href)
+        const url = new URL(href);
+        if(url.host === "t.me"){
+            WebApp?.openTelegramLink(href);
+        } else {
+            WebApp?.openLink(href);
+        }
     }, [href])
     return <a onClick={onClick} href={href} {...props}>{content}</a>;
 };
