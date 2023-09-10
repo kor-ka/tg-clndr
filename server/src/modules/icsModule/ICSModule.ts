@@ -43,14 +43,17 @@ export class ICSModule {
         e.attendees.maybe.map(uid => uidToAttendee(uid, 'TENTATIVE')),
         e.attendees.no.map(uid => uidToAttendee(uid, 'DECLINED'))
       ].flat()))
+      const lines = (e.description ?? "").split("\n");
+      const location = lines.shift();
+      const description = lines.join("\n");
       evs.push(
         {
           calName: chat?.name ?? undefined,
           uid: e._id.toHexString(),
           sequence: e.seq,
           title: e.title,
-          location: e.description, 
-          description: e.description,
+          location, 
+          description,
           start: [date.getFullYear(), date.getMonth() + 1, date.getDate(), date.getHours(), date.getMinutes()],
           duration: { minutes: 60 },
           attendees
