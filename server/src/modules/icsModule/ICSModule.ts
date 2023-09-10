@@ -49,6 +49,7 @@ export class ICSModule {
           uid: e._id.toHexString(),
           sequence: e.seq,
           title: e.title,
+          location: e.description, 
           description: e.description,
           start: [date.getFullYear(), date.getMonth() + 1, date.getDate(), date.getHours(), date.getMinutes()],
           duration: { minutes: 60 },
