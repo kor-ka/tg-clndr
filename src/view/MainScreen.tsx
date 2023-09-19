@@ -209,6 +209,12 @@ export const UserPic = React.memo(({ uid, style }: { uid: number, style?: any })
     const backgroundColor = useContext(BackgroundContext)
     const color = colors[uid % colors.length]
 
+    const [imageLoadError, setImageLoadError] = React.useState<boolean>(false)
+
+    const onImageError = React.useCallback(() => {
+        setImageLoadError(true)
+    }, [])
+
     return <div style={{
         display: 'flex',
         justifyContent: 'center',
@@ -222,7 +228,8 @@ export const UserPic = React.memo(({ uid, style }: { uid: number, style?: any })
         borderRadius: 24,
         ...style
     }}  >
-        {!user.imageUrl && <div style={{ fontSize: '12px' }} >{[user.firstName, user.lastname].filter(Boolean).map(e => e?.charAt(0)).join('')} </div>}
+        {!user.imageUrl || imageLoadError && <div style={{ fontSize: '12px' }} >{[user.firstName, user.lastname].filter(Boolean).map(e => e?.charAt(0)).join('')} </div>}
+        {user.imageUrl && <img src={user.imageUrl} style={{ display: 'none' }} onError={onImageError} />}
     </div>
 })
 
