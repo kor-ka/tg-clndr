@@ -146,6 +146,17 @@ And don't forget to pin the message with the button, so everyone can open the ap
       }
     });
 
+    this.bot.onText(/\/start/, async (upd) => {
+      try {
+        await this.bot.sendMessage(
+            upd.chat.id,
+            'Hey👋\nThis bot is meant to work in groups with your friends, add me to any group to start.'
+          );
+      } catch (e) {
+        console.log(e);
+      }
+    });
+
     this.bot.onText(/\/pin/, async (upd) => {
       try {
         await this.chatMetaModule.updateChat(upd.chat.id, upd.chat.title ?? "");
