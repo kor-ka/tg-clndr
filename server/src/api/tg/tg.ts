@@ -5,9 +5,22 @@ import { container, singleton } from "tsyringe";
 import { ChatMetaModule } from "../../modules/chatMetaModule/ChatMetaModule";
 import { EventsModule } from "../../modules/eventsModule/EventsModule";
 import { UserModule } from "../../modules/userModule/UserModule";
-import { EVENTS, LATEST_EVENTS } from "../../modules/eventsModule/eventStore";
+import { EVENTS, LATEST_EVENTS, SavedEvent } from "../../modules/eventsModule/eventStore";
 import { MDBClient } from "../../utils/MDB";
 import { CronJob } from "cron";
+import { renderEvent } from "./renderEvent";
+
+const renderEventMessage = async (event: SavedEvent) => {
+  const text = (await renderEvent(event)).join('\n');
+  const buttons: TB.InlineKeyboardButton[][] = [
+    [
+      { text: "✅", callback_data: "atnd/yes" },
+      { text: "🤔", callback_data: "atnd/maybe" },
+      { text: "🙅", callback_data: "atnd/no" }
+    ]
+  ];
+  return [text, buttons] as const
+}
 
 @singleton()
 export class TelegramBot {
@@ -20,6 +33,28 @@ export class TelegramBot {
   readonly bot = new TB(this.token, {
     polling: true,
   });
+
+  sendEventMessage = async (event: SavedEvent) => {
+    const [text, buttons] = await renderEventMessage(event)
+    const message = await this.bot.sendMessage(event.chatId, text, {
+      reply_markup: { inline_keyboard: buttons },
+      parse_mode: "HTML",
+      message_thread_id: event.threadId
+    });
+    await EVENTS().updateOne({ _id: event._id }, { $addToSet: { messages: message.message_id } })
+  }
+
+  updateEventMessages = async (event: SavedEvent) => {
+    const [text, buttons] = await renderEventMessage(event)
+    const meessages = (await EVENTS().findOne({ _id: event._id }))?.messages || []
+    await Promise.all(meessages.map(mid =>
+      this.bot.editMessageText(text, {
+        chat_id: event.chatId,
+        message_id: mid,
+        parse_mode: "HTML",
+        reply_markup: { inline_keyboard: buttons },
+      })))
+  }
 
   private createPin = async (chatId: number, threadId: number | undefined) => {
     console.log("createPin", chatId);
@@ -211,9 +246,31 @@ And don't forget to pin the message with the button, so everyone can open the ap
       }
     });
 
+    this.bot.on("callback_query", async q => {
+      try {
+        const { data: dataString, from, message } = q;
+        if (message && dataString) {
+          let data = dataString.split("/");
+          if (data[0] === 'atnd') {
+            const vote = data[1] as "yes" | "maybe" | "no"
+            const event = await EVENTS().findOne({ chatId: message.chat.id, threadId: message.message_thread_id, messages: message.message_id })
+            if (event) {
+              await this.eventsModule.updateAtendeeStatus(message.chat.id, message.message_thread_id, event._id.toHexString(), q.from.id, vote)
+            }
+          }
+        }
+        await this.bot.answerCallbackQuery(q.id);
+      } catch (e) {
+        console.error(e)
+      }
+    })
+
     this.eventsModule.upateSubject.subscribe(async (upd) => {
       try {
-        await this.udpatePin(upd.chatId, upd.threadId)
+        await Promise.all([
+          this.udpatePin(upd.chatId, upd.threadId),
+          (upd.type === 'create' ? this.sendEventMessage : this.updateEventMessages)(upd.event)
+        ])
       } catch (e) {
         console.error(e)
       }

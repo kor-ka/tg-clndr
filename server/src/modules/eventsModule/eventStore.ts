@@ -7,6 +7,7 @@ export type ServerEvent = Omit<Event, 'id'> & {
     chatId: number,
     threadId: number | undefined,
     idempotencyKey: string,
+    messages?: number[]
 }
 export type SavedEvent = WithId<ServerEvent>
 export const EVENTS = () => MDB.collection<ServerEvent>("events");
