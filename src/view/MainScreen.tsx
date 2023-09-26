@@ -126,9 +126,13 @@ const ToSplit = React.memo(() => {
         }
     }, []);
     const onClick = React.useCallback(() => {
-        WebApp?.openTelegramLink(`https://t.me/splitsimplebot/split?startapp=${WebApp?.initDataUnsafe.start_param}&startApp=${WebApp?.initDataUnsafe.start_param}`);
-    }, []);
-    return <Card onClick={onClick} style={{ position: 'fixed', padding: 16, top: 'calc(var(--tg-viewport-stable-height) - 77px)', right: 0, borderRadius: '32px 0 0 32px', marginRight: 0, transition: 'transform ease-out 150ms, top ease 150ms', transform: `translateX(${splitAvailable ? 0 : 64}px)` }}>⚡️</Card>
+        if (splitAvailable) {
+            WebApp?.openTelegramLink(`https://t.me/splitsimplebot/split?startapp=${WebApp?.initDataUnsafe.start_param}&startApp=${WebApp?.initDataUnsafe.start_param}`);
+        } else {
+            WebApp?.openTelegramLink(`https://t.me/splitsimplebot`);
+        }
+    }, [splitAvailable]);
+    return <Card onClick={onClick} style={{ position: 'fixed', padding: 16, top: 'calc(var(--tg-viewport-stable-height) - 77px)', right: 0, borderRadius: '32px 0 0 32px', marginRight: 0, transition: 'transform ease-out 150ms, top ease 150ms' }}>⚡️</Card>
 });
 
 export const MainScreenView = ({ eventsVM }: { eventsVM: VM<Map<string, VM<Event>>> }) => {
@@ -166,7 +170,7 @@ const Link = ({ attributes, content }: { attributes: any, content: any }) => {
         e.preventDefault();
         e.stopPropagation();
         const url = new URL(href);
-        if(url.host === "t.me"){
+        if (url.host === "t.me") {
             WebApp?.openTelegramLink(href);
         } else {
             WebApp?.openLink(href);
