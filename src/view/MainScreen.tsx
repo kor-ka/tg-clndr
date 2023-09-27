@@ -232,7 +232,7 @@ export const UserPic = React.memo(({ uid, style }: { uid: number, style?: any })
         borderRadius: 24,
         ...style
     }}  >
-        {!user.imageUrl || imageLoadError && <div style={{ fontSize: '12px' }} >{[user.firstName, user.lastname].filter(Boolean).map(e => e?.charAt(0)).join('')} </div>}
+        {(!user.imageUrl || imageLoadError) && <div style={{ fontSize: '12px' }} >{[user.firstName, user.lastname].filter(Boolean).map(e => e?.charAt(0)).join('')} </div>}
         {user.imageUrl && <img src={user.imageUrl} style={{ display: 'none' }} onError={onImageError} />}
     </div>
 })
