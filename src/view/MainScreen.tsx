@@ -198,14 +198,15 @@ export const ListItem = React.memo(({ titile: title, titleView, subtitle, subtit
 }
 )
 
+1 8 5 2 7 4 6
 const colors = [
     'var(--color-user-1)',
-    'var(--color-user-2)',
-    'var(--color-user-4)',
-    'var(--color-user-5)',
-    'var(--color-user-6)',
-    'var(--color-user-7)',
     'var(--color-user-8)',
+    'var(--color-user-5)',
+    'var(--color-user-2)',
+    'var(--color-user-7)',
+    'var(--color-user-4)',
+    'var(--color-user-6)',
 ]
 export const UserPic = React.memo(({ uid, style }: { uid: number, style?: any }) => {
     const usersModule = React.useContext(UsersProvider)
