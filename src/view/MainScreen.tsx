@@ -219,6 +219,8 @@ export const UserPic = React.memo(({ uid, style }: { uid: number, style?: any })
         setImageLoadError(true)
     }, [])
 
+    const showImg = user.imageUrl && !imageLoadError;
+
     return <div style={{
         display: 'flex',
         justifyContent: 'center',
@@ -227,12 +229,12 @@ export const UserPic = React.memo(({ uid, style }: { uid: number, style?: any })
         height: 24,
         border: `2px solid ${backgroundColor}`,
         backgroundColor: color,
-        backgroundImage: user.imageUrl ? `url(${user.imageUrl})` : `linear-gradient(white -125%, ${color})`,
+        backgroundImage: showImg ? `url(${user.imageUrl})` : `linear-gradient(white -125%, ${color})`,
         backgroundSize: 'cover',
         borderRadius: 24,
         ...style
     }}  >
-        {(!user.imageUrl || imageLoadError) && <div style={{ fontSize: '12px' }} >{[user.firstName, user.lastname].filter(Boolean).map(e => e?.charAt(0)).join('')} </div>}
+        {!showImg && <div style={{ fontSize: '12px' }} >{[user.firstName, user.lastname].filter(Boolean).map(e => e?.charAt(0)).join('')} </div>}
         {user.imageUrl && <img src={user.imageUrl} style={{ display: 'none' }} onError={onImageError} />}
     </div>
 })
