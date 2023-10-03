@@ -172,7 +172,7 @@ initMDB().then(() => {
 
       const users = await container.resolve(UserModule).getUsersCached(chatId)
       const usersProvider = new UsersClientModule(userId)
-      savedUsersToApi(users, chatId).forEach(usersProvider.updateUser)
+      savedUsersToApi(users, chatId, threadId).forEach(usersProvider.updateUser)
 
 
 

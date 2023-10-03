@@ -164,10 +164,10 @@ export const savedOpsToApi = (saved: SavedEvent[]): Event[] => {
 }
 
 export const savedUserToApi = (saved: SavedUser, chatId: number, threadId?: number): User => {
-    const { _id, chatIds, disabledChatIds, threadIds, ...u } = saved
-    return { ...u, disabled: !!disabledChatIds?.includes(chatId) || (!!threadId && !threadIds?.includes(threadId)) }
+    const { _id, chatIds, disabledChatIds, threadFullIds, ...u } = saved
+    return { ...u, disabled: !!disabledChatIds?.includes(chatId) || ((threadId !== undefined) && !threadFullIds?.includes(`${chatId}_${threadId}`)) }
 }
 
-export const savedUsersToApi = (saved: SavedUser[], chatId: number, threadId?: number): User[] => {
+export const savedUsersToApi = (saved: SavedUser[], chatId: number, threadId: number | undefined): User[] => {
     return saved.map(s => savedUserToApi(s, chatId, threadId))
 }
