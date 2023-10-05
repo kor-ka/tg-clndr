@@ -290,9 +290,10 @@ And don't forget to pin the message with the button, so everyone can open the ap
     new CronJob('* * * * *', async () => {
       console.log('tg cron fire')
       try {
-        const now = Date.now()
+        // trigger render for older events to clean up pin
+        const freshEnough = Date.now() - 1000 * 60 * 60 * 5;
         LATEST_EVENTS()
-          .find({ date: { $gte: now } })
+          .find({ date: { $gte: freshEnough } })
           .forEach(le => {
             console.log('udpate', JSON.stringify(le, undefined, 4))
             this.udpatePin(le.chatId, le.threadId).catch(e => {
