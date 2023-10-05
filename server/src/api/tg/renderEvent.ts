@@ -15,7 +15,7 @@ const usersListStr = async (uids: number[]) => {
     const userModule = container.resolve(UserModule);
     const users = (await Promise.all(uids.map(uid => userModule.getUser(uid))))
         .filter(Boolean)
-        .map(u => ({ ...u as SavedUser, fullName: [u!.name, u!.lastname].filter(Boolean).join(' ') }));
+        .map(u => ({ ...u as SavedUser, fullName: [u!.name, u!.lastname].filter(Boolean).join(' ') }));
     return users.sort((a, b) => [a.name, a.lastname].filter(Boolean).join(', ').localeCompare(b.fullName))
         .map(u => u.fullName).join(', ');
 }

@@ -21,7 +21,7 @@ export const renderPin = async (chatId: number, threadId: number | undefined, ev
   let buttonsRows: TB.InlineKeyboardButton[][] = [];
   buttonsRows.push([
     {
-      text: "calendar",
+      text: "Calendar",
       url: `https://t.me/clndrrrbot/clndr?startapp=${key}&startApp=${key}`,
     },
   ]);

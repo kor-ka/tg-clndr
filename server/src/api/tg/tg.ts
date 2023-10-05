@@ -9,14 +9,25 @@ import { EVENTS, LATEST_EVENTS, SavedEvent } from "../../modules/eventsModule/ev
 import { MDBClient } from "../../utils/MDB";
 import { CronJob } from "cron";
 import { renderEvent } from "./renderEvent";
+import { getChatToken } from "../Auth";
 
 const renderEventMessage = async (event: SavedEvent) => {
   const text = (await renderEvent(event)).join('\n');
+
+  let key = [event.chatId, event.threadId].filter(Boolean).join('_');
+  const token = getChatToken(event.chatId);
+  key = [key, token].filter(Boolean).join('T');
+
   const buttons: TB.InlineKeyboardButton[][] = [
     [
       { text: "✅", callback_data: "atnd/yes" },
       { text: "🤔", callback_data: "atnd/maybe" },
       { text: "🙅", callback_data: "atnd/no" }
+    ], [
+      {
+        text: "Calendar",
+        url: `https://t.me/clndrrrbot/clndr?startapp=${key}&startApp=${key}`,
+      },
     ]
   ];
   return [text, buttons] as const
@@ -184,10 +195,10 @@ And don't forget to pin the message with the button, so everyone can open the ap
     this.bot.onText(/\/start$/, async (upd) => {
       try {
         await this.bot.sendMessage(
-            upd.chat.id,
-            'Hey👋\nThis bot is meant to work in groups with your friends, add me to any group to start.',
-            { reply_markup: { inline_keyboard: [[{ text: 'Add to group', url: "https://telegram.me/clndrrrbot?startgroup=true" }]] } }
-          );
+          upd.chat.id,
+          'Hey👋\nThis bot is meant to work in groups with your friends, add me to any group to start.',
+          { reply_markup: { inline_keyboard: [[{ text: 'Add to group', url: "https://telegram.me/clndrrrbot?startgroup=true" }]] } }
+        );
 
       } catch (e) {
         console.log(e);
