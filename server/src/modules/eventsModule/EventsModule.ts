@@ -103,12 +103,6 @@ export class EventsModule {
     }
   }
 
-  prevDayStart = () => {
-    let date = new Date(new Date().getTime() - (1000 * 60 * 60 * 24) / 2);
-    date.setUTCHours(0, 0, 0, 0);
-    return date.getTime();
-  }
-
   updateAtendeeStatus = async (chatId: number, threadId: number | undefined, eventId: string, uid: number, status: 'yes' | 'no' | 'maybe') => {
     const _id = new ObjectId(eventId);
     const addTo = status
@@ -132,19 +126,16 @@ export class EventsModule {
   getEvents = async (chatId: number, threadId: number | undefined, limit = 200): Promise<SavedEvent[]> => {
     const now = new Date().getTime();
     const freshEnough = now - 1000 * 60 * 60 * 4;
-    const prevDayStart = this.prevDayStart();
-    let res = await this.events.find({ chatId, threadId, date: { $gt: prevDayStart }, deleted: { $ne: true } }, { limit, sort: { date: 1 } }).toArray();
-    res = res.filter(e => e.date >= freshEnough);
-    this.logCache.set(`${chatId}-${threadId ?? undefined}-${limit}-${prevDayStart}`, res)
+    let res = await this.events.find({ chatId, threadId, date: { $gt: freshEnough }, deleted: { $ne: true } }, { limit, sort: { date: 1 } }).toArray();
+    this.logCache.set(`${chatId}-${threadId ?? undefined}-${limit}`, res)
     return res
   }
 
   getEventsCached = async (chatId: number, threadId: number | undefined, limit = 200) => {
     const now = new Date().getTime();
     const freshEnough = now - 1000 * 60 * 60 * 4;
-    const prevDayStart = this.prevDayStart();
 
-    let events = this.logCache.get(`${chatId}-${threadId ?? undefined}-${limit}-${prevDayStart}`)?.filter(e => e.date >= freshEnough)
+    let events = this.logCache.get(`${chatId}-${threadId ?? undefined}-${limit}`)?.filter(e => e.date >= freshEnough)
     const eventsPromise = this.getEvents(chatId, threadId, limit)
     if (!events) {
       events = await eventsPromise
