@@ -113,6 +113,8 @@ And don't forget to pin the message with the button, so everyone can open the ap
           parse_mode: "HTML",
           disable_web_page_preview: true,
           reply_markup: { inline_keyboard: buttonsRows },
+        }).catch(e => {
+          console.error(e)
         });
         await this.pinModule.updatePinMeta(chatId, threadId, { text, inlineKeyboardDescriptor })
       }
