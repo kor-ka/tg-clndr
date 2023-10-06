@@ -99,6 +99,7 @@ And don't forget to pin the message with the button, so everyone can open the ap
 
   udpatePin = async (chatId: number, threadId?: number) => {
     const pinned = await this.pinModule.getPinMeta(chatId, threadId);
+    console.log("udpatePin - pinned", chatId, threadId, JSON.stringify(pinned, undefined, 4))
 
     if (pinned) {
       const events = await this.eventsModule.getEvents(chatId, threadId)
