@@ -33,6 +33,8 @@ const renderEventMessage = async (event: SavedEvent) => {
   return [text, buttons] as const
 }
 
+const nick = "clndrrrbot"
+
 @singleton()
 export class TelegramBot {
   private pinModule = container.resolve(PinsModule);
@@ -44,6 +46,10 @@ export class TelegramBot {
   readonly bot = new TB(this.token, {
     polling: true,
   });
+
+  onCommand = (command: string, callback: (msg: TB.Message, match: RegExpExecArray | null) => void) => {
+    return this.bot.onText(new RegExp(`^\/(${command}|${command}@${nick})$`), callback)
+  }
 
   sendEventMessage = async (event: SavedEvent) => {
     const [text, buttons] = await renderEventMessage(event)
@@ -192,7 +198,7 @@ And don't forget to pin the message with the button, so everyone can open the ap
       }
     });
 
-    this.bot.onText(/\/start$/, async (upd) => {
+    this.onCommand('start', async (upd) => {
       try {
         await this.bot.sendMessage(
           upd.chat.id,
@@ -205,7 +211,7 @@ And don't forget to pin the message with the button, so everyone can open the ap
       }
     });
 
-    this.bot.onText(/\/pin/, async (upd) => {
+    this.onCommand('pin', async (upd) => {
       try {
         await this.chatMetaModule.updateChat(upd.chat.id, upd.chat.title ?? "");
         await this.createPin(upd.chat.id, upd.message_thread_id);
@@ -214,7 +220,7 @@ And don't forget to pin the message with the button, so everyone can open the ap
       }
     });
 
-    this.bot.onText(/\/buymeacoffee/, async (upd) => {
+    this.onCommand('buymeacoffee', async (upd) => {
       try {
         await this.bot.sendMessage(
           upd.chat.id,
