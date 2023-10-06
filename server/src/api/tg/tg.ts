@@ -99,7 +99,6 @@ And don't forget to pin the message with the button, so everyone can open the ap
 
   udpatePin = async (chatId: number, threadId?: number) => {
     const pinned = await this.pinModule.getPinMeta(chatId, threadId);
-    console.log("udpatePin - pinned", chatId, threadId, JSON.stringify(pinned, undefined, 4))
 
     if (pinned) {
       const events = await this.eventsModule.getEvents(chatId, threadId)
@@ -107,7 +106,7 @@ And don't forget to pin the message with the button, so everyone can open the ap
       const inlineKeyboardDescriptor = JSON.stringify(buttonsRows)
 
       // do not edit if nothing changed
-      if ((pinned.text !== text) && (pinned.inlineKeyboardDescriptor !== inlineKeyboardDescriptor)) {
+      if ((pinned.text !== text) || (pinned.inlineKeyboardDescriptor !== inlineKeyboardDescriptor)) {
         await this.bot.editMessageText(text, {
           chat_id: chatId,
           message_id: pinned.messageId,
