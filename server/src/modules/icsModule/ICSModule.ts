@@ -52,7 +52,7 @@ export class ICSModule {
           uid: e._id.toHexString(),
           sequence: e.seq,
           title: e.title,
-          location, 
+          location,
           description,
           start: [date.getFullYear(), date.getMonth() + 1, date.getDate(), date.getHours(), date.getMinutes()],
           duration: { minutes: 60 },
@@ -77,7 +77,6 @@ export class ICSModule {
   }
 
   readonly init = () => {
-    // TODO: same work as tg - extract unifying module?
     this.eventsModule.upateSubject.subscribe(async (upd) => {
       try {
         await this.update(upd.chatId, upd.threadId)
@@ -85,29 +84,5 @@ export class ICSModule {
         console.error(e)
       }
     })
-
-    new CronJob('* * * * *', async () => {
-      console.log('ics cron fire')
-      try {
-        const now = Date.now()
-        LATEST_EVENTS()
-          .find({ date: { $gte: now } })
-          .forEach(le => {
-            console.log('udpate', JSON.stringify(le, undefined, 4))
-            this.update(le.chatId, le.threadId).catch(e => {
-              console.error(e)
-            })
-          }).catch(e => {
-            console.error(e)
-          })
-      } catch (e) {
-        console.error(e)
-      }
-    }, null, true);
   }
-
-
-
-
-
 }
