@@ -6,6 +6,8 @@ interface Pins {
   threadId: number | null;
   messageId: number;
   chatInstance?: string;
+  text?: string,
+  inlineKeyboardDescriptor?: string
 }
 
 export const PINS = () => MDB.collection<Pins>("pins");

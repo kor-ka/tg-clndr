@@ -6,16 +6,18 @@ export class PinsModule {
   private db = PINS();
 
   updatePinMeta = async (chatId: number, threadId: number | undefined, options: {
-    messageId?: number, chatInstance?: string
+    messageId?: number, chatInstance?: string, text?: string, inlineKeyboardDescriptor?: string
   }) => {
-    const { messageId, chatInstance } = options;
+    const { messageId, chatInstance, text, inlineKeyboardDescriptor } = options;
     return await this.db.updateOne(
       { chatId, threadId },
       {
         $set: {
           chatId,
           ...messageId ? { messageId } : {},
-          ...chatInstance ? { chatInstance } : {}
+          ...chatInstance ? { chatInstance } : {},
+          ...text ? { text } : {},
+          ...inlineKeyboardDescriptor ? { inlineKeyboardDescriptor } : {},
         }
       },
       { upsert: true }

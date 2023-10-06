@@ -103,15 +103,19 @@ And don't forget to pin the message with the button, so everyone can open the ap
     if (pinned) {
       const events = await this.eventsModule.getEvents(chatId, threadId)
       const { text, buttonsRows } = await renderPin(chatId, threadId, events);
+      const inlineKeyboardDescriptor = JSON.stringify(buttonsRows)
 
-      await this.bot.editMessageText(text, {
-        chat_id: chatId,
-        message_id: pinned.messageId,
-        parse_mode: "HTML",
-        disable_web_page_preview: true,
-        reply_markup: { inline_keyboard: buttonsRows },
-      });
-
+      // do not edit if nothing changed
+      if ((pinned.text !== text) && (pinned.inlineKeyboardDescriptor !== inlineKeyboardDescriptor)) {
+        await this.bot.editMessageText(text, {
+          chat_id: chatId,
+          message_id: pinned.messageId,
+          parse_mode: "HTML",
+          disable_web_page_preview: true,
+          reply_markup: { inline_keyboard: buttonsRows },
+        });
+        await this.pinModule.updatePinMeta(chatId, threadId, { text, inlineKeyboardDescriptor })
+      }
     }
   }
 
@@ -294,20 +298,35 @@ And don't forget to pin the message with the button, so everyone can open the ap
     })
 
     // clean up older events from pin as time goes
-    new CronJob('5 * * * *', async () => {
+    // run every minute
+    new CronJob('* * * * *', async () => {
       console.log('tg cron fire')
       try {
         // trigger render for older events to clean up pin in case of no events
         const freshEnough = Date.now() - 1000 * 60 * 60 * 5;
-        LATEST_EVENTS()
-          .find({ date: { $gte: freshEnough } })
-          .forEach(le => {
-            this.udpatePin(le.chatId, le.threadId).catch(e => {
-              console.error(e)
-            })
-          }).catch(e => {
-            console.error(e?.messasge)
+
+        let i = 0;
+        await LATEST_EVENTS()
+          .find({
+            date: { $gte: freshEnough },
+            // udpate window: 10m
+            updated: { $not: { $gt: Date.now() - 1000 * 60 * 10 } }
           })
+          // TODO: not all chats with future events should be updated tho - only ones with outdated events in pin
+          // ~30 messages/sec each minute -> given 10m window problems after 18000 active chats
+          .limit(29 * 60)
+          .forEach((le) => {
+            setTimeout(() => {
+              this.udpatePin(le.chatId, le.threadId)
+                .then(() => LATEST_EVENTS().updateOne({ _id: le._id }, { $set: { updated: Date.now() } }))
+                .catch(e => {
+                  console.error(e?.message)
+                })
+              // ~30 m/s
+            }, i++ * 33)
+          })
+
+        console.log("pin updates scheduled: " + i)
       } catch (e: any) {
         console.error(e?.message)
       }

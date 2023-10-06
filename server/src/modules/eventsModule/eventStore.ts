@@ -12,4 +12,4 @@ export type ServerEvent = Omit<Event, 'id'> & {
 export type SavedEvent = WithId<ServerEvent>
 export const EVENTS = () => MDB.collection<ServerEvent>("events");
 
-export const LATEST_EVENTS = () => MDB.collection<{ chatId: number, threadId: number | undefined, date: number }>("latest_events");
+export const LATEST_EVENTS = () => MDB.collection<{ chatId: number, threadId: number | undefined, date: number, updated?: number }>("latest_events");
