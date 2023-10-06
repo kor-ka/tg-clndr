@@ -293,23 +293,23 @@ And don't forget to pin the message with the button, so everyone can open the ap
       }
     })
 
-    new CronJob('* * * * *', async () => {
+    // clean up older events from pin as time goes
+    new CronJob('5 * * * *', async () => {
       console.log('tg cron fire')
       try {
-        // trigger render for older events to clean up pin
+        // trigger render for older events to clean up pin in case of no events
         const freshEnough = Date.now() - 1000 * 60 * 60 * 5;
         LATEST_EVENTS()
           .find({ date: { $gte: freshEnough } })
           .forEach(le => {
-            console.log('udpate', JSON.stringify(le, undefined, 4))
             this.udpatePin(le.chatId, le.threadId).catch(e => {
               console.error(e)
             })
           }).catch(e => {
-            console.error(e)
+            console.error(e?.messasge)
           })
-      } catch (e) {
-        console.error(e)
+      } catch (e: any) {
+        console.error(e?.message)
       }
     }, null, true);
 
