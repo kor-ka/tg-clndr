@@ -10,6 +10,8 @@ import { SavedUser } from "../modules/userModule/userStore";
 import { SW } from "../utils/stopwatch";
 import { checkTgAuth } from "./tg/getTgAuth";
 import { checkChatToken } from "./Auth";
+import { TelegramBot } from "./tg/tg";
+import { ChatMeta } from "../modules/chatMetaModule/chatMetaStore";
 
 export class ClientAPI {
     private io: socketIo.Server;
@@ -17,6 +19,7 @@ export class ClientAPI {
     private splitModule = container.resolve(EventsModule)
     private userModule = container.resolve(UserModule)
     private chatMetaModule = container.resolve(ChatMetaModule)
+    private bot = container.resolve(TelegramBot)
     constructor(private socket: socketIo.Server) {
         this.io = socket
     }
@@ -123,6 +126,25 @@ export class ClientAPI {
                         ack({ error: message })
                     }
                 });
+                socket.on("update_settings", async (
+                    settings: Partial<NonNullable<ChatMeta['settings']>>,
+                    ack: (res: { updated: NonNullable<ChatMeta['settings']>, error?: never } | { error: string, updated?: never }) => void) => {
+                    try {
+                        const [member] = await Promise.all([this.bot.bot.getChatMember(chatId, tgData.user.id), checkAuth()])
+                        if (!(member.status === 'administrator' || member.status === 'creator')) {
+                            throw new Error("Not an admin")
+                        }
+                        const updated = await this.chatMetaModule.updateChatSetings(chatId, settings)
+                        ack({ updated: updated?.settings ?? {} });
+                    } catch (e) {
+                        console.error(e)
+                        let message = 'unknown error'
+                        if (e instanceof Error) {
+                            message = e.message
+                        }
+                        ack({ error: message })
+                    }
+                });
                 (async () => {
                     try {
                         await checkAuth()
@@ -132,14 +154,27 @@ export class ClientAPI {
 
                         this.userModule.updateUser(chatId, threadId, { id: tgData.user.id, name: tgData.user.first_name, lastname: tgData.user.last_name, username: tgData.user.username, disabled: false });
 
-                        const users = savedUsersToApi(await this.userModule.getUsersCached(chatId), chatId, threadId);
-                        const { events, eventsPromise } = await this.splitModule.getEventsCached(chatId, threadId);
+                        const [
+                            usersSaved,
+                            { events, eventsPromise },
+                            meta,
+                            member
+                        ] = await Promise.all([
+                            this.userModule.getUsersCached(chatId),
+                            this.splitModule.getEventsCached(chatId, threadId),
+                            this.chatMetaModule.getChatMeta(chatId),
+                            this.bot.bot.getChatMember(chatId, tgData.user.id)
+                        ])
+                        const users = savedUsersToApi(usersSaved, chatId, threadId)
+                        const settings = meta?.settings ?? {};
+                        const context = { isAdmin: member.status === 'administrator' || member.status === 'creator' };
+
                         // emit cached
-                        socket.emit("state", { events: savedOpsToApi(events), users });
+                        socket.emit("state", { events: savedOpsToApi(events), users, settings, context });
 
                         { // emit updated
                             const events = savedOpsToApi(await eventsPromise);
-                            socket.emit("state", { events, users });
+                            socket.emit("state", { events, users, settings, context });
                         }
 
                     } catch (e) {

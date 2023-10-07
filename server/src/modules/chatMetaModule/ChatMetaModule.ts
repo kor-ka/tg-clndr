@@ -11,23 +11,39 @@ export class ChatMetaModule {
 
   metaSubject = new Subject<ChatMeta>();
 
-  private onMetaUpdated = (chatId: number) => {
-    this.db.findOne({ chatId }).then((meta) => {
-      if (meta) {
-        this.metaSubject.next(meta);
-      }
-    });
+  private onMetaUpdated = async (chatId: number) => {
+    const meta = await this.db.findOne({ chatId })
+    if (meta) {
+      this.metaSubject.next(meta);
+    } else {
+      throw new Error("chat meta lost during udpate")
+    }
+    return meta
   };
 
   updateChat = async (chatId: number, name: string) => {
     let res = await this.db.updateOne(
       { chatId },
-      { $set: { chatId, name }, $setOnInsert: { token: randomBytes(16).toString('hex') } },
+      { $set: { chatId, name } },
       { upsert: true }
     );
-    this.onMetaUpdated(chatId);
+    this.onMetaUpdated(chatId).catch(e => console.error(e));
     return res;
   };
+
+  updateChatSetings = async (chatId: number, settings: Partial<NonNullable<ChatMeta['settings']>>) => {
+    const upd: Partial<NonNullable<ChatMeta['settings']>> = {
+      ...settings.restrictEditEvents !== undefined ? { restrictEditEvents: settings.restrictEditEvents } : {},
+      ...settings.disableAttend !== undefined ? { disableAttend: settings.disableAttend } : {},
+      ...settings.disableEventMessages !== undefined ? { disableEventMessages: settings.disableEventMessages } : {}
+    }
+    await this.db.updateOne(
+      { chatId },
+      { $set: { settings: upd } },
+      { upsert: true }
+    );
+    return this.onMetaUpdated(chatId);
+  }
 
   getChatMeta = async (chatId: number) => {
     return await this.db.findOne({ chatId });

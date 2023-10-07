@@ -5,7 +5,13 @@ export interface ChatMeta {
   _id: ObjectId;
   chatId: number;
   name: string;
-  token: string
+  // TODO: drop
+  token?: string;
+  settings?: {
+    restrictEditEvents?: boolean
+    disableEventMessages?: boolean
+    disableAttend?: boolean
+  }
 }
 
 export const CHATMETA = () => MDB.collection<ChatMeta>("settings");
