@@ -1,18 +1,11 @@
 import React from "react";
 import { SessionModel } from "../model/SessionModel";
 import { useVMvalue } from "../utils/vm/useVM";
-import { ModelContext } from "./MainScreen";
 import { ListItem, Card, CardLight } from "./uikit/kit";
 import { useHandleOperation } from "./useHandleOperation";
+import { WithModel } from "./utils/withModelHOC";
 
-
-// TODO: extract withModel HOC
-export const SettingsComponent = React.memo(() => {
-    const model = React.useContext(ModelContext)
-    return model ? <SettingsView model={model} /> : null
-})
-
-const SettingsView = React.memo(({ model }: { model: SessionModel }) => {
+export const SettingsComponent = WithModel(React.memo((({ model }: { model: SessionModel }) => {
     const settings = useVMvalue(model.settings)
     const context = useVMvalue(model.context)
 
@@ -44,5 +37,6 @@ const SettingsView = React.memo(({ model }: { model: SessionModel }) => {
                     <input checked={settings.enableEventMessages} readOnly={true} type="checkbox" disabled={loading} style={{ width: 20, height: 20, accentColor: 'var(--tg-theme-button-color)' }} /></>}
             /></Card>
     </> : null
-})
+})))
+
 

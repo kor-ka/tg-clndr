@@ -12,8 +12,6 @@ const tryInit = () => {
   let { initData, initDataUnsafe, ready } = wa
   ready();
 
-  wa.MainButton.setParams({ is_active: false, is_visible: true, text: "ADD EVENT" })
-
   const model = new SessionModel(
     { initData, initDataUnsafe }
   );

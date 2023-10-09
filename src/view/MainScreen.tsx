@@ -17,8 +17,9 @@ import { BackButtonController } from "./uikit/tg/BackButtonController";
 import { MainButtonController } from "./uikit/tg/MainButtonController";
 import { Card, ListItem, UsersPics, CardLight } from "./uikit/kit";
 import { SettingsComponent } from "./SettingsComponent";
+import { ModelContext } from "./ModelContext";
+import { WithModel } from "./utils/withModelHOC";
 
-export const ModelContext = React.createContext<SessionModel | undefined>(undefined);
 export const UserContext = React.createContext<number | undefined>(undefined);
 export const UsersProviderContext = React.createContext<UsersModule>(new UsersModule());
 export const SplitAvailableContext = React.createContext(false);
@@ -89,14 +90,21 @@ const ToSplit = React.memo(() => {
     return <Card onClick={onClick} style={{ position: 'fixed', padding: 16, top: 'calc(var(--tg-viewport-stable-height) - 77px)', right: 0, borderRadius: '32px 0 0 32px', marginRight: 0, transition: 'transform ease-out 150ms, top ease 150ms' }}>⚡️</Card>
 });
 
+const MainScreenAddEventButton = WithModel(({ model }: { model: SessionModel }) => {
+    const nav = useSSRReadyNavigate();
+    const settings = useVMvalue(model.settings);
+    const context = useVMvalue(model.context);
+    const showButton = (settings.allowPublicEdit || context.isAdmin);
+    return <MainButtonController isVisible={showButton} onClick={() => nav("/tg/addEvent")} text={"ADD EVENT"} />
+})
+
 export const MainScreenView = ({ eventsVM }: { eventsVM: VM<Map<string, VM<Event>>> }) => {
-    const nav = useSSRReadyNavigate()
     return <div style={{ display: 'flex', flexDirection: 'column', padding: "8px 0px", paddingBottom: 96 }}>
         <BackButtonController />
         <EventsView eventsVM={eventsVM} />
         {/* TODO: move to separate screen once settings button available for tApps */}
         <SettingsComponent />
-        <MainButtonController onClick={() => nav("/tg/addEvent")} text={"ADD EVENT"} />
+        <MainScreenAddEventButton />
         <ToSplit />
     </div>
 }

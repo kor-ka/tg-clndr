@@ -294,7 +294,7 @@ And don't forget to pin the message with the button, so everyone can open the ap
             await this.sendEventMessage(upd.event)
           }
         } else {
-          this.updateEventMessages(upd.event)
+          await this.updateEventMessages(upd.event)
         }
       } catch (e) {
         console.error(e)

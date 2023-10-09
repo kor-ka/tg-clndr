@@ -1,14 +1,16 @@
 import React from "react";
 import { useSearchParams } from "react-router-dom";
+import { SessionModel } from "../model/SessionModel";
 import { Event } from "../shared/entity";
 import { useVMvalue } from "../utils/vm/useVM";
-import { UsersProviderContext, ModelContext, UserContext } from "./MainScreen";
+import { UsersProviderContext, UserContext } from "./MainScreen";
 import { ListItem, UserPic, Card, Button } from "./uikit/kit";
 import { BackButtonController } from "./uikit/tg/BackButtonController";
 import { MainButtonController } from "./uikit/tg/MainButtonController";
 import { useHandleOperation } from "./useHandleOperation";
 import { useGoHome } from "./utils/navigation/useGoHome";
 import { showConfirm } from "./utils/webapp";
+import { WithModel } from "./utils/withModelHOC";
 
 const Attendee = React.memo(({ uid, status }: { uid: number, status: 'yes' | 'no' | 'maybe' }) => {
     const usersModule = React.useContext(UsersProviderContext)
@@ -16,8 +18,11 @@ const Attendee = React.memo(({ uid, status }: { uid: number, status: 'yes' | 'no
     return <ListItem titleView={<div style={{ display: 'flex', flexDirection: "row", alignItems: 'center' }}><UserPic uid={uid} style={{ marginRight: 8 }} />{user.fullName}</div>} right={status === 'yes' ? '✅' : status === 'no' ? '🙅' : status === 'maybe' ? '🤔' : ''} />
 })
 
-export const EventScreen = () => {
-    const model = React.useContext(ModelContext);
+export const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
+    const settings = useVMvalue(model.settings);
+    const context = useVMvalue(model.context);
+    const canEdit = (settings.allowPublicEdit || context.isAdmin);
+
     const uid = React.useContext(UserContext);
 
     let [searchParams] = useSearchParams();
@@ -107,7 +112,7 @@ export const EventScreen = () => {
         })
     }, [model, editEvId, handleOperation, goHome]);
 
-    const showButton = !editEv || edited;
+    const showButton = (!editEv || edited) && canEdit;
 
     const crazyDateFormat = React.useMemo(() => {
         var tzoffset = (new Date()).getTimezoneOffset() * 60000; //offset in milliseconds
@@ -119,16 +124,16 @@ export const EventScreen = () => {
         <div style={{ display: 'flex', flexDirection: 'column', padding: '20px 0px' }}>
 
             <Card>
-                <input value={title} onChange={onTitleInputChange} autoFocus={!editEv} disabled={disable} style={{ flexGrow: 1, padding: '8px 8px', background: 'var(--tg-theme-secondary-bg-color)' }} placeholder="Title" />
+                <input value={title} onChange={onTitleInputChange} autoFocus={!editEv} disabled={disable || !canEdit} style={{ flexGrow: 1, padding: '8px 8px', background: 'var(--tg-theme-secondary-bg-color)' }} placeholder="Title" />
             </Card>
 
             <Card>
-                <input value={crazyDateFormat} onChange={onDateInputChange} disabled={disable} type="datetime-local" style={{ flexGrow: 1, background: 'var(--tg-theme-secondary-bg-color)', padding: '8px 8px', margin: '0px 0px' }} />
+                <input value={crazyDateFormat} onChange={onDateInputChange} disabled={disable || !canEdit} type="datetime-local" style={{ flexGrow: 1, background: 'var(--tg-theme-secondary-bg-color)', padding: '8px 8px', margin: '0px 0px' }} />
             </Card>
 
 
             <Card>
-                <textarea value={description} onChange={onDescriptionInputChange} disabled={disable} style={{ flexGrow: 1, padding: '8px 8px', background: 'var(--tg-theme-secondary-bg-color)', height: 128 }} placeholder="Description" />
+                <textarea value={description} onChange={onDescriptionInputChange} disabled={disable || !canEdit} style={{ flexGrow: 1, padding: '8px 8px', background: 'var(--tg-theme-secondary-bg-color)', height: 128 }} placeholder="Description" />
             </Card>
 
             {editEv && <Card style={{ flexDirection: 'row', padding: 0, alignSelf: 'center' }}>
@@ -141,8 +146,8 @@ export const EventScreen = () => {
             {((editEv?.attendees.maybe.length ?? 0) > 0) && <Card key={'maybe'}>{editEv?.attendees.maybe.map(uid => <Attendee key={uid} uid={uid} status="maybe" />)}</Card>}
             {((editEv?.attendees.no.length ?? 0) > 0) && <Card key={'no'}>{editEv?.attendees.no.map(uid => <Attendee key={uid} uid={uid} status="no" />)}</Card>}
 
-            {editEv && <Button disabled={disable} onClick={onDeleteClick}><ListItem titleStyle={{ color: "var(--text-destructive-color)", alignSelf: 'center' }} titile="DELETE EVENT" /></Button>}
+            {editEv && canEdit && <Button disabled={disable} onClick={onDeleteClick}><ListItem titleStyle={{ color: "var(--text-destructive-color)", alignSelf: 'center' }} titile="DELETE EVENT" /></Button>}
         </div>
         <MainButtonController isVisible={showButton} onClick={onClick} text={editEv ? "SAVE" : "ADD EVENT"} progress={loading} />
     </>
-}
+})
