@@ -11,13 +11,21 @@ export function htmlEntities(str: string) {
         .replace(/"/g, "&quot;");
 }
 
+const limit = 5;
 const usersListStr = async (uids: number[]) => {
+    const overflow = uids.length > limit ? (uids.length - limit + 1) : 0;
+    const showLength = overflow ? uids.length - overflow : uids.length;
+
     const userModule = container.resolve(UserModule);
-    const users = (await Promise.all(uids.map(uid => userModule.getUser(uid))))
+    const users = (await Promise.all(uids.slice(0, showLength).map(uid => userModule.getUser(uid))))
         .filter(Boolean)
         .map(u => ({ ...u as SavedUser, fullName: [u!.name, u!.lastname].filter(Boolean).join(' ') }));
-    return users.sort((a, b) => [a.name, a.lastname].filter(Boolean).join(', ').localeCompare(b.fullName))
+    let text = users.sort((a, b) => [a.name, a.lastname].filter(Boolean).join(', ').localeCompare(b.fullName))
         .map(u => u.fullName).join(', ');
+    if (overflow) {
+        text += `, ${overflow} more`
+    }
+    return text
 }
 
 export const renderEvent = async ({ date, tz, title, description, attendees, deleted }: SavedEvent, timeZones: Set<string> = new Set()) => {
