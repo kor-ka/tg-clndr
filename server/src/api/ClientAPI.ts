@@ -1,6 +1,6 @@
 import * as socketIo from "socket.io";
 import { container } from "tsyringe";
-import { EventUpdate, User, Event, ClientApiCommand } from "../../../src/shared/entity";
+import { EventUpdate, User, Event, ClientApiCommand, ChatSettings } from "../../../src/shared/entity";
 import { ChatMetaModule } from "../modules/chatMetaModule/ChatMetaModule";
 import { EventsModule } from "../modules/eventsModule/EventsModule";
 import { SavedEvent } from "../modules/eventsModule/eventStore";
@@ -108,10 +108,10 @@ export class ClientAPI {
                     }
                 });
                 socket.on("update_settings", async (
-                    settings: Partial<NonNullable<ChatMeta['settings']>>,
-                    ack: (res: { updated: NonNullable<ChatMeta['settings']>, error?: never } | { error: string, updated?: never }) => void) => {
+                    settings: Partial<ChatSettings>,
+                    ack: (res: { updated: ChatSettings, error?: never } | { error: string, updated?: never }) => void) => {
                     try {
-                        const [member] = await Promise.all([this.bot.bot.getChatMember(chatId, tgData.user.id)])
+                        const member = await this.bot.bot.getChatMember(chatId, tgData.user.id)
                         if (!(member.status === 'administrator' || member.status === 'creator')) {
                             throw new Error("Not an admin")
                         }

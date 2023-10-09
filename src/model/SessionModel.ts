@@ -1,7 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import { VM } from "../utils/vm/VM";
 import Cookies from "js-cookie";
-import { ClientApiCommand, Event, EventUpdate, User } from "../shared/entity";
+import { ChatContext, ChatSettings, ClientApiCommand, Event, EventUpdate, User } from "../shared/entity";
 import { Deffered } from "../utils/deffered";
 import { UsersModule } from "./UsersModule";
 import { EventsModule } from "./EventsModule";
@@ -14,6 +14,9 @@ export class SessionModel {
     readonly eventsModule = new EventsModule();
     readonly users: UsersModule;
     readonly chatId: number
+
+    readonly settings = new VM<ChatSettings>({ allowPublicEdit: true, enableEventMessages: true })
+    readonly context = new VM<ChatContext>({ isAdmin: false })
 
     loaded = false;
 
@@ -55,8 +58,10 @@ export class SessionModel {
         });
 
 
-        this.socket.on("state", ({ events, users }: { events: Event[], users: User[] }) => {
+        this.socket.on("state", ({ events, users, settings, context }: { events: Event[], users: User[], settings: ChatSettings, context: ChatContext }) => {
             console.log("on_State", { events, users })
+            this.settings.next(settings)
+            this.context.next(context)
             this.loaded = true;
             if (events) {
                 // happens on reconnect and cache update
@@ -119,6 +124,21 @@ export class SessionModel {
         });
         return d.promise
     };
+
+    updateSettings = (update: Partial<ChatSettings>) => {
+        const d = new Deffered<ChatSettings>()
+        this.emit("update_settings", update, (res: { updated: ChatSettings, error: never } | { error: string, updated: never }) => {
+            console.log("on_update_settings_ack", res)
+            const { updated, error } = res
+            if (updated) {
+                this.settings.next(updated)
+                d.resolve(updated)
+            } else {
+                d.reject(new Error(error))
+            }
+        });
+        return d.promise
+    }
 
     ssrTimeSone = () => {
         return Cookies.get('ssr_time_zone')

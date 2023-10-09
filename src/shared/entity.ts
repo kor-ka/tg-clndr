@@ -10,6 +10,15 @@ export type User = {
     disabled: boolean;
 }
 
+export type ChatSettings = {
+    allowPublicEdit: boolean
+    enableEventMessages: boolean
+}
+
+export type ChatContext = {
+    isAdmin: boolean
+}
+
 export type Event = {
     id: string;
     uid: number;

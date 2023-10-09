@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React from "react";
 import { Event } from "../shared/entity"
 import { SessionModel } from "../model/SessionModel"
 import { UsersModule } from "../model/UsersModule";
@@ -16,6 +16,7 @@ import { useSSRReadyNavigate } from "./utils/navigation/useSSRReadyNavigate";
 import { BackButtonController } from "./uikit/tg/BackButtonController";
 import { MainButtonController } from "./uikit/tg/MainButtonController";
 import { Card, ListItem, UsersPics, CardLight } from "./uikit/kit";
+import { SettingsComponent } from "./SettingsComponent";
 
 export const ModelContext = React.createContext<SessionModel | undefined>(undefined);
 export const UserContext = React.createContext<number | undefined>(undefined);
@@ -93,6 +94,8 @@ export const MainScreenView = ({ eventsVM }: { eventsVM: VM<Map<string, VM<Event
     return <div style={{ display: 'flex', flexDirection: 'column', padding: "8px 0px", paddingBottom: 96 }}>
         <BackButtonController />
         <EventsView eventsVM={eventsVM} />
+        {/* TODO: move to separate screen once settings button available for tApps */}
+        <SettingsComponent />
         <MainButtonController onClick={() => nav("/tg/addEvent")} text={"ADD EVENT"} />
         <ToSplit />
     </div>

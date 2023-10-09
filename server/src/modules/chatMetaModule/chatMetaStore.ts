@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { ChatSettings } from "../../../../src/shared/entity";
 import { MDB } from "../../utils/MDB";
 
 export interface ChatMeta {
@@ -7,10 +8,7 @@ export interface ChatMeta {
   name: string;
   // TODO: drop
   token?: string;
-  settings: {
-    allowPublicEdit: boolean
-    enableEventMessages: boolean
-  }
+  settings: ChatSettings
 }
 
 export const CHATMETA = () => MDB.collection<ChatMeta>("settings");
