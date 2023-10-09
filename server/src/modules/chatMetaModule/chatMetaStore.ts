@@ -7,10 +7,9 @@ export interface ChatMeta {
   name: string;
   // TODO: drop
   token?: string;
-  settings?: {
-    restrictEditEvents?: boolean
-    disableEventMessages?: boolean
-    disableAttend?: boolean
+  settings: {
+    allowPublicEdit: boolean
+    enableEventMessages: boolean
   }
 }
 

@@ -63,6 +63,13 @@ export class ClientAPI {
                     ack: (res: { patch: { type: 'create' | 'update' | 'delete', event: Event }, error?: never } | { error: string, patch?: never }) => void) => {
                     try {
                         // TODO: sanitise op
+                        // const { settings } = (await this.chatMetaModule.getChatMeta(chatId))!
+                        // if (!settings.allowPublicEdit) {
+                        //     const isAdmin = ['administrator', 'creator'].includes((await this.bot.bot.getChatMember(chatId, tgData.user.id)).status)
+                        //     if (!isAdmin) {
+                        //         throw new Error("Restricted")
+                        //     }
+                        // }
                         const { type } = command;
                         if (type === 'create' || type === 'update') {
                             const event = await this.splitModule.commitOperation(chatId, threadId, tgData.user.id, command);

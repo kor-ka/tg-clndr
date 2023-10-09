@@ -24,22 +24,21 @@ export class ChatMetaModule {
   updateChat = async (chatId: number, name: string) => {
     let res = await this.db.updateOne(
       { chatId },
-      { $set: { chatId, name } },
+      { $set: { chatId, name }, $setOnInsert: { "settings.allowPublicEdit": true, "settings.enableEventMessages": true } },
       { upsert: true }
     );
     this.onMetaUpdated(chatId).catch(e => console.error(e));
     return res;
   };
 
-  updateChatSetings = async (chatId: number, settings: Partial<NonNullable<ChatMeta['settings']>>) => {
-    const upd: Partial<NonNullable<ChatMeta['settings']>> = {
-      ...settings.restrictEditEvents !== undefined ? { restrictEditEvents: settings.restrictEditEvents } : {},
-      ...settings.disableAttend !== undefined ? { disableAttend: settings.disableAttend } : {},
-      ...settings.disableEventMessages !== undefined ? { disableEventMessages: settings.disableEventMessages } : {}
+  updateChatSetings = async (chatId: number, settings: Partial<ChatMeta['settings']>) => {
+    const upd = {
+      ...settings.allowPublicEdit !== undefined ? { 'settings.allowPublicEdit': settings.allowPublicEdit } : {},
+      ...settings.enableEventMessages !== undefined ? { 'settings.enableEventMessages': settings.enableEventMessages } : {},
     }
     await this.db.updateOne(
       { chatId },
-      { $set: { settings: upd } },
+      { $set: upd },
       { upsert: true }
     );
     return this.onMetaUpdated(chatId);
