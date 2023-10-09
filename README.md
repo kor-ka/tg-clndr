@@ -1,46 +1,59 @@
-# Getting Started with Create React App
+# Running locally
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Setup
+### DB
+Mongodb is used as a database for this project, so you'll need one to run this app, you can get one for free here: https://www.mongodb.com/
+### Telegram bot
+You'll need a telegram bot token in order to run this app, you can get on here: https://t.me/botfather
+Also, you'll need to set up a web app for this bot using `botfather` `/newapp` command. Web app URL for this app should include `/tg/` path (eg `https://your-app-id.herokuapp.com/tg/`)
 
-## Available Scripts
+### .env
+Once you have aqired mongodb URI and telegram bot token, rename [example.env](example.env) to .env, update MONGODB_URI and TELEGRAM_BOT_TOKEN fields accordingly.
 
-In the project directory, you can run:
+## Running locally in dev mode
+To run app locally in dev mode you'll have to run two **separate** processes - app server and react dev server:
 
-### `yarn start`
+### run server: ```yarn buildServer && yarn startServer```
+### run react dev server: ```yarn start```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+After that, you should see an empty tab pointing to http://localhost:3000/.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+In order to run actual tApp content you'll have to start tApp with the same params as the Telegram client would - passing path you configured for your tApp using `botfather`, `tgWebAppStartParam`, and `#tgWebAppData`.
 
-### `yarn test`
+These params can be easily acquired using Telegram web client: 
+- set up this project as described in the "Setup" section
+- run a server if it is not already: `yarn buildServer && yarn startServer`
+- send `/pin` command to the bot
+- open tApp using button provided (it won't work if it is not deployed yet - it's fine) in a telegram web app (https://web.telegram.org)
+- open dev tools
+- locate tApp iframe ![image](./tAppDevTools.png)
+- copy `src` attribute from iframe
+- replace origin with `localhost:3000`
+- open resulting url
+- congrats, app is running in dev mode
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+# Deployment
+This project is ready to be deployed on [heroku](https://heroku.com/), thx to [Procfile](./Procfile)
 
-### `yarn build`
+# Project structure
+`/src/shared` - types used both on server and client side
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+`/src/utils` - utils used both on client and server-side
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Client
+`/src/index.tsx` - client entry point
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+`/src/model` - client application model (working with API, data sync, value models, etc)
 
-### `yarn eject`
+`/src/view` - UI-related code, screens, components etc
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## Server
+`/server/src/index.ts` - server entry point, HTTP API, SSR
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+`/server/src/api/tg` - telegram bot client - handling messages, telegram bot updates, etc
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+`/server/src/api/ClientApi.ts` - websocket API for tApp - updates, data sync, etc
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+`/server/src/modules` - server-side model layer
 
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+`/server/src/utils` - MongoDB wrappers, utils
