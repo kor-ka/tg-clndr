@@ -1,74 +1,30 @@
 import React, { useCallback, useContext } from "react";
 import { Event } from "../shared/entity"
 import { SessionModel } from "../model/SessionModel"
-import { UserClient, UsersModule } from "../model/UsersModule";
+import { UsersModule } from "../model/UsersModule";
 import { useVMvalue } from "../utils/vm/useVM"
 import {
     createBrowserRouter,
-    Location,
     RouterProvider,
-    useLocation as loc,
-    useNavigate as nav, useResolvedPath, useSearchParams
 } from "react-router-dom";
 import { EventScreen } from "./EventScreen";
 import { VM } from "../utils/vm/VM";
 import Linkify from "linkify-react";
-
-export let __DEV__ = false
-export let WebApp: any = undefined
-if (typeof window !== "undefined") {
-    __DEV__ = window.location.hostname.indexOf("localhost") >= 0 || window.location.search.endsWith("_dev_=true")
-    WebApp = (window as any).Telegram.WebApp
-}
-export const showAlert = (message: string) => {
-    if (__DEV__) {
-        window.alert(message)
-    } else {
-        WebApp?.showAlert(message)
-    }
-}
-
-export const showConfirm = (message: string, callback: (confirmed: boolean) => void) => {
-    if (__DEV__) {
-        callback(window.confirm(message))
-    } else {
-        WebApp?.showConfirm(message, callback)
-
-    }
-}
-
+import { WebApp, __DEV__ } from "./utils/webapp";
+import { useSSRReadyLocation } from "./utils/navigation/useSSRReadyLocation";
+import { homeLoc, HomeLoc } from "./utils/navigation/useGoHome";
+import { useSSRReadyNavigate } from "./utils/navigation/useSSRReadyNavigate";
+import { getSSRReadyPath } from "./utils/navigation/getSSRReadyPath";
 
 export const ModelContext = React.createContext<SessionModel | undefined>(undefined);
 export const UserContext = React.createContext<number | undefined>(undefined);
 export const UsersProvider = React.createContext<UsersModule>(new UsersModule());
 export const SplitAvailable = React.createContext(false);
 export const Timezone = React.createContext<string | undefined>(undefined);
-export const HomeLoc = React.createContext<{ loc: Location | undefined }>({ loc: undefined });
 
 export const BackgroundContext = React.createContext("var(--tg-theme-bg-color)")
 
-export const useNav = () => {
-    if (typeof window !== "undefined") {
-        return nav()
-    } else {
-        return () => { }
-    }
-}
 
-export const useLoc = (): Location => {
-    if (typeof window !== "undefined") {
-        return loc()
-    } else {
-        return { state: {}, key: 'default', pathname: '', search: '', hash: '' }
-    }
-}
-
-const getPath = () => {
-    if (typeof window !== "undefined") {
-        return window.location.pathname
-    }
-    return ''
-}
 
 export const renderApp = (model: SessionModel) => {
     const router = createBrowserRouter([
@@ -91,7 +47,7 @@ export const renderApp = (model: SessionModel) => {
             <ModelContext.Provider value={model}>
                 <UserContext.Provider value={model.tgWebApp.user.id}>
                     <UsersProvider.Provider value={model.users}>
-                        <HomeLoc.Provider value={{ loc: undefined }}>
+                        <HomeLoc.Provider value={homeLoc}>
                             <RouterProvider router={router} />
                         </HomeLoc.Provider>
                     </UsersProvider.Provider>
@@ -103,8 +59,8 @@ export const renderApp = (model: SessionModel) => {
 
 export const MainScreen = () => {
     const homeLoc = React.useContext(HomeLoc);
-    const loc = useLoc();
-    homeLoc.loc = loc;
+    const loc = useSSRReadyLocation();
+    homeLoc.location = loc;
 
     const model = React.useContext(ModelContext)
     return model ? <MainScreenWithModel model={model} /> : null
@@ -136,7 +92,7 @@ const ToSplit = React.memo(() => {
 });
 
 export const MainScreenView = ({ eventsVM }: { eventsVM: VM<Map<string, VM<Event>>> }) => {
-    const nav = useNav()
+    const nav = useSSRReadyNavigate()
     return <div style={{ display: 'flex', flexDirection: 'column', padding: "8px 0px", paddingBottom: 96 }}>
         <BackButtopnController />
         <EventsView eventsVM={eventsVM} />
@@ -248,7 +204,7 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
     const usersModule = React.useContext(UsersProvider)
     const user = useVMvalue(usersModule.getUser(event.uid))
 
-    const nav = useNav()
+    const nav = useSSRReadyNavigate()
     const onClick = React.useCallback(() => {
         nav(`/tg/editEvent?editEvent=${event.id}`)
     }, [])
@@ -329,11 +285,11 @@ const EventsView = React.memo((({ eventsVM }: { eventsVM: VM<Map<string, VM<Even
 }))
 
 export const BackButtopnController = React.memo(() => {
-    const nav = useNav()
+    const nav = useSSRReadyNavigate()
     const bb = React.useMemo(() => WebApp?.BackButton, [])
     const goBack = useCallback(() => nav(-1), [])
 
-    const canGoBack = getPath() !== '/tg/'
+    const canGoBack = getSSRReadyPath() !== '/tg/'
 
     React.useEffect(() => {
         if (canGoBack) {

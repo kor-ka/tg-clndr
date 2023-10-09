@@ -2,9 +2,10 @@ import React from "react";
 import { useSearchParams } from "react-router-dom";
 import { Event } from "../shared/entity";
 import { useVMvalue } from "../utils/vm/useVM";
-import { UsersProvider, ModelContext, BackButtopnController, CardLight, ListItem, MainButtopnController, showConfirm, Button, HomeLoc, UserContext, Card, UserPic } from "./MainScreen";
+import { UsersProvider, ModelContext, BackButtopnController, CardLight, ListItem, MainButtopnController, Button, UserContext, Card, UserPic } from "./MainScreen";
 import { useHandleOperation } from "./useHandleOperation";
-import { useGoHome } from "./utils/useGoHome";
+import { useGoHome } from "./utils/navigation/useGoHome";
+import { showConfirm } from "./utils/webapp";
 
 const Attendee = React.memo(({ uid, status }: { uid: number, status: 'yes' | 'no' | 'maybe' }) => {
     const usersModule = React.useContext(UsersProvider)
