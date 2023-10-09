@@ -100,6 +100,34 @@ export const UserPic = React.memo(({ uid, style }: { uid: number, style?: any })
     </div>
 })
 
-export const UsersPics = React.memo(({ uids }: { uids: number[] }) => {
-    return <div style={{ display: 'flex', flexDirection: 'row' }}>{uids.map((uid, index) => <UserPic key={uid} uid={uid} style={{ marginRight: -8, zIndex: uids.length - index }} />)}</div>
+
+export const Counter = React.memo(({ style, text }: { style?: any, text: string }) => {
+    const backgroundColor = useContext(BackgroundContext)
+    const color = "gray"
+
+    return <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 24,
+        height: 24,
+        border: `2px solid ${backgroundColor}`,
+        backgroundColor: color,
+        backgroundImage: `linear-gradient(white -125%, ${color})`,
+        backgroundSize: 'cover',
+        borderRadius: 24,
+        ...style
+    }}  >
+        <div style={{ fontSize: '12px' }} >{text} </div>
+    </div>
+})
+
+export const UsersPics = React.memo(({ uids, limit }: { uids: number[], limit?: number }) => {
+    limit = limit ?? 5
+    const overflow = uids.length > limit ? (uids.length - limit + 1) : 0;
+    const showLength = overflow ? uids.length - overflow : uids.length;
+    return <div style={{ display: 'flex', flexDirection: 'row' }}>
+        {uids.slice(0, showLength).map((uid, index) => <UserPic key={uid} uid={uid} style={{ marginRight: -8, zIndex: uids.length - index }} />)}
+        {!!overflow && <Counter text={`+${overflow}`} style={{ marginRight: -8, zIndex: uids.length }} />}
+    </div>
 })
