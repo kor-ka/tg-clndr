@@ -288,10 +288,10 @@ And don't forget to pin the message with the button, so everyone can open the ap
 
     this.eventsModule.upateSubject.subscribe(async (upd) => {
       try {
-        await Promise.all([
-          this.udpatePin(upd.chatId, upd.threadId),
-          (upd.type === 'create' ? this.sendEventMessage : this.updateEventMessages)(upd.event)
-        ])
+        await this.udpatePin(upd.chatId, upd.threadId)
+        if ((await this.chatMetaModule.getChatMeta(upd.chatId))?.settings.enableEventMessages) {
+          await (upd.type === 'create' ? this.sendEventMessage : this.updateEventMessages)(upd.event)
+        }
       } catch (e) {
         console.error(e)
       }
