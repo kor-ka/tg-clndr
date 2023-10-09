@@ -1,15 +1,15 @@
 import React from "react";
-import { WebApp, showAlert, useNav } from "./MainScreen";
+import { WebApp, showAlert } from "./utils/webapp";
 export const useHandleOperation = () => {
 
     const [loading, setLoading] = React.useState(false);
 
-    const callback = React.useCallback(<T,>(promise: Promise<T>, onComplete?: () => void) => {
+    const callback = React.useCallback(<T,>(operation: () => Promise<T>, onComplete?: () => void) => {
         if (loading) {
             return Promise.reject(new Error("operation already in progress"))
         }
         setLoading(true);
-        return promise.then((res: T) => {
+        return operation().then((res: T) => {
             WebApp?.HapticFeedback.notificationOccurred("success");
             if (onComplete) {
                 onComplete()

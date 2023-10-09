@@ -13,7 +13,7 @@ import { SocketApi } from "./api/socket";
 import { container } from "tsyringe";
 import * as fs from "fs";
 import { initMDB } from "./utils/MDB";
-import { MainScreenView, SplitAvailable, Timezone, UserContext, UsersProvider } from "../../src/view/MainScreen";
+import { MainScreenView, SplitAvailableContext, TimezoneContext, UserContext, UsersProviderContext } from "../../src/view/MainScreen";
 import { Event } from "../../src/shared/entity";
 import { EventsModule } from "./modules/eventsModule/EventsModule";
 import { savedOpsToApi, savedUsersToApi } from "./api/ClientAPI";
@@ -162,17 +162,17 @@ initMDB().then(() => {
 
       // const app = ''
       const app = ReactDOMServer.renderToString(
-        <Timezone.Provider value={timeZone}>
-          <SplitAvailable.Provider value={req.cookies[`split_available_${chatId}`] === 'true'}>
+        <TimezoneContext.Provider value={timeZone}>
+          <SplitAvailableContext.Provider value={req.cookies[`split_available_${chatId}`] === 'true'}>
             <UserContext.Provider
               value={userId}
             >
-              <UsersProvider.Provider value={usersProvider}>
+              <UsersProviderContext.Provider value={usersProvider}>
                 <MainScreenView eventsVM={new VM(eventsMap)} />
-              </UsersProvider.Provider>
+              </UsersProviderContext.Provider>
             </UserContext.Provider>
-          </SplitAvailable.Provider>
-        </Timezone.Provider>
+          </SplitAvailableContext.Provider>
+        </TimezoneContext.Provider>
       );
       const data = await getIndexStr();
       res.send(

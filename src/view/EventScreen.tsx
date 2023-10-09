@@ -2,13 +2,16 @@ import React from "react";
 import { useSearchParams } from "react-router-dom";
 import { Event } from "../shared/entity";
 import { useVMvalue } from "../utils/vm/useVM";
-import { UsersProvider, ModelContext, BackButtopnController, CardLight, ListItem, MainButtopnController, Button, UserContext, Card, UserPic } from "./MainScreen";
+import { UsersProviderContext, ModelContext, UserContext } from "./MainScreen";
+import { ListItem, UserPic, Card, Button } from "./uikit/kit";
+import { BackButtonController } from "./uikit/tg/BackButtonController";
+import { MainButtonController } from "./uikit/tg/MainButtonController";
 import { useHandleOperation } from "./useHandleOperation";
 import { useGoHome } from "./utils/navigation/useGoHome";
 import { showConfirm } from "./utils/webapp";
 
 const Attendee = React.memo(({ uid, status }: { uid: number, status: 'yes' | 'no' | 'maybe' }) => {
-    const usersModule = React.useContext(UsersProvider)
+    const usersModule = React.useContext(UsersProviderContext)
     const user = useVMvalue(usersModule.getUser(uid))
     return <ListItem titleView={<div style={{ display: 'flex', flexDirection: "row", alignItems: 'center' }}><UserPic uid={uid} style={{ marginRight: 8 }} />{user.fullName}</div>} right={status === 'yes' ? '✅' : status === 'no' ? '🙅' : status === 'maybe' ? '🤔' : ''} />
 })
@@ -55,7 +58,7 @@ export const EventScreen = () => {
     const onClick = React.useCallback(() => {
         if (model) {
             handleOperation(
-                model.commitCommand({
+                () => model.commitCommand({
                     type: editEv ? 'update' : 'create',
                     event: {
                         tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -81,7 +84,7 @@ export const EventScreen = () => {
 
     const onStatusChange = React.useCallback((s: 'yes' | 'no' | 'maybe') => {
         if (model && editEvId && s !== status) {
-            handleOperation(model.updateStatus(editEvId, s));
+            handleOperation(() => model.updateStatus(editEvId, s));
         }
     }, [model, editEvId, status]);
     const onStatusChangeYes = React.useCallback(() => onStatusChange('yes'), [onStatusChange]);
@@ -95,7 +98,7 @@ export const EventScreen = () => {
     const onDeleteClick = React.useCallback(() => {
         showConfirm("Delete event? This can not be undone.", (confirmed) => {
             if (confirmed && model && editEvId) {
-                handleOperation(
+                handleOperation(() =>
                     model.commitCommand({
                         type: 'delete',
                         id: editEvId
@@ -112,7 +115,7 @@ export const EventScreen = () => {
     }, [date]);
 
     return <>
-        <BackButtopnController />
+        <BackButtonController />
         <div style={{ display: 'flex', flexDirection: 'column', padding: '20px 0px' }}>
 
             <Card>
@@ -140,6 +143,6 @@ export const EventScreen = () => {
 
             {editEv && <Button disabled={disable} onClick={onDeleteClick}><ListItem titleStyle={{ color: "var(--text-destructive-color)", alignSelf: 'center' }} titile="DELETE EVENT" /></Button>}
         </div>
-        <MainButtopnController isVisible={showButton} onClick={onClick} text={editEv ? "SAVE" : "ADD EVENT"} progress={loading} />
+        <MainButtonController isVisible={showButton} onClick={onClick} text={editEv ? "SAVE" : "ADD EVENT"} progress={loading} />
     </>
 }

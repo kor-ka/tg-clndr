@@ -1,10 +1,10 @@
 import {
-    useNavigate as useReactRouterNavigate,
+    useNavigate as reactRouterNavigate,
 } from "react-router-dom";
 
 export const useSSRReadyNavigate = () => {
     if (typeof window !== "undefined") {
-        return useReactRouterNavigate()
+        return reactRouterNavigate()
     } else {
         return () => { }
     }

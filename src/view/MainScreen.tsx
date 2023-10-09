@@ -1,4 +1,4 @@
-import React, { useCallback, useContext } from "react";
+import React, { useContext } from "react";
 import { Event } from "../shared/entity"
 import { SessionModel } from "../model/SessionModel"
 import { UsersModule } from "../model/UsersModule";
@@ -9,22 +9,19 @@ import {
 } from "react-router-dom";
 import { EventScreen } from "./EventScreen";
 import { VM } from "../utils/vm/VM";
-import Linkify from "linkify-react";
 import { WebApp, __DEV__ } from "./utils/webapp";
 import { useSSRReadyLocation } from "./utils/navigation/useSSRReadyLocation";
 import { homeLoc, HomeLoc } from "./utils/navigation/useGoHome";
 import { useSSRReadyNavigate } from "./utils/navigation/useSSRReadyNavigate";
-import { getSSRReadyPath } from "./utils/navigation/getSSRReadyPath";
+import { BackButtonController } from "./uikit/tg/BackButtonController";
+import { MainButtonController } from "./uikit/tg/MainButtonController";
+import { Card, ListItem, UsersPics, CardLight } from "./uikit/kit";
 
 export const ModelContext = React.createContext<SessionModel | undefined>(undefined);
 export const UserContext = React.createContext<number | undefined>(undefined);
-export const UsersProvider = React.createContext<UsersModule>(new UsersModule());
-export const SplitAvailable = React.createContext(false);
-export const Timezone = React.createContext<string | undefined>(undefined);
-
-export const BackgroundContext = React.createContext("var(--tg-theme-bg-color)")
-
-
+export const UsersProviderContext = React.createContext<UsersModule>(new UsersModule());
+export const SplitAvailableContext = React.createContext(false);
+export const TimezoneContext = React.createContext<string | undefined>(undefined);
 
 export const renderApp = (model: SessionModel) => {
     const router = createBrowserRouter([
@@ -42,19 +39,19 @@ export const renderApp = (model: SessionModel) => {
         },
     ]);
 
-    return <Timezone.Provider value={Intl.DateTimeFormat().resolvedOptions().timeZone}>
-        <SplitAvailable.Provider value={model.splitAvailableSync()}>
+    return <TimezoneContext.Provider value={Intl.DateTimeFormat().resolvedOptions().timeZone}>
+        <SplitAvailableContext.Provider value={model.splitAvailableSync()}>
             <ModelContext.Provider value={model}>
                 <UserContext.Provider value={model.tgWebApp.user.id}>
-                    <UsersProvider.Provider value={model.users}>
+                    <UsersProviderContext.Provider value={model.users}>
                         <HomeLoc.Provider value={homeLoc}>
                             <RouterProvider router={router} />
                         </HomeLoc.Provider>
-                    </UsersProvider.Provider>
+                    </UsersProviderContext.Provider>
                 </UserContext.Provider>
             </ModelContext.Provider>
-        </SplitAvailable.Provider>
-    </Timezone.Provider>
+        </SplitAvailableContext.Provider>
+    </TimezoneContext.Provider>
 }
 
 export const MainScreen = () => {
@@ -72,7 +69,7 @@ const MainScreenWithModel = ({ model }: { model: SessionModel }) => {
 
 const ToSplit = React.memo(() => {
     const model = React.useContext(ModelContext);
-    const splitAvailableSync = React.useContext(SplitAvailable)
+    const splitAvailableSync = React.useContext(SplitAvailableContext)
     const [splitAvailable, setSplitAvailable] = React.useState(splitAvailableSync);
     React.useEffect(() => {
         if (!splitAvailable) {
@@ -94,114 +91,17 @@ const ToSplit = React.memo(() => {
 export const MainScreenView = ({ eventsVM }: { eventsVM: VM<Map<string, VM<Event>>> }) => {
     const nav = useSSRReadyNavigate()
     return <div style={{ display: 'flex', flexDirection: 'column', padding: "8px 0px", paddingBottom: 96 }}>
-        <BackButtopnController />
+        <BackButtonController />
         <EventsView eventsVM={eventsVM} />
-        <MainButtopnController onClick={() => nav("/tg/addEvent")} text={"ADD EVENT"} />
+        <MainButtonController onClick={() => nav("/tg/addEvent")} text={"ADD EVENT"} />
         <ToSplit />
     </div>
 }
 
-export const Card = ({ children, style, onClick }: { children: any, style?: any, onClick?: React.MouseEventHandler<HTMLDivElement> }) => {
-    return <div onClick={onClick} className={onClick ? "card" : undefined} style={{ display: 'flex', flexDirection: 'column', margin: '8px 16px', padding: 4, backgroundColor: "var(--tg-theme-secondary-bg-color)", borderRadius: 16, ...style }}>
-        <BackgroundContext.Provider value="var(--tg-theme-secondary-bg-color)">
-            {children}
-        </BackgroundContext.Provider>
-    </div>
-}
-
-export const Button = ({ children, style, onClick, disabled }: { children: any, style?: any, onClick?: React.MouseEventHandler<HTMLButtonElement>, disabled?: boolean }) => {
-    return <button disabled={disabled} onClick={onClick} style={{ margin: '8px 16px', padding: 0, backgroundColor: "var(--tg-theme-secondary-bg-color)", borderRadius: 8, ...style }}>
-        <div style={{ display: 'flex', flexDirection: 'column', padding: 4, opacity: disabled ? 0.8 : undefined }}>{children}</div>
-    </button>
-}
-
-
-export const CardLight = ({ children, style }: { children: any, style?: any }) => {
-    return <div style={{ display: 'flex', flexDirection: 'column', margin: '0px 20px', ...style }}>{children}</div>
-}
-
-const Link = ({ attributes, content }: { attributes: any, content: any }) => {
-    const { href, ...props } = attributes;
-    const onClick = React.useCallback((e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const url = new URL(href);
-        if (url.host === "t.me") {
-            WebApp?.openTelegramLink(href);
-        } else {
-            WebApp?.openLink(href);
-        }
-    }, [href])
-    return <a onClick={onClick} href={href} {...props}>{content}</a>;
-};
-
-export const ListItem = React.memo(({ titile: title, titleView, subtitle, subtitleView, right, style, titleStyle, subTitleStyle, rightStyle, leftStyle, onClick, onSubtitleClick }: { titile?: string, titleView?: React.ReactNode, subtitle?: string, subtitleView?: React.ReactNode, right?: React.ReactNode, style?: any, titleStyle?: any, subTitleStyle?: any, rightStyle?: any, leftStyle?: any, onClick?: React.MouseEventHandler<HTMLDivElement>, onSubtitleClick?: React.MouseEventHandler<HTMLDivElement> }) => {
-    return <div className={onClick ? "list_item" : undefined} onClick={onClick} style={{ display: 'flex', flexDirection: "row", justifyContent: 'space-between', padding: 4, alignItems: 'center', ...style }}>
-        <div style={{ display: 'flex', padding: '2px 0px', flexDirection: "column", flexGrow: 1, flexShrink: 1, minWidth: 0, ...leftStyle }}>
-            {!!title && <div style={{ padding: '2px 4px', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', ...titleStyle }}>{title}</div>}
-            {titleView && <div style={{ padding: '2px 4px' }}>
-                {titleView}
-            </div>}
-            {!!subtitle && <Linkify options={{ render: Link }}>
-                <div onClick={onSubtitleClick} style={{ padding: '2px 4px', fontSize: '0.8em', color: "var(--tg-theme-hint-color)", whiteSpace: 'pre-wrap', textOverflow: 'ellipsis', overflow: 'hidden', ...subTitleStyle }}>{subtitle}</div>
-            </Linkify>}
-            {subtitleView && <div style={{ padding: '2px 4px' }}>
-                {subtitleView}
-            </div>}
-        </div>
-        {!!right && <div style={{ display: 'flex', padding: '4px 16px', flexShrink: 0, alignItems: 'center', ...rightStyle }}>{right}</div>}
-    </div>
-}
-)
-
-const colors = [
-    'var(--color-user-1)',
-    'var(--color-user-8)',
-    'var(--color-user-5)',
-    'var(--color-user-2)',
-    'var(--color-user-7)',
-    'var(--color-user-4)',
-    'var(--color-user-6)',
-]
-export const UserPic = React.memo(({ uid, style }: { uid: number, style?: any }) => {
-    const usersModule = React.useContext(UsersProvider)
-    const user = useVMvalue(usersModule.getUser(uid))
-    const backgroundColor = useContext(BackgroundContext)
-    const color = colors[uid % colors.length]
-
-    const [imageLoadError, setImageLoadError] = React.useState<boolean>(false)
-
-    const onImageError = React.useCallback(() => {
-        setImageLoadError(true)
-    }, [])
-
-    const showImg = user.imageUrl && !imageLoadError;
-
-    return <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: 24,
-        height: 24,
-        border: `2px solid ${backgroundColor}`,
-        backgroundColor: color,
-        backgroundImage: showImg ? `url(${user.imageUrl})` : `linear-gradient(white -125%, ${color})`,
-        backgroundSize: 'cover',
-        borderRadius: 24,
-        ...style
-    }}  >
-        {!showImg && <div style={{ fontSize: '12px' }} >{[user.firstName, user.lastname].filter(Boolean).map(e => e?.charAt(0)).join('')} </div>}
-        {user.imageUrl && <img src={user.imageUrl} style={{ display: 'none' }} onError={onImageError} />}
-    </div>
-})
-
-const UsersPics = React.memo(({ uids }: { uids: number[] }) => {
-    return <div style={{ display: 'flex', flexDirection: 'row' }}>{uids.map((uid, index) => <UserPic key={uid} uid={uid} style={{ marginRight: -8, zIndex: uids.length - index }} />)}</div>
-})
 
 const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
     const event = useVMvalue(eventVM)
-    const usersModule = React.useContext(UsersProvider)
+    const usersModule = React.useContext(UsersProviderContext)
     const user = useVMvalue(usersModule.getUser(event.uid))
 
     const nav = useSSRReadyNavigate()
@@ -209,7 +109,7 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
         nav(`/tg/editEvent?editEvent=${event.id}`)
     }, [])
 
-    const timeZone = React.useContext(Timezone);
+    const timeZone = React.useContext(TimezoneContext);
     const time = React.useMemo(() => new Date(event.date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h24', timeZone }), [event.date]);
 
     return <ListItem
@@ -248,7 +148,7 @@ const DateView = React.memo(({ date, isToday }: { date: string, isToday?: boolea
 });
 
 const EventsView = React.memo((({ eventsVM }: { eventsVM: VM<Map<string, VM<Event>>> }) => {
-    const timeZone = React.useContext(Timezone);
+    const timeZone = React.useContext(TimezoneContext);
     const eventsMap = useVMvalue(eventsVM);
     const todayStr = React.useMemo(() => new Date().toLocaleString('en', { month: 'short', day: 'numeric', timeZone }), [timeZone]);
     const { today, log } = React.useMemo(() => {
@@ -283,58 +183,3 @@ const EventsView = React.memo((({ eventsVM }: { eventsVM: VM<Map<string, VM<Even
         {(today.length + log.length) === 200 && <Card><ListItem subtitle={`Maybe there are more events, who knows 🤷‍♂️\nDeveloper was too lasy to implement pagination.`} /></Card>}
     </>
 }))
-
-export const BackButtopnController = React.memo(() => {
-    const nav = useSSRReadyNavigate()
-    const bb = React.useMemo(() => WebApp?.BackButton, [])
-    const goBack = useCallback(() => nav(-1), [])
-
-    const canGoBack = getSSRReadyPath() !== '/tg/'
-
-    React.useEffect(() => {
-        if (canGoBack) {
-            bb.show()
-        } else {
-            bb.hide()
-        }
-    }, [canGoBack])
-
-    React.useEffect(() => {
-        console.log(bb)
-        bb.onClick(goBack)
-        return () => {
-            bb.offClick(goBack)
-        }
-    }, [bb])
-
-    return (canGoBack && __DEV__) ? <button style={{ position: 'absolute', top: 0, left: 0 }} onClick={goBack}>{"< back"}</button> : null
-})
-
-export const MainButtopnController = React.memo(({ onClick, text, color, textColor, isActive, isVisible, progress }: { onClick: () => void, text?: string, color?: string, textColor?: string, isActive?: boolean, isVisible?: boolean, progress?: boolean }) => {
-    const mb = React.useMemo(() => WebApp?.MainButton, [])
-
-    React.useEffect(() => {
-        mb.onClick(onClick)
-        return () => {
-            mb.offClick(onClick)
-        }
-    }, [onClick])
-
-
-    React.useEffect(() => {
-        if (progress !== mb.isProgressVisible) {
-            if (progress) {
-                mb.showProgress()
-            } else {
-                mb.hideProgress()
-            }
-        }
-
-    }, [progress])
-
-    React.useEffect(() => {
-        mb.setParams({ text, color, text_color: textColor, is_active: isActive ?? true, is_visible: isVisible ?? true })
-    }, [text, color, textColor, isActive, isVisible])
-
-    return (__DEV__ && isVisible !== false) ? <button style={{ position: 'absolute', top: 0, right: 0 }} disabled={isActive === false} onClick={onClick} >{text}{progress ? "⌛️" : ""}</button> : null
-})

@@ -1,11 +1,11 @@
 import {
     Location,
-    useLocation as useReactRouterLocation,
+    useLocation as reactRouterLocation,
 } from "react-router-dom";
 
 export const useSSRReadyLocation = (): Location => {
     if (typeof window !== "undefined") {
-        return useReactRouterLocation()
+        return reactRouterLocation()
     } else {
         return { state: {}, key: 'default', pathname: '', search: '', hash: '' }
     }
