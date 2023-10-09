@@ -1,7 +1,6 @@
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import { SessionModel } from "./model/SessionModel";
-import reportWebVitals from "./reportWebVitals";
 import { VM } from "./utils/vm/VM";
 import { Event } from "./shared/entity"
 
@@ -23,7 +22,6 @@ const tryInit = () => {
   import('./view/MainScreen').then(({ renderApp }) => {
 
     const onEvents = (e: Map<string, VM<Event>>) => {
-      // TODO: fix - detect not loaded yet, not empty sate
       if (model.loaded) {
         model.eventsModule.events.unsubscribe(onEvents)
         root.render(renderApp(model))
@@ -36,16 +34,9 @@ const tryInit = () => {
 }
 const root = createRoot(document.getElementById("root")!);
 if (window.location.pathname.startsWith("/tg/")) {
-  if (!tryInit()) {
-    const interval = setInterval(() => {
-      if (tryInit()) {
-        clearInterval(interval)
-      }
-    }, 10)
-  }
+  const interval = setInterval(() => {
+    if (tryInit()) {
+      clearInterval(interval)
+    }
+  }, 10)
 }
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();

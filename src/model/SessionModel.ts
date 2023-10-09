@@ -45,7 +45,6 @@ export class SessionModel {
         this.socket = io(endpoint, {
             transports: ["websocket"],
             query: {
-                userState: true,
                 initData: params.initData,
                 initDataUnsafe: encodeURIComponent(JSON.stringify(params.initDataUnsafe))
             },

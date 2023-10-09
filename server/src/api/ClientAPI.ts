@@ -2,12 +2,10 @@ import * as socketIo from "socket.io";
 import { container } from "tsyringe";
 import { EventUpdate, User, Event, ClientApiCommand } from "../../../src/shared/entity";
 import { ChatMetaModule } from "../modules/chatMetaModule/ChatMetaModule";
-import { PinsModule } from "../modules/pinsModule/PinsModule";
 import { EventsModule } from "../modules/eventsModule/EventsModule";
 import { SavedEvent } from "../modules/eventsModule/eventStore";
 import { UserModule } from "../modules/userModule/UserModule";
 import { SavedUser } from "../modules/userModule/userStore";
-import { SW } from "../utils/stopwatch";
 import { checkTgAuth } from "./tg/getTgAuth";
 import { checkChatToken } from "./Auth";
 import { TelegramBot } from "./tg/tg";
@@ -38,56 +36,32 @@ export class ClientAPI {
 
         this.io.on('connection', (socket) => {
             try {
-                const sw = new SW("connection");
-                if (!socket.handshake.query.userState) {
-                    return;
-                }
-                sw.lap();
                 const { initData, initDataUnsafe } = socket.handshake.query
                 const tgData = JSON.parse(decodeURIComponent(initDataUnsafe as string)) as { auth_date: number, hash: string, chat?: { id: number }, start_param?: string, chat_instance?: string, user: { id: number, first_name: string, last_name?: string, username?: string } }
-                const { auth_date, hash, chat_instance } = tgData
+                const { auth_date, hash } = tgData
                 const auth = checkTgAuth(decodeURIComponent(initData as string), hash, auth_date);
                 if (!auth) {
                     return
                 }
-                sw.lap("tgAuth");
                 const [chat_descriptor, token] = (tgData.start_param as string).split('T') ?? [];
                 const [chatId, threadId] = chat_descriptor?.split('_').map(Number) ?? []
+
                 if (chatId === undefined) {
+                    socket.disconnect()
                     return
                 }
 
-                const tokenCheckPromise = new Promise<boolean>(async (resolve, reject) => {
-                    try {
-                        try {
-                            checkChatToken(token, chatId);
-                            resolve(true);
-                        } catch (e) {
-                            const chatMeta = await this.chatMetaModule.getChatMeta(chatId)
-                            resolve((chatMeta?.token ?? undefined) === token)
-                        }
-                    } catch (e) {
-                        reject(e)
-                    }
-                }).catch(() => false).then(auth => {
-                    if (!auth) {
-                        socket.disconnect()
-                    }
-                    return auth
-                })
-
-                const checkAuth = async () => {
-                    let auth = await tokenCheckPromise;
-                    if (!auth) {
-                        throw new Error("unauthrized")
-                    }
+                try {
+                    checkChatToken(token, chatId);
+                } catch (e) {
+                    socket.disconnect()
+                    return
                 }
 
                 socket.on("command", async (
                     command: ClientApiCommand,
                     ack: (res: { patch: { type: 'create' | 'update' | 'delete', event: Event }, error?: never } | { error: string, patch?: never }) => void) => {
                     try {
-                        await checkAuth()
                         // TODO: sanitise op
                         const { type } = command;
                         if (type === 'create' || type === 'update') {
@@ -114,7 +88,6 @@ export class ClientAPI {
                     },
                     ack: (res: { updated: Event, error?: never } | { error: string, updated?: never }) => void) => {
                     try {
-                        await checkAuth()
                         const event = await this.splitModule.updateAtendeeStatus(chatId, threadId, eventId, tgData.user.id, status);
                         ack({ updated: savedOpToApi(event) });
                     } catch (e) {
@@ -130,7 +103,7 @@ export class ClientAPI {
                     settings: Partial<NonNullable<ChatMeta['settings']>>,
                     ack: (res: { updated: NonNullable<ChatMeta['settings']>, error?: never } | { error: string, updated?: never }) => void) => {
                     try {
-                        const [member] = await Promise.all([this.bot.bot.getChatMember(chatId, tgData.user.id), checkAuth()])
+                        const [member] = await Promise.all([this.bot.bot.getChatMember(chatId, tgData.user.id)])
                         if (!(member.status === 'administrator' || member.status === 'creator')) {
                             throw new Error("Not an admin")
                         }
@@ -147,8 +120,6 @@ export class ClientAPI {
                 });
                 (async () => {
                     try {
-                        await checkAuth()
-
                         socket.join(`chatClient_${[chatId, threadId].filter(Boolean).join('_')}`);
                         socket.join(`chatUsersClient_${chatId}`);
 

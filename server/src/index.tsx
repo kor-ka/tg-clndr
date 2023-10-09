@@ -99,20 +99,12 @@ initMDB().then(() => {
 
     .get("/ics/:key/cal.ics", async (req, res) => {
       try {
-        const chatMetaModule = container.resolve(ChatMetaModule)
-        const icsModule = container.resolve(ICSModule)
-
         const [chat_descriptor, token] = (req.params.key as string).split('T') ?? [];
         const [chatId, threadId] = chat_descriptor.split('_').map(Number) ?? [];
-        const [data, chatMeta] = await Promise.all([icsModule.getIcs(chatId, threadId), chatMetaModule.getChatMeta(chatId)]);
+        checkChatToken(token, chatId);
 
-        try {
-          checkChatToken(token, chatId);
-        } catch (e) {
-          if ((chatMeta?.token ?? undefined) !== token) {
-            throw new Error("unauthorized")
-          }
-        }
+        const icsModule = container.resolve(ICSModule)
+        const data = await icsModule.getIcs(chatId, threadId)
 
         res.set('Content-disposition', 'attachment; filename=cal.ics');
         res.set('Content-Type', 'text/calendar; method="PUBLISH"');
@@ -140,11 +132,11 @@ initMDB().then(() => {
 
   app.use(compression()).get("/tg/", async (req, res) => {
     try {
-      const eventsModule = container.resolve(EventsModule);
-      const chatMetaModule = container.resolve(ChatMetaModule)
-
       const [chat_descriptor, token] = (req.query.tgWebAppStartParam as string).split('T') ?? [];
       const [chatId, threadId] = chat_descriptor.split('_').map(Number) ?? [];
+      checkChatToken(token, chatId);
+
+      const eventsModule = container.resolve(EventsModule);
 
       const userIdString = req.cookies.user_id;
       const userId = userIdString ? Number.parseInt(userIdString, 10) : undefined
@@ -157,15 +149,7 @@ initMDB().then(() => {
         res.cookie('ssr_time_zone', timeZone, { sameSite: 'none', secure: true })
       }
 
-      const [{ events }, chatMeta] = await Promise.all([eventsModule.getEventsCached(chatId, threadId), chatMetaModule.getChatMeta(chatId)])
-
-      try {
-        checkChatToken(token, chatId);
-      } catch (e) {
-        if ((chatMeta?.token ?? undefined) !== token) {
-          throw new Error("unauthorized")
-        }
-      }
+      const { events } = await eventsModule.getEventsCached(chatId, threadId)
 
       const eventsMap = new Map<string, VM<Event>>()
       savedOpsToApi(events).forEach(o => eventsMap.set(o.id, new VM(o)))
