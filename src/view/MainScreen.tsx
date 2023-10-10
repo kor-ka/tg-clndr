@@ -9,7 +9,7 @@ import {
 } from "react-router-dom";
 import { EventScreen } from "./EventScreen";
 import { VM } from "../utils/vm/VM";
-import { WebApp, __DEV__ } from "./utils/webapp";
+import { showAlert, WebApp, __DEV__ } from "./utils/webapp";
 import { useSSRReadyLocation } from "./utils/navigation/useSSRReadyLocation";
 import { homeLoc, HomeLoc } from "./utils/navigation/useGoHome";
 import { useSSRReadyNavigate } from "./utils/navigation/useSSRReadyNavigate";
@@ -92,10 +92,15 @@ const ToSplit = React.memo(() => {
 
 const MainScreenAddEventButton = WithModel(({ model }: { model: SessionModel }) => {
     const nav = useSSRReadyNavigate();
-    const settings = useVMvalue(model.settings);
-    const context = useVMvalue(model.context);
-    const showButton = (settings.allowPublicEdit || context.isAdmin);
-    return <MainButtonController isVisible={showButton} onClick={() => nav("/tg/addEvent")} text={"ADD EVENT"} />
+    const onClick = React.useCallback(() => {
+        const canEdit = model.settings.val.allowPublicEdit || model.context.val.isAdmin
+        if (canEdit) {
+            nav("/tg/addEvent")
+        } else {
+            showAlert("Only admins can add events in this groups")
+        }
+    }, [nav])
+    return <MainButtonController onClick={onClick} text={"ADD EVENT"} />
 })
 
 export const MainScreenView = ({ eventsVM }: { eventsVM: VM<Map<string, VM<Event>>> }) => {
