@@ -24,7 +24,7 @@ export const SettingsComponent = WithModel(React.memo((({ model }: { model: Sess
         <Card >
             <ListItem
                 onClick={switchPublicEdit}
-                titile="Pulic edit enabled"
+                titile="Allow public access"
                 subtitle="Enable to allow non-admin users to create/edit/delete events"
                 right={<>
                     <input checked={settings.allowPublicEdit} readOnly={true} type="checkbox" disabled={loading} style={{ width: 20, height: 20, accentColor: 'var(--tg-theme-button-color)' }} /></>}
@@ -32,7 +32,7 @@ export const SettingsComponent = WithModel(React.memo((({ model }: { model: Sess
             <ListItem
                 onClick={switchSendMessage}
                 titile="Send even message"
-                subtitle="Enable to send message to the chat each time new event created"
+                subtitle="Enable to send message to the chat each time a new event created"
                 right={<>
                     <input checked={settings.enableEventMessages} readOnly={true} type="checkbox" disabled={loading} style={{ width: 20, height: 20, accentColor: 'var(--tg-theme-button-color)' }} /></>}
             /></Card>
