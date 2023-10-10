@@ -1,29 +1,29 @@
-import { init } from "linkifyjs"
-import { WebApp } from "../../utils/webapp"
 
 export class PremountController {
     static INSTANCE = new PremountController()
     private onClickMounted = false
     private pending = false
+    private mb: any
 
     private constructor() { }
 
     private onPreMountCLick = () => {
         this.pending = true
-        WebApp?.MainButton.showProgress()
+        this.mb?.MainButton.showProgress()
     }
 
     readonly init = () => {
-        WebApp?.MainButton.onClick(this.onPreMountCLick)
+        this.mb = typeof window !== "undefined" ? (window as any).Telegram.WebApp : undefined
+        this.mb?.MainButton.onClick(this.onPreMountCLick)
     }
 
     readonly onMount = (onClick: () => void) => {
         if (!this.onClickMounted) {
             this.onClickMounted = true
-            WebApp?.MainButton.offClick(this.onPreMountCLick)
+            this.mb?.MainButton.offClick(this.onPreMountCLick)
             if (this.pending) {
                 this.pending = false
-                WebApp?.MainButton.hideProgress()
+                this.mb?.MainButton.hideProgress()
                 onClick()
             }
         }
