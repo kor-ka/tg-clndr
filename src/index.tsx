@@ -13,7 +13,7 @@ const tryInit = () => {
   let { initData, initDataUnsafe, ready } = wa
 
   MainButtonPremountController.INSTANCE.init()
-  wa.MainButton.setParams({ is_active: false, is_visible: true, text: "ADD EVENT" })
+  wa.MainButton.setParams({ is_active: true, is_visible: true, text: "ADD EVENT" })
 
   ready();
 
