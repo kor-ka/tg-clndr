@@ -10,6 +10,7 @@ import { checkTgAuth } from "./tg/getTgAuth";
 import { checkChatToken } from "./Auth";
 import { TelegramBot } from "./tg/tg";
 import { ChatMeta } from "../modules/chatMetaModule/chatMetaStore";
+import { SW } from "../utils/stopwatch";
 
 export class ClientAPI {
     private io: socketIo.Server;
@@ -35,6 +36,9 @@ export class ClientAPI {
         })
 
         this.io.on('connection', (socket) => {
+            const sw = new SW("init connection")
+            sw.lap()
+
             try {
                 const { initData, initDataUnsafe } = socket.handshake.query
                 const tgData = JSON.parse(decodeURIComponent(initDataUnsafe as string)) as { auth_date: number, hash: string, chat?: { id: number }, start_param?: string, chat_instance?: string, user: { id: number, first_name: string, last_name?: string, username?: string } }
@@ -51,12 +55,16 @@ export class ClientAPI {
                     return
                 }
 
+                sw.lap('tg auth')
+
                 try {
                     checkChatToken(token, chatId);
                 } catch (e) {
                     socket.disconnect()
                     return
                 }
+
+                sw.lap('check chat token')
 
                 socket.on("command", async (
                     command: ClientApiCommand,
@@ -126,12 +134,22 @@ export class ClientAPI {
                         ack({ error: message })
                     }
                 });
-                (async () => {
-                    try {
-                        socket.join(`chatClient_${[chatId, threadId].filter(Boolean).join('_')}`);
-                        socket.join(`chatUsersClient_${chatId}`);
 
-                        this.userModule.updateUser(chatId, threadId, { id: tgData.user.id, name: tgData.user.first_name, lastname: tgData.user.last_name, username: tgData.user.username, disabled: false });
+                sw.lap('subsciptions')
+
+
+                socket.join(`chatClient_${[chatId, threadId].filter(Boolean).join('_')}`);
+                socket.join(`chatUsersClient_${chatId}`);
+
+                sw.lap('join');
+
+
+                (async () => {
+                    sw.lap('async start');
+
+                    try {
+                        this.userModule.updateUser(chatId, threadId, { id: tgData.user.id, name: tgData.user.first_name, lastname: tgData.user.last_name, username: tgData.user.username, disabled: false }).catch(e => console.error(e));
+                        sw.lap('update user');
 
                         const [
                             usersSaved,
@@ -139,17 +157,23 @@ export class ClientAPI {
                             meta,
                             member
                         ] = await Promise.all([
-                            this.userModule.getUsersCached(chatId),
-                            this.splitModule.getEventsCached(chatId, threadId),
-                            this.chatMetaModule.getChatMeta(chatId),
-                            this.bot.bot.getChatMember(chatId, tgData.user.id)
+                            mesure(() => this.userModule.getUsersCached(chatId), 'getUsersCached'),
+                            mesure(() => this.splitModule.getEventsCached(chatId, threadId), 'getEventsCached'),
+                            mesure(() => this.chatMetaModule.getChatMeta(chatId), 'getChatMeta'),
+                            mesure(() => this.bot.bot.getChatMember(chatId, tgData.user.id), 'getChatMember')
                         ])
+                        sw.lap('promises');
+
                         const users = savedUsersToApi(usersSaved, chatId, threadId)
                         const settings = meta?.settings ?? {};
                         const context = { isAdmin: member.status === 'administrator' || member.status === 'creator' };
 
+                        sw.lap('convert');
+
                         // emit cached
                         socket.emit("state", { events: savedOpsToApi(events), users, settings, context });
+                        sw.lap('emit');
+                        sw.report()
 
                         { // emit updated
                             const events = savedOpsToApi(await eventsPromise);
@@ -166,6 +190,15 @@ export class ClientAPI {
 
         })
     }
+}
+
+const mesure = <T>(factory: () => Promise<T>, tag: string) => {
+    const time = Date.now()
+    const promise = factory()
+    promise.then(() => {
+        console.log(tag, Date.now() - time)
+    })
+    return promise
 }
 
 export const savedOpToApi = (saved: SavedEvent): Event => {

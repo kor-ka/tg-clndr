@@ -136,7 +136,10 @@ export class EventsModule {
     const freshEnough = now - 1000 * 60 * 60 * 4;
 
     let events = this.logCache.get(`${chatId}-${threadId ?? undefined}-${limit}`)?.filter(e => e.date >= freshEnough)
-    const eventsPromise = this.getEvents(chatId, threadId, limit)
+    const eventsPromise = this.getEvents(chatId, threadId, limit).catch(e => {
+      console.error(e)
+      return []
+    })
     if (!events) {
       events = await eventsPromise
     }
