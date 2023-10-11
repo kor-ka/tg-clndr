@@ -22,4 +22,14 @@ export class GeoModule {
     }
     return data
   }
+
+  geocode = async (text: string) => {
+    const res = await (await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(text)}&key=${key}`)).json();
+    const result = res?.results?.[0]
+    if (result && result.geometry.location && result.formatted_address) {
+      const location = [result.geometry.location.lat as number, result.geometry.location.lng as number] as const;
+      const address = result.formatted_address as string;
+      return { location, address }
+    }
+  }
 }

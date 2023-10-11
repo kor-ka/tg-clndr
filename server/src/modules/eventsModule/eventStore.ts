@@ -8,6 +8,10 @@ export type ServerEvent = Omit<Event, 'id'> & {
     threadId: number | undefined,
     idempotencyKey: string,
     messages?: number[]
+    geo?: {
+        address: string
+        location: readonly [number, number]
+    }
 }
 export type SavedEvent = WithId<ServerEvent>
 export const EVENTS = () => MDB.collection<ServerEvent>("events");

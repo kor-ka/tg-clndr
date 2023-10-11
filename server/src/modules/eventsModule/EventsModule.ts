@@ -62,13 +62,23 @@ export class EventsModule {
 
       })
 
-      if (command.type === 'create') {
-        this.geo.getTzLocation(command.event.tz).catch((e) => {
-          console.error(e)
-        })
-      }
     } finally {
       await session.endSession();
+    }
+
+    // non blocking update tz meta - for stats
+    if (command.type === 'create') {
+      this.geo.getTzLocation(command.event.tz).catch((e) => {
+        console.error(e)
+      })
+    }
+
+    // geo udpate - experiment with ios cal
+    if (_id && command.event.description) {
+      await this.geo.geocode(command.event.description)
+        .then(geo => this.events.updateOne({ _id }, { $set: { geo } }))
+        // ignore geocoding errors - it's optional
+        .catch(e => console.error(e))
     }
 
     // non-blocking cache update

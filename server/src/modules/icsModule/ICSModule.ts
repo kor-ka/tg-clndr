@@ -5,7 +5,7 @@ import { LATEST_EVENTS } from "../eventsModule/eventStore";
 import { ICS } from "./icsStore";
 import * as ics from "ics"
 import { ChatMetaModule } from "../chatMetaModule/ChatMetaModule";
-import { Attendee, ParticipationStatus } from "ics";
+import { Attendee, GeoCoordinates, ParticipationStatus } from "ics";
 import { UserModule } from "../userModule/UserModule";
 
 const uidToAttendee = async (uid: number, status: ParticipationStatus): Promise<Attendee> => {
@@ -43,9 +43,18 @@ export class ICSModule {
         e.attendees.maybe.map(uid => uidToAttendee(uid, 'TENTATIVE')),
         e.attendees.no.map(uid => uidToAttendee(uid, 'DECLINED'))
       ].flat()))
-      const lines = (e.description ?? "").split("\n");
-      const location = lines.shift();
-      const description = lines.join("\n");
+      let location: string | undefined = undefined
+      let description = e.description
+      let geo: GeoCoordinates | undefined = undefined
+      if (e.geo) {
+        location = e.geo.address
+        geo = { lat: e.geo.location[0], lon: e.geo.location[1] }
+      } else {
+        // if no geo - use first line from description as location
+        const lines = (e.description ?? "").split("\n");
+        location = lines.shift();
+        description = lines.join("\n");
+      }
       evs.push(
         {
           calName: chat?.name ?? undefined,
@@ -53,6 +62,7 @@ export class ICSModule {
           sequence: e.seq,
           title: e.title,
           location,
+          geo,
           description,
           start: [date.getFullYear(), date.getMonth() + 1, date.getDate(), date.getHours(), date.getMinutes()],
           duration: { minutes: 60 },
