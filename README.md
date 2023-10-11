@@ -1,4 +1,4 @@
-[@clndrrrbot](https://t.me/clndrrrbot) - a Mini app alowing managing shared calendar for chats - with a seamless integration with calendar apps on both Android and iOS.
+[@clndrrrbot](https://t.me/clndrrrbot) - a Mini app allowing managing shared calendars for chats - with seamless integration with calendar apps on both Android and iOS.
 
 # Running locally
 
