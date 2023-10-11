@@ -74,6 +74,14 @@ export class ICSModule {
 
     if (value) {
       value = value.replace('X-PUBLISHED-TTL:PT1H', 'X-PUBLISHED-TTL:PT1M')
+
+      for (let e of events) {
+        if (e.geo) {
+          const geoStr = `GEO:${e.geo.location[0]};${e.geo.location[1]}`;
+          value = value.replaceAll(geoStr, `${geoStr}\nX-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS="${e.geo.address}";X-APPLE-RADIUS=70;X-APPLE-REFERENCEFRAME=1;X-TITLE="${e.geo.address}":geo:${e.geo.location[0]},${e.geo.location[1]}`)
+        }
+      }
+
       await this.db.updateOne({ chatId, threadId }, { $set: { chatId, threadId, data: value } }, { upsert: true });
     } else if (error) {
       console.log(error)
