@@ -1,12 +1,15 @@
 import { ServerEvent, SavedEvent, EVENTS, LATEST_EVENTS } from "./eventStore";
-import { singleton } from "tsyringe";
+import { container, singleton } from "tsyringe";
 import { MDBClient } from "../../utils/MDB";
 import { ObjectId, WithId } from "mongodb";
 import { Subject } from "../../utils/subject";
 import { ClientApiUpsertCommand } from "../../../../src/shared/entity";
+import { GeoModule } from "../geoModule/GeoModule";
 
 @singleton()
 export class EventsModule {
+  private geo = container.resolve(GeoModule)
+
   private events = EVENTS();
   private eventsLatest = LATEST_EVENTS();
 
@@ -59,6 +62,11 @@ export class EventsModule {
 
       })
 
+      if (command.type === 'create') {
+        this.geo.getTzLocation(command.event.tz).catch((e) => {
+          console.error(e)
+        })
+      }
     } finally {
       await session.endSession();
     }
