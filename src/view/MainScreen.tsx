@@ -118,22 +118,26 @@ export const MainScreenView = ({ eventsVM }: { eventsVM: VM<Map<string, VM<Event
 const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
     const event = useVMvalue(eventVM)
     const usersModule = React.useContext(UsersProviderContext)
-    const user = useVMvalue(usersModule.getUser(event.uid))
+
+    const { id, date, deleted, title, description, attendees, geo } = event;
 
     const nav = useSSRReadyNavigate()
     const onClick = React.useCallback(() => {
-        nav(`/tg/editEvent?editEvent=${event.id}`)
-    }, [])
+        nav(`/tg/editEvent?editEvent=${id}`)
+    }, [id])
 
     const timeZone = React.useContext(TimezoneContext);
-    const time = React.useMemo(() => new Date(event.date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h24', timeZone }), [event.date]);
+    const time = React.useMemo(() => new Date(date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h24', timeZone }), [date]);
 
     return <ListItem
-        onClick={onClick} style={event.deleted ? { textDecoration: 'line-through' } : undefined}
-        titile={event.title}
-        subtitle={event.description}
-        subtitleView={<UsersPics uids={event.attendees.yes} />}
+        onClick={onClick} style={deleted ? { textDecoration: 'line-through' } : undefined}
+        titile={title}
+        subtitle={description}
         subTitleStyle={{ filter: 'grayscale(1)' }}
+        subtitleView={<div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {geo && <div style={{ filter: 'grayscale(1)', fontSize: '0.8em', color: "var(--tg-theme-hint-color)", whiteSpace: 'pre-wrap', textOverflow: 'ellipsis', overflow: 'hidden' }}><a href={`https://maps.google.com/?q=${geo.location[0]},${geo.location[1]}`}>📍{geo.address}</a></div>}
+            <UsersPics uids={attendees.yes} />
+        </div>}
         right={<span style={{ fontSize: '1.2em' }}> {time} </span>}
     />
 })

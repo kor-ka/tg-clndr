@@ -29,6 +29,10 @@ export type Event = {
     deleted?: boolean;
     seq: number;
     attendees: { yes: number[], no: number[], maybe: number[] }
+    geo?: {
+        address: string
+        location: readonly [number, number]
+    }
 }
 
 
