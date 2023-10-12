@@ -28,13 +28,16 @@ const usersListStr = async (uids: number[]) => {
     return text
 }
 
-export const renderEvent = async ({ date, tz, title, description, attendees, deleted }: SavedEvent, timeZones: Set<string> = new Set()) => {
+export const renderEvent = async ({ date, tz, title, description, attendees, deleted, geo }: SavedEvent, timeZones: Set<string> = new Set()) => {
     const dateStr = new Date(date).toLocaleString('en', { month: 'short', day: 'numeric', timeZone: tz });
     const timeStr = new Date(date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h24', timeZone: tz });
 
     const lines = [`${deleted ? "<s>" : ""}🗓️ ${dateStr} - <b>${htmlEntities(title.trim())}</b>, ${timeStr} ${timeZones.size > 1 ? `(${tz})` : ''}${deleted ? "</s>" : ""}`];
     if (description.trim()) {
         lines.push(`✏️ ${htmlEntities(description.trim())}`);
+    }
+    if (geo) {
+        lines.push(`📍 <a href="https://maps.google.com/?q=${geo.location[0]},${geo.location[1]}">${htmlEntities(geo.address)}</a>`)
     }
 
     let yesUsers = await usersListStr(attendees.yes);
