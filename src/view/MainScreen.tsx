@@ -15,7 +15,7 @@ import { homeLoc, HomeLoc } from "./utils/navigation/useGoHome";
 import { useSSRReadyNavigate } from "./utils/navigation/useSSRReadyNavigate";
 import { BackButtonController } from "./uikit/tg/BackButtonController";
 import { MainButtonController } from "./uikit/tg/MainButtonController";
-import { Card, ListItem, UsersPics, CardLight } from "./uikit/kit";
+import { Card, ListItem, UsersPics, CardLight, Link } from "./uikit/kit";
 import { SettingsComponent } from "./SettingsComponent";
 import { ModelContext } from "./ModelContext";
 import { WithModel } from "./utils/withModelHOC";
@@ -135,7 +135,7 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
         subtitle={description}
         subTitleStyle={{ filter: 'grayscale(1)' }}
         subtitleView={<div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {geo && <div style={{ filter: 'grayscale(1)', fontSize: '0.8em', color: "var(--tg-theme-hint-color)", whiteSpace: 'pre-wrap', textOverflow: 'ellipsis', overflow: 'hidden' }}><a href={`https://maps.google.com/?q=${geo.location[0]},${geo.location[1]}`}>📍{geo.address}</a></div>}
+            {geo && <div style={{ filter: 'grayscale(1)', fontSize: '0.8em', color: "var(--tg-theme-hint-color)", whiteSpace: 'pre-wrap', textOverflow: 'ellipsis', overflow: 'hidden' }}><Link href={`https://maps.google.com/?q=${geo.location[0]},${geo.location[1]}`}>📍{geo.address}</Link></div>}
             <UsersPics uids={attendees.yes} />
         </div>}
         right={<span style={{ fontSize: '1.2em' }}> {time} </span>}

@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { ReactNode, useContext } from "react";
 import Linkify from "linkify-react";
 import { WebApp } from "../utils/webapp";
 import { useVMvalue } from "../../utils/vm/useVM";
@@ -25,7 +25,7 @@ export const CardLight = ({ children, style }: { children: any, style?: any }) =
     return <div style={{ display: 'flex', flexDirection: 'column', margin: '0px 20px', ...style }}>{children}</div>
 }
 
-export const Link = ({ attributes, content }: { attributes: any, content: any }) => {
+const LinkComponent = ({ attributes, content }: { attributes: any, content: any }) => {
     const { href, ...props } = attributes;
     const onClick = React.useCallback((e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
         e.preventDefault();
@@ -40,6 +40,10 @@ export const Link = ({ attributes, content }: { attributes: any, content: any })
     return <a onClick={onClick} href={href} {...props}>{content}</a>;
 };
 
+export const Link = ({ href, children }: { href: string, children: ReactNode }) => {
+    return <LinkComponent attributes={{ href }} content={children} />
+}
+
 export const ListItem = React.memo(({ titile: title, titleView, subtitle, subtitleView, right, style, titleStyle, subTitleStyle, rightStyle, leftStyle, onClick, onSubtitleClick }: { titile?: string, titleView?: React.ReactNode, subtitle?: string, subtitleView?: React.ReactNode, right?: React.ReactNode, style?: any, titleStyle?: any, subTitleStyle?: any, rightStyle?: any, leftStyle?: any, onClick?: React.MouseEventHandler<HTMLDivElement>, onSubtitleClick?: React.MouseEventHandler<HTMLDivElement> }) => {
     return <div className={onClick ? "list_item" : undefined} onClick={onClick} style={{ display: 'flex', flexDirection: "row", justifyContent: 'space-between', padding: 4, alignItems: 'center', ...style }}>
         <div style={{ display: 'flex', padding: '2px 0px', flexDirection: "column", flexGrow: 1, flexShrink: 1, minWidth: 0, ...leftStyle }}>
@@ -47,7 +51,7 @@ export const ListItem = React.memo(({ titile: title, titleView, subtitle, subtit
             {titleView && <div style={{ padding: '2px 4px' }}>
                 {titleView}
             </div>}
-            {!!subtitle && <Linkify options={{ render: Link }}>
+            {!!subtitle && <Linkify options={{ render: LinkComponent }}>
                 <div onClick={onSubtitleClick} style={{ padding: '2px 4px', fontSize: '0.8em', color: "var(--tg-theme-hint-color)", whiteSpace: 'pre-wrap', textOverflow: 'ellipsis', overflow: 'hidden', ...subTitleStyle }}>{subtitle}</div>
             </Linkify>}
             {subtitleView && <div style={{ padding: '2px 4px' }}>
