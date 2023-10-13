@@ -170,13 +170,20 @@ const DateView = React.memo(({ date, isToday }: { date: string, isToday?: boolea
 const EventsView = React.memo((({ eventsVM }: { eventsVM: VM<Map<string, VM<Event>>> }) => {
     const timeZone = React.useContext(TimezoneContext);
     const eventsMap = useVMvalue(eventsVM);
-    const todayStr = React.useMemo(() => new Date().toLocaleString('en', { month: 'short', day: 'numeric', timeZone }), [timeZone]);
+    const [todayStr, todayYear] = React.useMemo(() => {
+        const todayDate = new Date()
+        const todayStr = todayDate.toLocaleString('en', { month: 'short', day: 'numeric', timeZone })
+        const todayYear = todayDate.toLocaleString('en', { year: 'numeric', timeZone })
+        return [todayStr, todayYear]
+    }, [timeZone]);
     const { today, log } = React.useMemo(() => {
         const today: { vm: VM<Event>, date: string }[] = [];
         const log: { vm: VM<Event>, date: string }[] = [];
         for (let vm of eventsMap.values()) {
-            const date = new Date(vm.val.date).toLocaleString('en', { month: 'short', day: 'numeric', timeZone });
-            (date === todayStr ? today : log).push({ vm, date })
+            const date = new Date(vm.val.date)
+            const dateYear = date.toLocaleString('en', { year: 'numeric', timeZone })
+            const dateStr = date.toLocaleString('en', { month: 'short', day: 'numeric', year: dateYear !== todayYear ? 'numeric' : undefined, timeZone });
+            (dateStr === todayStr ? today : log).push({ vm, date: dateStr })
         }
         return { today, log }
     }, [eventsMap]);
