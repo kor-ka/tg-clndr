@@ -4,7 +4,9 @@ import { DurationDscrpitor as NotifyBeforeTime, NotifyBeforeOptions } from "../.
 import { useVMvalue } from "../../utils/vm/useVM";
 import { ListItem, Card, CardLight } from "../uikit/kit";
 import { useHandleOperation } from "../useHandleOperation";
+import { reqestWriteAccess } from "../utils/webapp";
 import { WithModel } from "../utils/withModelHOC";
+
 
 
 export const UserSettings = WithModel(React.memo((({ model }: { model: SessionModel }) => {
@@ -20,7 +22,12 @@ export const UserSettings = WithModel(React.memo((({ model }: { model: SessionMo
         saveNotifyBefore(e.target.value === 'none' ? null : e.target.value as any)
     }, [])
 
-    const switchEnabledNotification = React.useCallback(() => {
+    const switchEnabledNotification = React.useCallback(async () => {
+        if (!settings.enableNotifications) {
+            if (!(await reqestWriteAccess())) {
+                return;
+            }
+        }
         handleOperation(() => model.updateUserSettings({ enableNotifications: !settings.enableNotifications }))
     }, [settings])
 

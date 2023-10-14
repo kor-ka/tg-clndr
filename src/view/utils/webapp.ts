@@ -20,3 +20,11 @@ export const showConfirm = (message: string, callback: (confirmed: boolean) => v
 
     }
 }
+
+export const reqestWriteAccess = () => {
+    return new Promise<boolean>(resolve => {
+        WebApp?.requestWriteAccess((granted: boolean) => {
+            resolve(granted)
+        })
+    })
+}
