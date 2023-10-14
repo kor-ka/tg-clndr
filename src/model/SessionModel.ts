@@ -1,7 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import { VM } from "../utils/vm/VM";
 import Cookies from "js-cookie";
-import { ChatContext, ChatSettings, ClientApiCommand, Event, EventUpdate, User } from "../shared/entity";
+import { ChatContext, ChatSettings, ClientApiCommand, Event, EventUpdate, User, UserSettings } from "../shared/entity";
 import { Deffered } from "../utils/deffered";
 import { UsersModule } from "./UsersModule";
 import { EventsModule } from "./EventsModule";
@@ -15,7 +15,9 @@ export class SessionModel {
     readonly users: UsersModule;
     readonly chatId: number
 
-    readonly settings = new VM<ChatSettings>({ allowPublicEdit: true, enableEventMessages: true })
+    readonly chatSettings = new VM<ChatSettings | undefined>(undefined)
+    readonly userSettings = new VM<UserSettings | undefined>(undefined)
+
     readonly context = new VM<ChatContext>({ isAdmin: false })
 
     loaded = false;
@@ -57,10 +59,9 @@ export class SessionModel {
             console.log(e);
         });
 
-
-        this.socket.on("state", ({ events, users, settings, context }: { events: Event[], users: User[], settings: ChatSettings, context: ChatContext }) => {
+        this.socket.on("state", ({ events, users, chatSettings, context }: { events: Event[], users: User[], chatSettings: ChatSettings, context: ChatContext }) => {
             console.log("on_State", { events, users })
-            this.settings.next(settings)
+            this.chatSettings.next(chatSettings)
             this.context.next(context)
             this.loaded = true;
             if (events) {
@@ -127,11 +128,24 @@ export class SessionModel {
 
     updateSettings = (update: Partial<ChatSettings>) => {
         const d = new Deffered<ChatSettings>()
-        this.emit("update_settings", update, (res: { updated: ChatSettings, error: never } | { error: string, updated: never }) => {
-            console.log("on_update_settings_ack", res)
+        this.emit("update_chat_settings", update, (res: { updated: ChatSettings, error: never } | { error: string, updated: never }) => {
             const { updated, error } = res
             if (updated) {
-                this.settings.next(updated)
+                this.chatSettings.next(updated)
+                d.resolve(updated)
+            } else {
+                d.reject(new Error(error))
+            }
+        });
+        return d.promise
+    }
+
+    updateUserSettings = (update: Partial<ChatSettings>) => {
+        const d = new Deffered<UserSettings>()
+        this.emit("update_user_settings", update, (res: { updated: UserSettings, error: never } | { error: string, updated: never }) => {
+            const { updated, error } = res
+            if (updated) {
+                this.userSettings.next(updated)
                 d.resolve(updated)
             } else {
                 d.reject(new Error(error))

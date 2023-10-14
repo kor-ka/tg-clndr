@@ -5,6 +5,7 @@ import { ObjectId, WithId } from "mongodb";
 import { Subject } from "../../utils/subject";
 import { ClientApiUpsertCommand } from "../../../../src/shared/entity";
 import { GeoModule } from "../geoModule/GeoModule";
+import { NotificationsModule } from "../notificationsModule/NotificationsModule";
 
 @singleton()
 export class EventsModule {
@@ -40,25 +41,29 @@ export class EventsModule {
           const eventData = { ...event, uid, chatId, threadId };
           // create new event
           _id = (await this.events.insertOne({ ...eventData, seq: 0, idempotencyKey: `${uid}_${id}`, attendees: { yes: [uid], no: [], maybe: [] } }, { session })).insertedId
+          await container.resolve(NotificationsModule).upsertNotification(_id, event.date, true, uid, session)
         } else if (type === 'update') {
           const { id, ...event } = command.event
           _id = new ObjectId(id)
-          // update op
-          const op = (await this.events.findOne({ _id, deleted: { $ne: true } }))
-          if (!op) {
+          // update event
+          const savedEvent = (await this.events.findOne({ _id, deleted: { $ne: true } }, { session }))
+          if (!savedEvent) {
             throw new Error("Operation not found")
           }
-          await this.events.updateOne({ _id, seq: op.seq }, { $set: event, $inc: { seq: 1 } }, { session })
+          await this.events.updateOne({ _id, seq: savedEvent.seq }, { $set: event, $inc: { seq: 1 } }, { session })
+
+          // update notifications
+          await container.resolve(NotificationsModule).onEventUpdated(_id, event.date, session)
 
           // keep latest date latest
-          const latest = (await this.events.find({ chatId, threadId }).sort({ date: -1 }).limit(1).toArray())[0];
+          const latest = (await this.events.find({ chatId, threadId }, { session }).sort({ date: -1 }).limit(1).toArray())[0];
           latestDateCandidate = Math.max(latestDateCandidate, latest?.date)
         } else {
           throw new Error('Unknown operation modification type')
         }
 
         // bump latest index
-        await this.eventsLatest.updateOne({ chatId, threadId }, { $max: { date: latestDateCandidate } }, { upsert: true });
+        await this.eventsLatest.updateOne({ chatId, threadId }, { $max: { date: latestDateCandidate } }, { upsert: true, session });
 
       })
 
@@ -106,7 +111,17 @@ export class EventsModule {
       // already deleted - just return 
       return event;
     } else {
-      await this.events.updateOne({ _id }, { $set: { deleted: true }, $inc: { seq: 1 } });
+      const session = MDBClient.startSession()
+      try {
+        await session.withTransaction(async () => {
+          await this.events.updateOne({ _id }, { $set: { deleted: true }, $inc: { seq: 1 } }, { session });
+          // update notifications
+          await container.resolve(NotificationsModule).onEventDeleted(_id, session)
+        })
+      } finally {
+        await session.endSession();
+      }
+
       event = await this.events.findOne({ _id })
       if (!event) {
         throw new Error("event lost during delete")
@@ -125,12 +140,24 @@ export class EventsModule {
     const _id = new ObjectId(eventId);
     const addTo = status
     const pullFrom = ['yes', 'no', 'maybe'].filter(s => s != addTo).map(k => `attendees.${k}`)
-    await this.events.updateOne({ _id }, { $pull: { [pullFrom[0]]: uid, [pullFrom[1]]: uid }, $addToSet: { [`attendees.${addTo}`]: uid }, $inc: { seq: 1 } })
+
+    let updatedEvent: SavedEvent | undefined
+
+    const session = MDBClient.startSession()
+    try {
+      await session.withTransaction(async () => {
+        await this.events.updateOne({ _id }, { $pull: { [pullFrom[0]]: uid, [pullFrom[1]]: uid }, $addToSet: { [`attendees.${addTo}`]: uid }, $inc: { seq: 1 } }, { session })
+        // update notifications
+        updatedEvent = (await this.events.findOne({ _id }, { session }))!
+        await container.resolve(NotificationsModule).upsertNotification(_id, updatedEvent.date, status === 'yes', uid, session)
+      })
+    } finally {
+      await session.endSession();
+    }
 
     // non-blocking cache update
     this.getEvents(chatId, threadId).catch((e) => console.error(e));
 
-    const updatedEvent = await this.events.findOne({ _id });
     if (!updatedEvent) {
       throw new Error("operation lost during updateAtendeeStatus");
     }

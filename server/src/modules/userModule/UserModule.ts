@@ -1,11 +1,13 @@
 import { container, singleton } from "tsyringe";
-import { User } from "../../../../src/shared/entity";
+import { User, UserSettings } from "../../../../src/shared/entity";
 import { TelegramBot } from "../../api/tg/tg";
 import { Subject } from "../../utils/subject";
-import { SavedUser, USER } from "./userStore";
+import { SavedUser, ServerUserSettings, USER } from "./userStore";
 import * as fs from "fs";
 import { appRoot } from "../..";
 import * as https from "https";
+import { beforeToMs, NotificationsModule } from "../notificationsModule/NotificationsModule";
+import { MDBClient } from "../../utils/MDB";
 
 @singleton()
 export class UserModule {
@@ -25,23 +27,28 @@ export class UserModule {
       return update;
     }, {} as any);
 
-    let res = await this.db.updateOne(
+    await this.db.updateOne(
       { id },
       {
         $set: {
           ...update,
         },
         $addToSet: { ...disabled ? { disabledChatIds: chatId } : {}, chatIds: chatId, threadFullIds: `${chatId}_${threadId}` },
-        $pull: { ...disabled ? {} : { disabledChatIds: chatId } }
+        $pull: { ...disabled ? {} : { disabledChatIds: chatId } },
+        $setOnInsert: {
+          "settings.notifyBefore": null,
+          "settings.notifyBeforeMs": null
+        }
       },
       { upsert: true }
     );
 
     const userSaved = await this.getUser(id)
-
-    if (userSaved) {
-      this.userUpdated.next({ chatId, user: userSaved });
+    if (!userSaved) {
+      throw new Error(`updateUser: user not found ${user.id}`)
     }
+
+    this.userUpdated.next({ chatId, user: userSaved });
 
     // TODO: better cahce update     
     await this.getUsers(chatId)
@@ -49,8 +56,35 @@ export class UserModule {
     // async photo update
     this.updateUserPhoto(chatId, id).catch(e => console.error(e));
 
-    return res;
+    return userSaved;
   };
+
+  updateUserSettings = async (userId: number, settings: Partial<UserSettings>) => {
+    let notificationSettings: Pick<ServerUserSettings, 'notifyBefore' | 'notifyBeforeMs'> | undefined = undefined
+    if (settings.notifyBefore !== undefined) {
+      notificationSettings = {
+        notifyBefore: settings.notifyBefore,
+        notifyBeforeMs: settings.notifyBefore ? beforeToMs(settings.notifyBefore) : null
+      }
+    }
+    const session = MDBClient.startSession()
+    try {
+      await session.withTransaction(async () => {
+        await this.db.updateOne({ id: userId }, { $set: { ...notificationSettings } }, { session })
+        if (notificationSettings) {
+          await container.resolve(NotificationsModule).onUpdateNotificationSettings(userId, notificationSettings, session)
+        }
+      })
+    } finally {
+      await session.endSession();
+    }
+
+    const user = await this.db.findOne({ id: userId })
+    if (!user) {
+      throw new Error(`updateUserSettings: user not found ${userId}`)
+    }
+    return user
+  }
 
   updateUserPhoto = async (
     chatId: number,

@@ -93,7 +93,7 @@ const ToSplit = React.memo(() => {
 const MainScreenAddEventButton = WithModel(({ model }: { model: SessionModel }) => {
     const nav = useSSRReadyNavigate();
     const onClick = React.useCallback(() => {
-        const canEdit = model.settings.val.allowPublicEdit || model.context.val.isAdmin
+        const canEdit = model.chatSettings.val?.allowPublicEdit || model.context.val.isAdmin
         if (canEdit) {
             nav("/tg/addEvent")
         } else {

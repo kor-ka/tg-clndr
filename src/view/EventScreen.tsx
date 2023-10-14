@@ -19,9 +19,9 @@ const Attendee = React.memo(({ uid, status }: { uid: number, status: 'yes' | 'no
 })
 
 export const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
-    const settings = useVMvalue(model.settings);
+    const settings = useVMvalue(model.chatSettings);
     const context = useVMvalue(model.context);
-    const canEdit = (settings.allowPublicEdit || context.isAdmin);
+    const canEdit = (settings?.allowPublicEdit || context.isAdmin);
 
     const uid = React.useContext(UserContext);
 

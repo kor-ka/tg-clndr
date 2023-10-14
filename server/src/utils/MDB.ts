@@ -63,6 +63,21 @@ const _initMDB = async () => {
       }
     );
 
+    await MDB.collection("notifications").createIndex(
+      { userId: 1, eventId: 1 },
+      {
+        name: "notifications:unique",
+        unique: true,
+      }
+    );
+
+    await MDB.collection("notifications").createIndex(
+      { sent: 1, time: 1 },
+      {
+        name: "notifications:time",
+      }
+    );
+
   } catch (e) {
     console.error(e)
     throw (e)

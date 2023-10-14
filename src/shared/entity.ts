@@ -1,6 +1,3 @@
-// 
-// Abstract 
-// 
 export type User = {
     id: number;
     name: string;
@@ -10,13 +7,30 @@ export type User = {
     disabled: boolean;
 }
 
+export const Duraion = {
+    m: 1000 * 60,
+    h: 1000 * 60 * 60,
+    d: 1000 * 60 * 60 * 24,
+    w: 1000 * 60 * 60 * 24 * 7
+}
+
+export type BeforePreset = `${number}${keyof typeof Duraion}`
+
+export type UserSettings = {
+    notifyBefore: null | BeforePreset;
+}
+
+export type Notification = {
+    beforePreset: BeforePreset | null;
+}
+
 export type ChatSettings = {
-    allowPublicEdit: boolean
-    enableEventMessages: boolean
+    allowPublicEdit: boolean;
+    enableEventMessages: boolean;
 }
 
 export type ChatContext = {
-    isAdmin: boolean
+    isAdmin: boolean;
 }
 
 export type Event = {
@@ -39,17 +53,17 @@ export type Event = {
 type ClientCommandEvent = Omit<Event, 'uid' | 'deleted' | 'seq' | 'attendees'>
 export type ClientApiCreateEventCommand = {
     type: 'create';
-    event: ClientCommandEvent
+    event: ClientCommandEvent;
 }
 
 export type ClientApiUpdateEventCommand = {
     type: 'update';
-    event: ClientCommandEvent
+    event: ClientCommandEvent;
 }
 
 export type ClientApiDeleteEventCommand = {
     type: 'delete';
-    id: string
+    id: string;
 }
 
 export type ClientApiUpsertCommand = ClientApiCreateEventCommand | ClientApiUpdateEventCommand;

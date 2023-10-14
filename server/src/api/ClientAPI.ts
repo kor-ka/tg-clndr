@@ -1,6 +1,6 @@
 import * as socketIo from "socket.io";
 import { container } from "tsyringe";
-import { EventUpdate, User, Event, ClientApiCommand, ChatSettings } from "../../../src/shared/entity";
+import { EventUpdate, User, Event, ClientApiCommand, ChatSettings, UserSettings } from "../../../src/shared/entity";
 import { ChatMetaModule } from "../modules/chatMetaModule/ChatMetaModule";
 import { EventsModule } from "../modules/eventsModule/EventsModule";
 import { SavedEvent } from "../modules/eventsModule/eventStore";
@@ -115,7 +115,7 @@ export class ClientAPI {
                         ack({ error: message })
                     }
                 });
-                socket.on("update_settings", async (
+                socket.on("update_chat_settings", async (
                     settings: Partial<ChatSettings>,
                     ack: (res: { updated: ChatSettings, error?: never } | { error: string, updated?: never }) => void) => {
                     try {
@@ -125,6 +125,22 @@ export class ClientAPI {
                         }
                         const updated = await this.chatMetaModule.updateChatSetings(chatId, settings)
                         ack({ updated: updated?.settings ?? {} });
+                    } catch (e) {
+                        console.error(e)
+                        let message = 'unknown error'
+                        if (e instanceof Error) {
+                            message = e.message
+                        }
+                        ack({ error: message })
+                    }
+                });
+
+                socket.on("update_user_settings", async (
+                    settings: Partial<UserSettings>,
+                    ack: (res: { updated: UserSettings, error?: never } | { error: string, updated?: never }) => void) => {
+                    try {
+                        const updated = await this.userModule.updateUserSettings(chatId, settings)
+                        ack({ updated: updated.settings });
                     } catch (e) {
                         console.error(e)
                         let message = 'unknown error'
@@ -148,15 +164,20 @@ export class ClientAPI {
                     sw.lap('async start');
 
                     try {
-                        this.userModule.updateUser(chatId, threadId, { id: tgData.user.id, name: tgData.user.first_name, lastname: tgData.user.last_name, username: tgData.user.username, disabled: false }).catch(e => console.error(e));
-                        sw.lap('update user');
-
                         const [
+                            user,
                             usersSaved,
                             { events, eventsPromise },
                             meta,
                             member
                         ] = await Promise.all([
+                            mesure(() => this.userModule.updateUser(chatId, threadId, {
+                                id: tgData.user.id,
+                                name: tgData.user.first_name,
+                                lastname: tgData.user.last_name,
+                                username: tgData.user.username,
+                                disabled: false
+                            }), 'updateUser'),
                             mesure(() => this.userModule.getUsersCached(chatId), 'getUsersCached'),
                             mesure(() => this.splitModule.getEventsCached(chatId, threadId), 'getEventsCached'),
                             mesure(() => this.chatMetaModule.getChatMeta(chatId), 'getChatMeta'),
@@ -165,19 +186,20 @@ export class ClientAPI {
                         sw.lap('promises');
 
                         const users = savedUsersToApi(usersSaved, chatId, threadId)
-                        const settings = meta?.settings ?? {};
+                        const chatSettings = meta?.settings ?? {};
+                        const userSettings = user.settings
                         const context = { isAdmin: member.status === 'administrator' || member.status === 'creator' };
 
                         sw.lap('convert');
 
                         // emit cached
-                        socket.emit("state", { events: savedOpsToApi(events), users, settings, context });
+                        socket.emit("state", { events: savedOpsToApi(events), users, chatSettings, userSettings, context });
                         sw.lap('emit');
                         sw.report()
 
                         { // emit updated
                             const events = savedOpsToApi(await eventsPromise);
-                            socket.emit("state", { events, users, settings, context });
+                            socket.emit("state", { events, users, chatSettings, userSettings, context });
                         }
 
                     } catch (e) {
@@ -211,7 +233,7 @@ export const savedOpsToApi = (saved: SavedEvent[]): Event[] => {
 }
 
 export const savedUserToApi = (saved: SavedUser, chatId: number, threadId?: number): User => {
-    const { _id, chatIds, disabledChatIds, threadFullIds, ...u } = saved
+    const { _id, chatIds, disabledChatIds, threadFullIds, settings, ...u } = saved
     return { ...u, disabled: !!disabledChatIds?.includes(chatId) || ((threadId !== undefined) && !threadFullIds?.includes(`${chatId}_${threadId}`)) }
 }
 

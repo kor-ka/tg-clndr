@@ -6,20 +6,20 @@ import { useHandleOperation } from "./useHandleOperation";
 import { WithModel } from "./utils/withModelHOC";
 
 export const SettingsComponent = WithModel(React.memo((({ model }: { model: SessionModel }) => {
-    const settings = useVMvalue(model.settings)
+    const settings = useVMvalue(model.chatSettings)
     const context = useVMvalue(model.context)
 
     const [handleOperation, loading] = useHandleOperation()
 
     const switchPublicEdit = React.useCallback(() => {
-        handleOperation(() => model.updateSettings({ allowPublicEdit: !settings.allowPublicEdit }))
+        handleOperation(() => model.updateSettings({ allowPublicEdit: !settings?.allowPublicEdit }))
     }, [settings])
 
     const switchSendMessage = React.useCallback(() => {
-        handleOperation(() => model.updateSettings({ enableEventMessages: !settings.enableEventMessages }))
+        handleOperation(() => model.updateSettings({ enableEventMessages: !settings?.enableEventMessages }))
     }, [settings])
 
-    return context.isAdmin ? <>
+    return (context.isAdmin && !!settings) ? <>
         <CardLight style={{ marginTop: 24 }}><ListItem subtitle="Admin settings" /></CardLight>
         <Card >
             <ListItem
