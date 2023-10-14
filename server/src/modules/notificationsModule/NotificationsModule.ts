@@ -1,7 +1,7 @@
 import { ClientSession, ObjectId } from "mongodb";
 import { singleton } from "tsyringe";
 import { NOTIFICATIONS } from "./notificationsStore";
-import { BeforePreset, Duraion, UserSettings } from "../../../../src/shared/entity";
+import { BeforePreset, Duraion, Notification } from "../../../../src/shared/entity";
 import { USER } from "../userModule/userStore";
 
 export const beforeToMs = (before: BeforePreset) => {
@@ -15,61 +15,56 @@ export class NotificationsModule {
   private db = NOTIFICATIONS();
   private users = USER();
 
-  upsertNotification = async (eventId: ObjectId, date: number, isAttendee: boolean, userId: number, session: ClientSession) => {
-    const { settings: { notifyBefore } } = (await this.users.findOne({ id: userId }))!;
-    const enabled = isAttendee && (notifyBefore !== null);
-    await this.db.updateOne({ eventId, userId }, {
-      $set: { time: enabled ? date - beforeToMs(notifyBefore) : null, eventTime: date },
-      $setOnInsert: { sent: false }
-    }, { upsert: true, session })
+  updateNotificationOnAttend = async (eventId: ObjectId, date: number, isAttendee: boolean, userId: number, session: ClientSession) => {
+    if (isAttendee) {
+      const { settings } = (await this.users.findOne({ id: userId }))!;
+      const notifyBefore = settings?.notifyBefore
+      if (notifyBefore) {
+        const notifyBeforeMs = beforeToMs(notifyBefore)
+        await this.db.updateOne({ eventId, userId }, {
+          $set: {
+            time: date - notifyBeforeMs,
+            eventTime: date,
+            notifyBefore,
+            notifyBeforeMs
+          },
+          $setOnInsert: { sent: false }
+        }, { upsert: true, session })
+      }
+    } else {
+      await this.db.deleteOne({ eventId, userId }, { session })
+    }
   }
 
-  onUpdateNotificationSettings = async (userId: number, settings: Pick<UserSettings, 'notifyBefore'>, session: ClientSession) => {
-    const beforePreset = settings.notifyBefore
-    const enabled = beforePreset !== null
-    this.db.updateMany({ userId, eventTime: { $gt: Date.now() } }, [
-      {
-        $set: {
-          time: enabled ?
-            { $subtract: ['$eventTime', beforeToMs(beforePreset)] }
-            : null,
-        }
-      },
-      {
-        $set: {
-          // if notification moved to future, re-enable it
-          sent: {
-            $cond: [
-              { $gt: ['$time', Date.now()] },
-              false,
-              '$sent'
-            ]
+  updateNotification = async (eventId: ObjectId, userId: number, { notifyBefore }: Notification) => {
+    if (notifyBefore) {
+      const notifyBeforeMs = beforeToMs(notifyBefore);
+      await this.db.updateOne({ eventId, userId }, [
+        {
+          $set: {
+            time: { $subtract: ['$eventTime', notifyBeforeMs] },
+            notifyBefore,
+            notifyBeforeMs
+          }
+        },
+        {
+          $set: {
+            // if notification moved to future, re-enable it
+            sent: { $cond: [{ $gt: ['$time', Date.now()] }, false, '$sent'] }
           }
         }
-      }
-    ], { session })
+      ]);
+    } else {
+      await this.db.deleteOne({ eventId, userId });
+    }
   }
 
   onEventUpdated = async (eventId: ObjectId, date: number, session: ClientSession) => {
     this.db.updateMany({ eventId }, [
       {
-        $lookup: {
-          from: 'users',
-          localField: 'userId',
-          foreignField: 'id',
-          as: 'user'
-        }
-      },
-      {
         $set: {
           eventTime: date,
-          time: {
-            $cond: [
-              { $ne: ['$user.settings.notifyBefore', null] },
-              { $subtract: [date, '$user.settings.notifyBeforeMs'] },
-              null
-            ]
-          }
+          time: { $subtract: [date, '$notifyBeforeMs'] }
         }
       },
       {

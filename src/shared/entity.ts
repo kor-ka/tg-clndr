@@ -17,11 +17,11 @@ export const Duraion = {
 export type BeforePreset = `${number}${keyof typeof Duraion}`
 
 export type UserSettings = {
-    notifyBefore: null | BeforePreset;
+    notifyBefore?: null | BeforePreset;
 }
 
 export type Notification = {
-    beforePreset: BeforePreset | null;
+    notifyBefore: BeforePreset | null;
 }
 
 export type ChatSettings = {
@@ -47,26 +47,27 @@ export type Event = {
         address: string
         location: readonly [number, number]
     }
+    notification?: Notification
 }
 
 
-type ClientCommandEvent = Omit<Event, 'uid' | 'deleted' | 'seq' | 'attendees'>
-export type ClientApiCreateEventCommand = {
+type ClientApiEvent = Omit<Event, 'uid' | 'deleted' | 'seq' | 'attendees' | 'notification'>
+export type ClientApiEventCreateCommand = {
     type: 'create';
-    event: ClientCommandEvent;
+    event: ClientApiEvent;
 }
 
-export type ClientApiUpdateEventCommand = {
+export type ClientApiEventUpdateCommand = {
     type: 'update';
-    event: ClientCommandEvent;
+    event: ClientApiEvent;
 }
 
-export type ClientApiDeleteEventCommand = {
+export type ClientApiEventDeleteCommand = {
     type: 'delete';
     id: string;
 }
 
-export type ClientApiUpsertCommand = ClientApiCreateEventCommand | ClientApiUpdateEventCommand;
-export type ClientApiCommand = ClientApiUpsertCommand | ClientApiDeleteEventCommand;
+export type ClientApiEventUpsertCommand = ClientApiEventCreateCommand | ClientApiEventUpdateCommand;
+export type ClientApiEventCommand = ClientApiEventUpsertCommand | ClientApiEventDeleteCommand;
 
 export type EventUpdate = { event: Event, type: 'create' | 'update' | 'delete' }

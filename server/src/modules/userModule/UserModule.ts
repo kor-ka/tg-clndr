@@ -49,7 +49,6 @@ export class UserModule {
         $pull: { ...disabled ? {} : { disabledChatIds: chatId } },
         $setOnInsert: {
           "settings.notifyBefore": null,
-          "settings.notifyBeforeMs": null
         }
       },
       { upsert: true }
@@ -79,17 +78,7 @@ export class UserModule {
         notifyBeforeMs: settings.notifyBefore ? beforeToMs(settings.notifyBefore) : null
       }
     }
-    const session = MDBClient.startSession()
-    try {
-      await session.withTransaction(async () => {
-        await this.db.updateOne({ id: userId }, { $set: { ...notificationSettings } }, { session })
-        if (notificationSettings) {
-          await container.resolve(NotificationsModule).onUpdateNotificationSettings(userId, notificationSettings, session)
-        }
-      })
-    } finally {
-      await session.endSession();
-    }
+    await this.db.updateOne({ id: userId }, { $set: { ...notificationSettings } })
 
     const user = await this.db.findOne({ id: userId })
     if (!user) {

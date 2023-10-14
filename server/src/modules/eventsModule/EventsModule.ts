@@ -3,7 +3,7 @@ import { container, singleton } from "tsyringe";
 import { MDBClient } from "../../utils/MDB";
 import { ObjectId, WithId } from "mongodb";
 import { Subject } from "../../utils/subject";
-import { ClientApiUpsertCommand } from "../../../../src/shared/entity";
+import { ClientApiEventUpsertCommand } from "../../../../src/shared/entity";
 import { GeoModule } from "../geoModule/GeoModule";
 import { NotificationsModule } from "../notificationsModule/NotificationsModule";
 
@@ -27,7 +27,7 @@ export class EventsModule {
   //   })()
   // }
 
-  commitOperation = async (chatId: number, threadId: number | undefined, uid: number, command: ClientApiUpsertCommand) => {
+  commitOperation = async (chatId: number, threadId: number | undefined, uid: number, command: ClientApiEventUpsertCommand) => {
     const { type, event } = command;
     const session = MDBClient.startSession()
     let _id: ObjectId | undefined
@@ -41,7 +41,7 @@ export class EventsModule {
           const eventData = { ...event, uid, chatId, threadId };
           // create new event
           _id = (await this.events.insertOne({ ...eventData, seq: 0, idempotencyKey: `${uid}_${id}`, attendees: { yes: [uid], no: [], maybe: [] } }, { session })).insertedId
-          await container.resolve(NotificationsModule).upsertNotification(_id, event.date, true, uid, session)
+          await container.resolve(NotificationsModule).updateNotificationOnAttend(_id, event.date, true, uid, session)
         } else if (type === 'update') {
           const { id, ...event } = command.event
           _id = new ObjectId(id)
@@ -149,7 +149,7 @@ export class EventsModule {
         await this.events.updateOne({ _id }, { $pull: { [pullFrom[0]]: uid, [pullFrom[1]]: uid }, $addToSet: { [`attendees.${addTo}`]: uid }, $inc: { seq: 1 } }, { session })
         // update notifications
         updatedEvent = (await this.events.findOne({ _id }, { session }))!
-        await container.resolve(NotificationsModule).upsertNotification(_id, updatedEvent.date, status === 'yes', uid, session)
+        await container.resolve(NotificationsModule).updateNotificationOnAttend(_id, updatedEvent.date, status === 'yes', uid, session)
       })
     } finally {
       await session.endSession();

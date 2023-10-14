@@ -39,7 +39,6 @@ export class ChatMetaModule {
     await this.db.updateOne(
       { chatId },
       { $set: upd },
-      { upsert: true }
     );
     return this.onMetaUpdated(chatId);
   }

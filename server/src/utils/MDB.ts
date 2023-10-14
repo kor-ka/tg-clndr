@@ -48,7 +48,7 @@ const _initMDB = async () => {
     );
 
     await MDB.collection("events").createIndex(
-      { chatId: 1, threadId: 1, idempotencyKey: 1, date: 1 },
+      { chatId: 1, threadId: 1, idempotencyKey: 1 },
       {
         name: "events:idempotencyUnique",
         unique: true,
@@ -59,6 +59,14 @@ const _initMDB = async () => {
       { id: 1 },
       {
         name: "users:unique",
+        unique: true,
+      }
+    );
+
+    await MDB.collection("settings").createIndex(
+      { chatId: 1 },
+      {
+        name: "chat_meta:unique",
         unique: true,
       }
     );

@@ -16,7 +16,7 @@ import { initMDB } from "./utils/MDB";
 import { MainScreenView, SplitAvailableContext, TimezoneContext, UserContext, UsersProviderContext } from "../../src/view/MainScreen";
 import { Event } from "../../src/shared/entity";
 import { EventsModule } from "./modules/eventsModule/EventsModule";
-import { savedOpsToApi, savedUsersToApi } from "./api/ClientAPI";
+import { savedEventsToApiLight, savedUsersToApi } from "./api/ClientAPI";
 import { UsersModule as UsersClientModule } from "../../src/model/UsersModule";
 import { UserModule } from "./modules/userModule/UserModule";
 import { VM } from "../../src/utils/vm/VM";
@@ -152,7 +152,7 @@ initMDB().then(() => {
       const { events } = await eventsModule.getEventsCached(chatId, threadId)
 
       const eventsMap = new Map<string, VM<Event>>()
-      savedOpsToApi(events).forEach(o => eventsMap.set(o.id, new VM(o)))
+      savedEventsToApiLight(events).forEach(o => eventsMap.set(o.id, new VM(o)))
 
       const users = await container.resolve(UserModule).getUsersCached(chatId)
       const usersProvider = new UsersClientModule(userId)

@@ -3,7 +3,7 @@ import { Event } from "../../../../src/shared/entity";
 import { MDB } from "../../utils/MDB";
 
 
-export type ServerEvent = Omit<Event, 'id'> & {
+export type ServerEvent = Omit<Event, 'id' | 'notification'> & {
     chatId: number,
     threadId: number | undefined,
     idempotencyKey: string,

@@ -1,6 +1,6 @@
 import * as socketIo from "socket.io";
 import { container } from "tsyringe";
-import { EventUpdate, User, Event, ClientApiCommand, ChatSettings, UserSettings } from "../../../src/shared/entity";
+import { EventUpdate, User, Event, ClientApiEventCommand, ChatSettings, UserSettings, Notification } from "../../../src/shared/entity";
 import { ChatMetaModule } from "../modules/chatMetaModule/ChatMetaModule";
 import { EventsModule } from "../modules/eventsModule/EventsModule";
 import { SavedEvent } from "../modules/eventsModule/eventStore";
@@ -9,24 +9,27 @@ import { SavedUser } from "../modules/userModule/userStore";
 import { checkTgAuth } from "./tg/getTgAuth";
 import { checkChatToken } from "./Auth";
 import { TelegramBot } from "./tg/tg";
-import { ChatMeta } from "../modules/chatMetaModule/chatMetaStore";
 import { SW } from "../utils/stopwatch";
+import { NotificationsModule } from "../modules/notificationsModule/NotificationsModule";
+import { ObjectId } from "mongodb";
+import { NOTIFICATIONS } from "../modules/notificationsModule/notificationsStore";
 
 export class ClientAPI {
     private io: socketIo.Server;
 
     private splitModule = container.resolve(EventsModule)
     private userModule = container.resolve(UserModule)
+    private notificationsModule = container.resolve(NotificationsModule)
     private chatMetaModule = container.resolve(ChatMetaModule)
     private bot = container.resolve(TelegramBot)
-    constructor(private socket: socketIo.Server) {
-        this.io = socket
+    constructor(server: socketIo.Server) {
+        this.io = server
     }
 
     readonly init = () => {
         this.splitModule.upateSubject.subscribe(state => {
             const { chatId, threadId, event, type } = state
-            const upd: EventUpdate = { event: savedOpToApi(event), type }
+            const upd: EventUpdate = { event: savedEventToApiLight(event), type }
             this.io.to('chatClient_' + [chatId, threadId].filter(Boolean).join('_')).emit('update', upd)
         })
 
@@ -67,7 +70,7 @@ export class ClientAPI {
                 sw.lap('check chat token')
 
                 socket.on("command", async (
-                    command: ClientApiCommand,
+                    command: ClientApiEventCommand,
                     ack: (res: { patch: { type: 'create' | 'update' | 'delete', event: Event }, error?: never } | { error: string, patch?: never }) => void) => {
                     try {
                         // TODO: sanitise op
@@ -82,10 +85,10 @@ export class ClientAPI {
                         const { type } = command;
                         if (type === 'create' || type === 'update') {
                             const event = await this.splitModule.commitOperation(chatId, threadId, tgData.user.id, command);
-                            ack({ patch: { event: savedOpToApi(event), type } });
+                            ack({ patch: { event: await savedEventToApiFull(event, tgData.user.id), type } });
                         } else if (type === 'delete') {
                             const event = await this.splitModule.deleteEvent(command.id)
-                            ack({ patch: { event: savedOpToApi(event), type } });
+                            ack({ patch: { event: savedEventToApiLight(event), type } });
                         }
 
                     } catch (e) {
@@ -105,7 +108,7 @@ export class ClientAPI {
                     ack: (res: { updated: Event, error?: never } | { error: string, updated?: never }) => void) => {
                     try {
                         const event = await this.splitModule.updateAtendeeStatus(chatId, threadId, eventId, tgData.user.id, status);
-                        ack({ updated: savedOpToApi(event) });
+                        ack({ updated: savedEventToApiLight(event) });
                     } catch (e) {
                         console.error(e)
                         let message = 'unknown error'
@@ -140,7 +143,23 @@ export class ClientAPI {
                     ack: (res: { updated: UserSettings, error?: never } | { error: string, updated?: never }) => void) => {
                     try {
                         const updated = await this.userModule.updateUserSettings(chatId, settings)
-                        ack({ updated: updated.settings });
+                        ack({ updated: updated.settings ?? {} });
+                    } catch (e) {
+                        console.error(e)
+                        let message = 'unknown error'
+                        if (e instanceof Error) {
+                            message = e.message
+                        }
+                        ack({ error: message })
+                    }
+                });
+
+                socket.on("notification_update", async (
+                    { eventId, notification }: { eventId: string, notification: Notification },
+                    ack: (res: { error?: string }) => void) => {
+                    try {
+                        await this.notificationsModule.updateNotification(new ObjectId(eventId), tgData.user.id, notification)
+                        ack({});
                     } catch (e) {
                         console.error(e)
                         let message = 'unknown error'
@@ -164,6 +183,7 @@ export class ClientAPI {
                     sw.lap('async start');
 
                     try {
+
                         const [
                             user,
                             usersSaved,
@@ -187,18 +207,18 @@ export class ClientAPI {
 
                         const users = savedUsersToApi(usersSaved, chatId, threadId)
                         const chatSettings = meta?.settings ?? {};
-                        const userSettings = user.settings
+                        const userSettings = user.settings ?? {}
                         const context = { isAdmin: member.status === 'administrator' || member.status === 'creator' };
 
                         sw.lap('convert');
 
                         // emit cached
-                        socket.emit("state", { events: savedOpsToApi(events), users, chatSettings, userSettings, context });
+                        socket.emit("state", { events: savedEventsToApiLight(events), users, chatSettings, userSettings, context });
                         sw.lap('emit');
                         sw.report()
 
                         { // emit updated
-                            const events = savedOpsToApi(await eventsPromise);
+                            const events = await savedEventsToApiFull(await eventsPromise, tgData.user.id);
                             socket.emit("state", { events, users, chatSettings, userSettings, context });
                         }
 
@@ -223,14 +243,25 @@ const mesure = <T>(factory: () => Promise<T>, tag: string) => {
     return promise
 }
 
-export const savedOpToApi = (saved: SavedEvent): Event => {
+export const savedEventToApiLight = (saved: SavedEvent): Event => {
     const { _id, ...event } = saved
     return { ...event, id: _id.toHexString() }
 }
 
-export const savedOpsToApi = (saved: SavedEvent[]): Event[] => {
-    return saved.map(savedOpToApi)
+export const savedEventsToApiLight = (saved: SavedEvent[]): Event[] => {
+    return saved.map(savedEventToApiLight)
 }
+
+export const savedEventToApiFull = async (saved: SavedEvent, userId: number): Promise<Event> => {
+    const event = savedEventToApiLight(saved)
+    event.notification = await NOTIFICATIONS().findOne({ eventId: saved._id, userId }) ?? undefined
+    return event
+}
+
+export const savedEventsToApiFull = (saved: SavedEvent[], userId: number): Promise<Event[]> => {
+    return Promise.all(saved.map((e) => savedEventToApiFull(e, userId)))
+}
+
 
 export const savedUserToApi = (saved: SavedUser, chatId: number, threadId?: number): User => {
     const { _id, chatIds, disabledChatIds, threadFullIds, settings, ...u } = saved

@@ -1,7 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import { VM } from "../utils/vm/VM";
 import Cookies from "js-cookie";
-import { ChatContext, ChatSettings, ClientApiCommand, Event, EventUpdate, User, UserSettings } from "../shared/entity";
+import { ChatContext, ChatSettings, ClientApiEventCommand, Event, EventUpdate, User, UserSettings } from "../shared/entity";
 import { Deffered } from "../utils/deffered";
 import { UsersModule } from "./UsersModule";
 import { EventsModule } from "./EventsModule";
@@ -94,7 +94,7 @@ export class SessionModel {
     }
 
     nextId = () => this.localOprationId++
-    commitCommand = (operation: ClientApiCommand): Promise<Event> => {
+    commitCommand = (operation: ClientApiEventCommand): Promise<Event> => {
         const d = new Deffered<Event>()
         this.emit("command", operation, (res: { patch: { event: Event, type: 'create' | 'update' | 'delete' }, error: never } | { error: string, patch: never }) => {
             console.log("on_op_ack", res)
