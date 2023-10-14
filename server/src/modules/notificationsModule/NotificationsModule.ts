@@ -1,8 +1,12 @@
 import { ClientSession, ObjectId } from "mongodb";
-import { singleton } from "tsyringe";
+import { container, singleton } from "tsyringe";
 import { NOTIFICATIONS } from "./notificationsStore";
 import { DurationDscrpitor, Duraion, Notification } from "../../../../src/shared/entity";
 import { USER } from "../userModule/userStore";
+import { CronJob } from "cron";
+import { __DEV__ } from "../../utils/dev";
+import { EVENTS } from "../eventsModule/eventStore";
+import { TelegramBot } from "../../api/tg/tg";
 
 export const beforeToMs = (before: DurationDscrpitor) => {
   const multiplyer = Duraion[before[before.length - 1] as keyof typeof Duraion] ?? 1
@@ -14,6 +18,42 @@ export const beforeToMs = (before: DurationDscrpitor) => {
 export class NotificationsModule {
   private db = NOTIFICATIONS();
   private users = USER();
+
+  constructor() {
+    new CronJob('* * * * *', async () => {
+      console.log('notifications cron fire')
+      try {
+        let i = 0;
+        await this.db
+          .find({ sent: { $ne: true }, time: { $lte: Date.now() } })
+          // tg limits
+          .limit(29 * 60)
+          .forEach((n) => {
+            setTimeout(async () => {
+              try {
+                // TODO: group/cache events
+                const event = await EVENTS().findOne({ _id: n.eventId });
+                if (event) {
+                  const user = await USER().findOne({ id: n.userId })
+                  if (user?.settings.enableNotifications) {
+                    await container.resolve(TelegramBot).sendNotification(event, n.userId);
+                  }
+                }
+                await this.db.updateOne({ _id: n._id }, { $set: { sent: true } });
+
+              } catch (e) {
+                console.error(e)
+              }
+
+              // ~30 m/s
+            }, i++ * 33)
+
+          })
+      } catch (e: any) {
+        console.error(e?.message)
+      }
+    }, null, !__DEV__);
+  }
 
   updateNotificationOnAttend = async (eventId: ObjectId, date: number, isAttendee: boolean, userId: number, session: ClientSession) => {
     if (isAttendee) {

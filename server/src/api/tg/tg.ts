@@ -10,6 +10,7 @@ import { MDBClient } from "../../utils/MDB";
 import { CronJob } from "cron";
 import { renderEvent } from "./renderEvent";
 import { getChatToken } from "../Auth";
+import { __DEV__ } from "../../utils/dev";
 
 const renderEventMessage = async (event: SavedEvent) => {
   const text = (await renderEvent(event)).join('\n');
@@ -44,7 +45,7 @@ export class TelegramBot {
 
   private token = process.env.TELEGRAM_BOT_TOKEN!;
   readonly bot = new TB(this.token, {
-    polling: true,
+    polling: !__DEV__,
   });
 
   onCommand = (command: string, callback: (msg: TB.Message, match: RegExpExecArray | null) => void) => {
@@ -71,6 +72,27 @@ export class TelegramBot {
         parse_mode: "HTML",
         reply_markup: { inline_keyboard: buttons },
       })))
+  }
+
+  sendNotification = async (event: SavedEvent, usrtId: number) => {
+    const text = (await renderEvent(event, { renderAttendees: false })).join('\n');
+    let key = [event.chatId, event.threadId].filter(Boolean).join('_');
+    const token = getChatToken(event.chatId);
+    key = [key, token].filter(Boolean).join('T');
+
+    const buttons: TB.InlineKeyboardButton[][] = [
+      [
+        {
+          text: "Calendar",
+          url: `https://t.me/clndrrrbot/clndr?startapp=${key}&startApp=${key}`,
+        },
+      ]
+    ];
+    await this.bot.sendMessage(usrtId, text, {
+      reply_markup: { inline_keyboard: buttons },
+      parse_mode: "HTML",
+      message_thread_id: event.threadId
+    });
   }
 
   private createPin = async (chatId: number, threadId: number | undefined) => {
@@ -334,7 +356,7 @@ And don't forget to pin the message with the button, so everyone can open the ap
       } catch (e: any) {
         console.error(e?.message)
       }
-    }, null, true);
+    }, null, !__DEV__);
 
   };
 

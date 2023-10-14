@@ -11,7 +11,7 @@ export const renderPin = async (chatId: number, threadId: number | undefined, ev
   const timeZones = new Set<string>();
   events.forEach(e => timeZones.add(e.tz));
 
-  let lines = (await Promise.all(events.map(e => renderEvent(e, timeZones)))).flat();
+  let lines = (await Promise.all(events.map(e => renderEvent(e, { timeZones })))).flat();
   lines = lines.length > 0 ? lines : ['🗓️ no upcoming events']
 
   lines.push('');

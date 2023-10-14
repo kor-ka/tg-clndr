@@ -28,11 +28,12 @@ const usersListStr = async (uids: number[]) => {
     return text
 }
 
-export const renderEvent = async ({ date, tz, title, description, attendees, deleted, geo }: SavedEvent, timeZones: Set<string> = new Set()) => {
+export const renderEvent = async ({ date, tz, title, description, attendees, deleted, geo }: SavedEvent, options?: { timeZones?: Set<string>, renderAttendees?: boolean }) => {
+    const { timeZones, renderAttendees } = options ?? {}
     const dateStr = new Date(date).toLocaleString('en', { month: 'short', day: 'numeric', timeZone: tz });
     const timeStr = new Date(date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h24', timeZone: tz });
 
-    const lines = [`${deleted ? "<s>" : ""}🗓️ ${dateStr} - <b>${htmlEntities(title.trim())}</b>, ${timeStr} ${timeZones.size > 1 ? `(${tz})` : ''}${deleted ? "</s>" : ""}`];
+    const lines = [`${deleted ? "<s>" : ""}🗓️ ${dateStr} - <b>${htmlEntities(title.trim())}</b>, ${timeStr} ${(timeZones?.size ?? 0) > 1 ? `(${tz})` : ''}${deleted ? "</s>" : ""}`];
     if (description.trim()) {
         lines.push(`✏️ ${htmlEntities(description.trim())}`);
     }
@@ -40,22 +41,24 @@ export const renderEvent = async ({ date, tz, title, description, attendees, del
         lines.push(`📍 <a href="https://maps.google.com/?q=${geo.location[0]},${geo.location[1]}">${htmlEntities(geo.address)}</a>`)
     }
 
-    let yesUsers = await usersListStr(attendees.yes);
-    yesUsers = yesUsers ? '✅ ' + yesUsers : '';
-    if (yesUsers) {
-        lines.push(yesUsers)
-    }
+    if (renderAttendees !== false) {
+        let yesUsers = await usersListStr(attendees.yes);
+        yesUsers = yesUsers ? '✅ ' + yesUsers : '';
+        if (yesUsers) {
+            lines.push(yesUsers)
+        }
 
-    let maybeUsers = await usersListStr(attendees.maybe);
-    maybeUsers = maybeUsers ? '🤔 ' + maybeUsers : '';
-    if (maybeUsers) {
-        lines.push(maybeUsers)
-    }
+        let maybeUsers = await usersListStr(attendees.maybe);
+        maybeUsers = maybeUsers ? '🤔 ' + maybeUsers : '';
+        if (maybeUsers) {
+            lines.push(maybeUsers)
+        }
 
-    let noUsers = await usersListStr(attendees.no);
-    noUsers = noUsers ? '🙅 ' + noUsers : '';
-    if (noUsers) {
-        lines.push(noUsers)
+        let noUsers = await usersListStr(attendees.no);
+        noUsers = noUsers ? '🙅 ' + noUsers : '';
+        if (noUsers) {
+            lines.push(noUsers)
+        }
     }
 
     lines.push('')
