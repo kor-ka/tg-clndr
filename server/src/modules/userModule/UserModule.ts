@@ -13,6 +13,18 @@ import { MDBClient } from "../../utils/MDB";
 export class UserModule {
   private db = USER();
 
+  // constructor() {
+  //   (async () => {
+  //     const a = this.db
+  //       .find()
+  //       .map(e => this.db.updateOne({ _id: e._id }, { $set: { "settings.notifyBefore": null, "settings.notifyBeforeMs": null } }))
+  //       .toArray()
+  //     await Promise.all((await a).flat())
+  //     console.log('migrated')
+  //   })()
+  // }
+
+
   readonly userUpdated = new Subject<{ chatId: number, user: SavedUser }>();
   private usersCache = new Map<number, SavedUser[]>;
 

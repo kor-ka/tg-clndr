@@ -31,7 +31,7 @@ export class NotificationsModule {
       {
         $set: {
           time: enabled ?
-            { $substr: ['$eventTime', beforeToMs(beforePreset)] }
+            { $subtract: ['$eventTime', beforeToMs(beforePreset)] }
             : null,
         }
       },
@@ -66,7 +66,7 @@ export class NotificationsModule {
           time: {
             $cond: [
               { $ne: ['$user.settings.notifyBefore', null] },
-              { $substr: [date, '$user.settings.notifyBeforeMs'] },
+              { $subtract: [date, '$user.settings.notifyBeforeMs'] },
               null
             ]
           }
