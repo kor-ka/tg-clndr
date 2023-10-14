@@ -1,26 +1,26 @@
 import React from "react";
-import { SessionModel } from "../model/SessionModel";
-import { useVMvalue } from "../utils/vm/useVM";
-import { ListItem, Card, CardLight } from "./uikit/kit";
-import { useHandleOperation } from "./useHandleOperation";
-import { WithModel } from "./utils/withModelHOC";
+import { SessionModel } from "../../model/SessionModel";
+import { useVMvalue } from "../../utils/vm/useVM";
+import { ListItem, Card, CardLight } from "../uikit/kit";
+import { useHandleOperation } from "../useHandleOperation";
+import { WithModel } from "../utils/withModelHOC";
 
-export const SettingsComponent = WithModel(React.memo((({ model }: { model: SessionModel }) => {
+export const ChatSettings = WithModel(React.memo((({ model }: { model: SessionModel }) => {
     const settings = useVMvalue(model.chatSettings)
     const context = useVMvalue(model.context)
 
     const [handleOperation, loading] = useHandleOperation()
 
     const switchPublicEdit = React.useCallback(() => {
-        handleOperation(() => model.updateSettings({ allowPublicEdit: !settings?.allowPublicEdit }))
+        handleOperation(() => model.updateChatSettings({ allowPublicEdit: !settings.allowPublicEdit }))
     }, [settings])
 
     const switchSendMessage = React.useCallback(() => {
-        handleOperation(() => model.updateSettings({ enableEventMessages: !settings?.enableEventMessages }))
+        handleOperation(() => model.updateChatSettings({ enableEventMessages: !settings.enableEventMessages }))
     }, [settings])
 
-    return (context.isAdmin && !!settings) ? <>
-        <CardLight style={{ marginTop: 24 }}><ListItem subtitle="Admin settings" /></CardLight>
+    return (context.isAdmin) ? <>
+        <CardLight><ListItem subtitle="Chat settings" /></CardLight>
         <Card >
             <ListItem
                 onClick={switchPublicEdit}

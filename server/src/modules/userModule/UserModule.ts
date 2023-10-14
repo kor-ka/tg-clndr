@@ -15,11 +15,7 @@ export class UserModule {
 
   // constructor() {
   //   (async () => {
-  //     const a = this.db
-  //       .find()
-  //       .map(e => this.db.updateOne({ _id: e._id }, { $set: { "settings.notifyBefore": null, "settings.notifyBeforeMs": null } }))
-  //       .toArray()
-  //     await Promise.all((await a).flat())
+  //     await this.db.updateMany({}, { $unset: { 'settings.notifyBeforeMs': "" } })
   //     console.log('migrated')
   //   })()
   // }
@@ -71,14 +67,12 @@ export class UserModule {
   };
 
   updateUserSettings = async (userId: number, settings: Partial<UserSettings>) => {
-    let notificationSettings: Pick<ServerUserSettings, 'notifyBefore' | 'notifyBeforeMs'> | undefined = undefined
-    if (settings.notifyBefore !== undefined) {
-      notificationSettings = {
-        notifyBefore: settings.notifyBefore,
-        notifyBeforeMs: settings.notifyBefore ? beforeToMs(settings.notifyBefore) : null
+    await this.db.updateOne({ id: userId }, {
+      $set: {
+        ...settings.notifyBefore !== undefined ? { 'settings.notifyBefore': settings.notifyBefore } : {},
+        ...settings.enableNotifications !== undefined ? { 'settings.enableNotifications': settings.enableNotifications } : {}
       }
-    }
-    await this.db.updateOne({ id: userId }, { $set: { ...notificationSettings } })
+    })
 
     const user = await this.db.findOne({ id: userId })
     if (!user) {

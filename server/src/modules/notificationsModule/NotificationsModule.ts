@@ -1,10 +1,10 @@
 import { ClientSession, ObjectId } from "mongodb";
 import { singleton } from "tsyringe";
 import { NOTIFICATIONS } from "./notificationsStore";
-import { BeforePreset, Duraion, Notification } from "../../../../src/shared/entity";
+import { DurationDscrpitor, Duraion, Notification } from "../../../../src/shared/entity";
 import { USER } from "../userModule/userStore";
 
-export const beforeToMs = (before: BeforePreset) => {
+export const beforeToMs = (before: DurationDscrpitor) => {
   const multiplyer = Duraion[before[before.length - 1] as keyof typeof Duraion] ?? 1
   const number = Number(before.slice(0, before.length - 1))
   return number * multiplyer
@@ -17,18 +17,17 @@ export class NotificationsModule {
 
   updateNotificationOnAttend = async (eventId: ObjectId, date: number, isAttendee: boolean, userId: number, session: ClientSession) => {
     if (isAttendee) {
-      const { settings } = (await this.users.findOne({ id: userId }))!;
-      const notifyBefore = settings?.notifyBefore
-      if (notifyBefore) {
+      const { settings: { enableNotifications, notifyBefore } } = (await this.users.findOne({ id: userId }))!;
+      if (enableNotifications && notifyBefore) {
         const notifyBeforeMs = beforeToMs(notifyBefore)
         await this.db.updateOne({ eventId, userId }, {
-          $set: {
+          $setOnInsert: {
+            sent: false,
             time: date - notifyBeforeMs,
             eventTime: date,
             notifyBefore,
             notifyBeforeMs
-          },
-          $setOnInsert: { sent: false }
+          }
         }, { upsert: true, session })
       }
     } else {
@@ -53,7 +52,7 @@ export class NotificationsModule {
             sent: { $cond: [{ $gt: ['$time', Date.now()] }, false, '$sent'] }
           }
         }
-      ]);
+      ], { upsert: true });
     } else {
       await this.db.deleteOne({ eventId, userId });
     }

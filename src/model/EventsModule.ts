@@ -24,4 +24,8 @@ export class EventsModule {
         return this.events.val.get(id)?.val as T
     }
 
+    getEventVM = (id: string) => {
+        return this.events.val.get(id)
+    }
+
 }

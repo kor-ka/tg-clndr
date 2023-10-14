@@ -16,9 +16,10 @@ import { useSSRReadyNavigate } from "./utils/navigation/useSSRReadyNavigate";
 import { BackButtonController } from "./uikit/tg/BackButtonController";
 import { MainButtonController } from "./uikit/tg/MainButtonController";
 import { Card, ListItem, UsersPics, CardLight, Link } from "./uikit/kit";
-import { SettingsComponent } from "./SettingsComponent";
 import { ModelContext } from "./ModelContext";
 import { WithModel } from "./utils/withModelHOC";
+import { SettignsIcon } from "./uikit/SettingsIcon";
+import { SettingsScreen } from "./settigns/SettingsScreen";
 
 export const UserContext = React.createContext<number | undefined>(undefined);
 export const UsersProviderContext = React.createContext<UsersModule>(new UsersModule());
@@ -38,6 +39,10 @@ export const renderApp = (model: SessionModel) => {
         {
             path: "/tg/editEvent",
             element: <EventScreen />,
+        },
+        {
+            path: "/tg/settings",
+            element: <SettingsScreen />,
         },
     ]);
 
@@ -93,7 +98,7 @@ const ToSplit = React.memo(() => {
 const MainScreenAddEventButton = WithModel(({ model }: { model: SessionModel }) => {
     const nav = useSSRReadyNavigate();
     const onClick = React.useCallback(() => {
-        const canEdit = model.chatSettings.val?.allowPublicEdit || model.context.val.isAdmin
+        const canEdit = model.chatSettings.val.allowPublicEdit || model.context.val.isAdmin
         if (canEdit) {
             nav("/tg/addEvent")
         } else {
@@ -104,11 +109,22 @@ const MainScreenAddEventButton = WithModel(({ model }: { model: SessionModel }) 
 })
 
 export const MainScreenView = ({ eventsVM }: { eventsVM: VM<Map<string, VM<Event>>> }) => {
+    const nav = useSSRReadyNavigate();
+    const toSettings = React.useCallback(() => nav("/tg/settings"), [nav])
     return <div style={{ display: 'flex', flexDirection: 'column', padding: "8px 0px", paddingBottom: 96 }}>
         <BackButtonController />
         <EventsView eventsVM={eventsVM} />
-        {/* TODO: move to separate screen once settings button available for tApps */}
-        <SettingsComponent />
+        <Card onClick={toSettings}>
+            <ListItem
+                titleView={
+                    <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+                        <div style={{ width: 46, height: 46, borderRadius: 46, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: 'var(--tg-theme-button-color)' }}>
+                            <SettignsIcon />
+                        </div>
+                        <span style={{ margin: 8 }}>Settings</span>
+                    </div>
+                } />
+        </Card>
         <MainScreenAddEventButton />
         <ToSplit />
     </div>

@@ -1,7 +1,7 @@
 import React from "react";
 import { useSearchParams } from "react-router-dom";
 import { SessionModel } from "../model/SessionModel";
-import { Event } from "../shared/entity";
+import { DurationDscrpitor, Event, NotifyBeforeOptions, Notification } from "../shared/entity";
 import { useVMvalue } from "../utils/vm/useVM";
 import { UsersProviderContext, UserContext } from "./MainScreen";
 import { ListItem, UserPic, Card, Button } from "./uikit/kit";
@@ -18,10 +18,39 @@ const Attendee = React.memo(({ uid, status }: { uid: number, status: 'yes' | 'no
     return <ListItem titleView={<div style={{ display: 'flex', flexDirection: "row", alignItems: 'center' }}><UserPic uid={uid} style={{ marginRight: 8 }} />{user.fullName}</div>} right={status === 'yes' ? '✅' : status === 'no' ? '🙅' : status === 'maybe' ? '🤔' : ''} />
 })
 
+export const NotificationComponent = WithModel(React.memo((({ model, cahedEvent }: { model: SessionModel, cahedEvent: Event }) => {
+    const event = useVMvalue(model.eventsModule.getEventVM(cahedEvent.id)!)
+
+    const [handleOperation, loading] = useHandleOperation()
+
+    const updateNotification = React.useCallback((notifyBefore: DurationDscrpitor | null) => {
+        handleOperation(() => model.updateNotification(event.id, { notifyBefore }))
+    }, [event, handleOperation])
+
+    const onAlertChange = React.useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+        updateNotification(e.target.value === 'none' ? null : e.target.value as any)
+    }, [updateNotification])
+
+    return <>
+        <Card >
+            <ListItem
+                titile="Alert"
+                right={
+                    <select disabled={loading} onChange={onAlertChange} value={event.notification?.notifyBefore ?? 'none'}>
+                        <option value={'none'}>None</option>
+                        {NotifyBeforeOptions.map(o => <option>{o}</option>)}
+                    </select>
+                } />
+        </Card>
+    </>
+})))
+
+
 export const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
-    const settings = useVMvalue(model.chatSettings);
+    const chatSettings = useVMvalue(model.chatSettings);
+    const userSettings = useVMvalue(model.userSettings);
     const context = useVMvalue(model.context);
-    const canEdit = (settings?.allowPublicEdit || context.isAdmin);
+    const canEdit = (chatSettings.allowPublicEdit || context.isAdmin);
 
     const uid = React.useContext(UserContext);
 
@@ -141,6 +170,8 @@ export const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
                 <Button key={'maybe'} onClick={onStatusChangeMaybe} disabled={disable} style={{ backgroundColor: status === 'maybe' ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-secondary-bg-color)', margin: 0 }}><ListItem titleStyle={{ color: status === 'maybe' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} titile="Maybe" /></Button>
                 <Button key={'no'} onClick={onStatusChangeNo} disabled={disable} style={{ backgroundColor: status === 'no' ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-secondary-bg-color)', margin: 0 }}><ListItem titleStyle={{ color: status === 'no' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} titile="Decline" /></Button>
             </Card>}
+
+            {userSettings.enableNotifications && editEv && <NotificationComponent cahedEvent={editEv} />}
 
             {((editEv?.attendees.yes.length ?? 0) > 0) && <Card key={'yes'}>{editEv?.attendees.yes.map(uid => <Attendee key={uid} uid={uid} status="yes" />)}</Card>}
             {((editEv?.attendees.maybe.length ?? 0) > 0) && <Card key={'maybe'}>{editEv?.attendees.maybe.map(uid => <Attendee key={uid} uid={uid} status="maybe" />)}</Card>}

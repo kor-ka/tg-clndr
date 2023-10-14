@@ -108,7 +108,7 @@ export class ClientAPI {
                     ack: (res: { updated: Event, error?: never } | { error: string, updated?: never }) => void) => {
                     try {
                         const event = await this.splitModule.updateAtendeeStatus(chatId, threadId, eventId, tgData.user.id, status);
-                        ack({ updated: savedEventToApiLight(event) });
+                        ack({ updated: await savedEventToApiFull(event, tgData.user.id) });
                     } catch (e) {
                         console.error(e)
                         let message = 'unknown error'
@@ -142,8 +142,8 @@ export class ClientAPI {
                     settings: Partial<UserSettings>,
                     ack: (res: { updated: UserSettings, error?: never } | { error: string, updated?: never }) => void) => {
                     try {
-                        const updated = await this.userModule.updateUserSettings(chatId, settings)
-                        ack({ updated: updated.settings ?? {} });
+                        const updated = await this.userModule.updateUserSettings(tgData.user.id, settings)
+                        ack({ updated: updated.settings });
                     } catch (e) {
                         console.error(e)
                         let message = 'unknown error'
@@ -205,9 +205,13 @@ export class ClientAPI {
                         ])
                         sw.lap('promises');
 
+                        if (!meta) {
+                            throw new Error(`Chat not fround: ${chatId}`)
+                        }
+
                         const users = savedUsersToApi(usersSaved, chatId, threadId)
-                        const chatSettings = meta?.settings ?? {};
-                        const userSettings = user.settings ?? {}
+                        const chatSettings = meta.settings;
+                        const userSettings = user.settings
                         const context = { isAdmin: member.status === 'administrator' || member.status === 'creator' };
 
                         sw.lap('convert');
@@ -254,7 +258,8 @@ export const savedEventsToApiLight = (saved: SavedEvent[]): Event[] => {
 
 export const savedEventToApiFull = async (saved: SavedEvent, userId: number): Promise<Event> => {
     const event = savedEventToApiLight(saved)
-    event.notification = await NOTIFICATIONS().findOne({ eventId: saved._id, userId }) ?? undefined
+    event.notification = await NOTIFICATIONS().findOne({ eventId: saved._id, userId })
+    console.log('savedEventToApiFull', event)
     return event
 }
 

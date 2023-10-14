@@ -23,14 +23,9 @@ const tryInit = () => {
 
 
   import('./view/MainScreen').then(({ renderApp }) => {
-
-    const onEvents = (e: Map<string, VM<Event>>) => {
-      if (model.loaded) {
-        model.eventsModule.events.unsubscribe(onEvents)
-        root.render(renderApp(model))
-      }
-    }
-    model.eventsModule.events.subscribe(onEvents);
+    model.ready.promise.then(() => {
+      root.render(renderApp(model))
+    })
   })
 
   return true

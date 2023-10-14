@@ -1,7 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import { VM } from "../utils/vm/VM";
 import Cookies from "js-cookie";
-import { ChatContext, ChatSettings, ClientApiEventCommand, Event, EventUpdate, User, UserSettings } from "../shared/entity";
+import { ChatContext, ChatSettings, ClientApiEventCommand, Event, EventUpdate, User, UserSettings, Notification } from "../shared/entity";
 import { Deffered } from "../utils/deffered";
 import { UsersModule } from "./UsersModule";
 import { EventsModule } from "./EventsModule";
@@ -15,12 +15,12 @@ export class SessionModel {
     readonly users: UsersModule;
     readonly chatId: number
 
-    readonly chatSettings = new VM<ChatSettings | undefined>(undefined)
-    readonly userSettings = new VM<UserSettings | undefined>(undefined)
+    readonly chatSettings = new VM<ChatSettings>({ allowPublicEdit: false, enableEventMessages: false })
+    readonly userSettings = new VM<UserSettings>({ notifyBefore: null })
 
     readonly context = new VM<ChatContext>({ isAdmin: false })
 
-    loaded = false;
+    readonly ready = new Deffered<void>()
 
     private localOprationId = Date.now();
 
@@ -59,21 +59,17 @@ export class SessionModel {
             console.log(e);
         });
 
-        this.socket.on("state", ({ events, users, chatSettings, context }: { events: Event[], users: User[], chatSettings: ChatSettings, context: ChatContext }) => {
+        this.socket.on("state", ({ events, users, chatSettings, userSettings, context }: { events: Event[], users: User[], chatSettings: ChatSettings, userSettings: UserSettings, context: ChatContext }) => {
             console.log("on_State", { events, users })
+            this.userSettings.next(userSettings)
             this.chatSettings.next(chatSettings)
             this.context.next(context)
-            this.loaded = true;
-            if (events) {
-                // happens on reconnect and cache update
-                // since some event may be deleted in between, rewrite whole event
-                // TODO: detect deletions?
-                this.eventsModule.events.next(new Map(events.map(e => [e.id, new VM(e)])))
-            }
-            if (users) {
-                users.forEach(this.users.updateUser)
-            }
-
+            // happens on reconnect and cache update
+            // since some event may be deleted in between, rewrite whole event
+            // TODO: detect deletions?
+            this.eventsModule.events.next(new Map(events.map(e => [e.id, new VM(e)])))
+            users.forEach(this.users.updateUser)
+            this.ready.resolve()
         });
 
         this.socket.on("user", (user: User) => {
@@ -126,7 +122,7 @@ export class SessionModel {
         return d.promise
     };
 
-    updateSettings = (update: Partial<ChatSettings>) => {
+    updateChatSettings = (update: Partial<ChatSettings>) => {
         const d = new Deffered<ChatSettings>()
         this.emit("update_chat_settings", update, (res: { updated: ChatSettings, error: never } | { error: string, updated: never }) => {
             const { updated, error } = res
@@ -140,13 +136,30 @@ export class SessionModel {
         return d.promise
     }
 
-    updateUserSettings = (update: Partial<ChatSettings>) => {
+    updateUserSettings = (update: Partial<UserSettings>) => {
         const d = new Deffered<UserSettings>()
         this.emit("update_user_settings", update, (res: { updated: UserSettings, error: never } | { error: string, updated: never }) => {
             const { updated, error } = res
             if (updated) {
                 this.userSettings.next(updated)
                 d.resolve(updated)
+            } else {
+                d.reject(new Error(error))
+            }
+        });
+        return d.promise
+    }
+
+    updateNotification = (eventId: string, notification: Notification) => {
+        const d = new Deffered<Notification>()
+        this.emit("notification_update", { eventId, notification }, (res: { error?: string }) => {
+            const { error } = res
+            if (!error) {
+                const vm = this.eventsModule.getEventVM(eventId)
+                if (vm) {
+                    vm.next({ ...vm.val, notification })
+                }
+                d.resolve(notification)
             } else {
                 d.reject(new Error(error))
             }

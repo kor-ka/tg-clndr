@@ -14,14 +14,17 @@ export const Duraion = {
     w: 1000 * 60 * 60 * 24 * 7
 }
 
-export type BeforePreset = `${number}${keyof typeof Duraion}`
+export type DurationDscrpitor = `${number}${keyof typeof Duraion}`
+
+export const NotifyBeforeOptions: DurationDscrpitor[] = ['1m', '5m', '10m', '15m', '30m', '1h', '2h', '1d', '2d', '1w']
 
 export type UserSettings = {
-    notifyBefore?: null | BeforePreset;
+    enableNotifications?: boolean
+    notifyBefore: null | DurationDscrpitor;
 }
 
 export type Notification = {
-    notifyBefore: BeforePreset | null;
+    notifyBefore: DurationDscrpitor | null;
 }
 
 export type ChatSettings = {
@@ -43,15 +46,15 @@ export type Event = {
     deleted?: boolean;
     seq: number;
     attendees: { yes: number[], no: number[], maybe: number[] }
-    geo?: {
+    geo: {
         address: string
         location: readonly [number, number]
-    }
-    notification?: Notification
+    } | null
+    notification?: Notification | null
 }
 
 
-type ClientApiEvent = Omit<Event, 'uid' | 'deleted' | 'seq' | 'attendees' | 'notification'>
+type ClientApiEvent = Omit<Event, 'uid' | 'deleted' | 'seq' | 'attendees' | 'geo' | 'notification'>
 export type ClientApiEventCreateCommand = {
     type: 'create';
     event: ClientApiEvent;

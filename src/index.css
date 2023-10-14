@@ -112,3 +112,9 @@ input[type=number] {
 .list_item:active {
   opacity: 0.8;
 }
+
+select {
+  background-color: transparent;
+  background: transparent;
+  border: none;
+}

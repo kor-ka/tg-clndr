@@ -40,7 +40,7 @@ export class EventsModule {
           const { id, ...event } = command.event
           const eventData = { ...event, uid, chatId, threadId };
           // create new event
-          _id = (await this.events.insertOne({ ...eventData, seq: 0, idempotencyKey: `${uid}_${id}`, attendees: { yes: [uid], no: [], maybe: [] } }, { session })).insertedId
+          _id = (await this.events.insertOne({ ...eventData, seq: 0, idempotencyKey: `${uid}_${id}`, attendees: { yes: [uid], no: [], maybe: [] }, geo: null }, { session })).insertedId
           await container.resolve(NotificationsModule).updateNotificationOnAttend(_id, event.date, true, uid, session)
         } else if (type === 'update') {
           const { id, ...event } = command.event
