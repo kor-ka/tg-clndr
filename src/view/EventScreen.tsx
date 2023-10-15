@@ -6,6 +6,7 @@ import { useVMvalue } from "../utils/vm/useVM";
 import { UsersProviderContext, UserContext } from "./MainScreen";
 import { ListItem, UserPic, Card, Button } from "./uikit/kit";
 import { BackButtonController } from "./uikit/tg/BackButtonController";
+import { ClosingConfirmationController } from "./uikit/tg/ClosingConfirmationController";
 import { MainButtonController } from "./uikit/tg/MainButtonController";
 import { useHandleOperation } from "./useHandleOperation";
 import { useGoHome } from "./utils/navigation/useGoHome";
@@ -141,7 +142,7 @@ export const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
         })
     }, [model, editEvId, handleOperation, goHome]);
 
-    const showButton = (!editEv || edited) && canEdit;
+    const upsertAvailable = (!editEv || edited) && canEdit;
 
     const crazyDateFormat = React.useMemo(() => {
         var tzoffset = (new Date()).getTimezoneOffset() * 60000; //offset in milliseconds
@@ -179,6 +180,7 @@ export const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
 
             {editEv && canEdit && <Button disabled={disable} onClick={onDeleteClick}><ListItem titleStyle={{ color: "var(--text-destructive-color)", alignSelf: 'center' }} titile="DELETE EVENT" /></Button>}
         </div>
-        <MainButtonController isVisible={showButton} onClick={onClick} text={editEv ? "SAVE" : "ADD EVENT"} progress={loading} />
+        {upsertAvailable && <ClosingConfirmationController />}
+        <MainButtonController isVisible={upsertAvailable} onClick={onClick} text={editEv ? "SAVE" : "ADD EVENT"} progress={loading} />
     </>
 })
