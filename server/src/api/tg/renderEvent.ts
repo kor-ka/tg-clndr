@@ -37,7 +37,7 @@ const renderAtChat = (atChat?: { name: string, id: number }) => {
             linkChatIdStr = linkChatIdStr.replace('-1', '')
             linkChatId = Number.parseInt(linkChatIdStr)
         }
-        return `<a href="https://t.me/c/${linkChatId}/-1">${name}</a>`
+        return `<a href="https://t.me/c/${linkChatId}/-1">@‌${htmlEntities(name)}</a>`
     } else {
         return ""
     }
@@ -48,7 +48,7 @@ export const renderEvent = async ({ date, tz, title, description, attendees, del
     const dateStr = new Date(date).toLocaleString('en', { month: 'short', day: 'numeric', timeZone: tz });
     const timeStr = new Date(date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h24', timeZone: tz });
 
-    const lines = [`${deleted ? "<s>" : ""}🗓️ ${dateStr} - <b>${htmlEntities(title.trim() + renderAtChat(atChat))}</b>, ${timeStr} ${(timeZones?.size ?? 0) > 1 ? `(${tz})` : ''}${deleted ? "</s>" : ""}`];
+    const lines = [`${deleted ? "<s>" : ""}🗓️ ${dateStr} - <b>${htmlEntities(title.trim()) + renderAtChat(atChat)}</b>, ${timeStr} ${(timeZones?.size ?? 0) > 1 ? `(${tz})` : ''}${deleted ? "</s>" : ""}`];
     if (description.trim()) {
         lines.push(`✏️ ${htmlEntities(description.trim())}`);
     }
