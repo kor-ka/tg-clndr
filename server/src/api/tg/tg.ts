@@ -76,7 +76,12 @@ export class TelegramBot {
 
   sendNotification = async (event: SavedEvent, usrtId: number) => {
     const chatMeta = await this.chatMetaModule.getChatMeta(event.chatId)
-    const text = (await renderEvent(event, { renderAttendees: false, atChat: chatMeta ? { id: chatMeta.chatId, name: chatMeta.name } : undefined })).join('\n');
+    const text = (await renderEvent(event,
+      {
+        renderAttendees: false,
+        atChat: chatMeta ? { id: chatMeta.chatId, name: chatMeta.name } : undefined,
+        renderDate: event.date - Date.now() >= 1000 * 60 * 60 * 24,
+      })).join('\n');
     let key = [event.chatId, event.threadId].filter(Boolean).join('_');
     const token = getChatToken(event.chatId);
     key = [key, token].filter(Boolean).join('T');
