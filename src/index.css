@@ -117,4 +117,6 @@ select {
   background-color: transparent;
   background: transparent;
   border: none;
+  text-align: right;
+  text-align-last: right;
 }
