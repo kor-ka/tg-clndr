@@ -76,12 +76,17 @@ export class NotificationsModule {
   }
 
   updateNotification = async (eventId: ObjectId, userId: number, { notifyBefore }: Notification) => {
+    const event = await EVENTS().findOne({ _id: eventId })
+    if (!event) {
+      throw new Error(`event not found: ${eventId} `)
+    }
     if (notifyBefore) {
       const notifyBeforeMs = beforeToMs(notifyBefore);
       await this.db.updateOne({ eventId, userId }, [
         {
           $set: {
-            time: { $subtract: ['$eventTime', notifyBeforeMs] },
+            eventTime: event.date,
+            time: event.date - notifyBeforeMs,
             notifyBefore,
             notifyBeforeMs
           }
