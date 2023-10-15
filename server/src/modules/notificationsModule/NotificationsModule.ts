@@ -31,12 +31,17 @@ export class NotificationsModule {
           .forEach((n) => {
             setTimeout(async () => {
               try {
-                // TODO: group/cache events
-                const event = await EVENTS().findOne({ _id: n.eventId });
-                if (event) {
-                  const user = await USER().findOne({ id: n.userId })
-                  if (user?.settings.enableNotifications) {
-                    await container.resolve(TelegramBot).sendNotification(event, n.userId);
+                // non-outdated
+                if (n.time && (Date.now() - n.time < 1000 * 60 * 60)) {
+                  // TODO: group/cache events
+                  const event = await EVENTS().findOne({ _id: n.eventId });
+                  // event still exists
+                  if (event) {
+                    const user = await USER().findOne({ id: n.userId })
+                    // user enabled notifications
+                    if (user?.settings.enableNotifications) {
+                      await container.resolve(TelegramBot).sendNotification(event, n.userId);
+                    }
                   }
                 }
                 await this.db.updateOne({ _id: n._id }, { $set: { sent: true } });
