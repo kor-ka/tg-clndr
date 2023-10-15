@@ -75,7 +75,8 @@ export class TelegramBot {
   }
 
   sendNotification = async (event: SavedEvent, usrtId: number) => {
-    const text = (await renderEvent(event, { renderAttendees: false })).join('\n');
+    const chatMeta = await this.chatMetaModule.getChatMeta(event.chatId)
+    const text = (await renderEvent(event, { renderAttendees: false, chatName: chatMeta?.name })).join('\n');
     let key = [event.chatId, event.threadId].filter(Boolean).join('_');
     const token = getChatToken(event.chatId);
     key = [key, token].filter(Boolean).join('T');
@@ -83,7 +84,7 @@ export class TelegramBot {
     const buttons: TB.InlineKeyboardButton[][] = [
       [
         {
-          text: "Calendar",
+          text: `${chatMeta?.name ?? ''} Calendar`.trim(),
           url: `https://t.me/clndrrrbot/clndr?startapp=${key}&startApp=${key}`,
         },
       ]
