@@ -13,6 +13,7 @@ import { SW } from "../utils/stopwatch";
 import { NotificationsModule } from "../modules/notificationsModule/NotificationsModule";
 import { ObjectId } from "mongodb";
 import { NOTIFICATIONS } from "../modules/notificationsModule/notificationsStore";
+import { StatsModule } from "../modules/statsModule/StatsModule";
 
 export class ClientAPI {
     private io: socketIo.Server;
@@ -22,6 +23,7 @@ export class ClientAPI {
     private notificationsModule = container.resolve(NotificationsModule)
     private chatMetaModule = container.resolve(ChatMetaModule)
     private bot = container.resolve(TelegramBot)
+    private stats = container.resolve(StatsModule)
     constructor(server: socketIo.Server) {
         this.io = server
     }
@@ -66,6 +68,12 @@ export class ClientAPI {
                     socket.disconnect()
                     return
                 }
+
+                const sessionId = new ObjectId()
+                this.stats.onSessionStart(sessionId, tgData.user.id, chatId).catch(e => console.error('stat: failed to track session start:', e))
+                socket.on('disconnect', () => {
+                    this.stats.onSessionEnd(sessionId).catch(e => console.error('stat: failed to track session end:', e))
+                })
 
                 sw.lap('check chat token')
 

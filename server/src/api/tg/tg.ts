@@ -11,6 +11,7 @@ import { CronJob } from "cron";
 import { renderEvent } from "./renderEvent";
 import { getChatToken } from "../Auth";
 import { __DEV__ } from "../../utils/dev";
+import { StatsModule } from "../../modules/statsModule/StatsModule";
 
 const renderEventMessage = async (event: SavedEvent) => {
   const text = (await renderEvent(event));
@@ -42,6 +43,7 @@ export class TelegramBot {
   private chatMetaModule = container.resolve(ChatMetaModule);
   private userModule = container.resolve(UserModule)
   private eventsModule = container.resolve(EventsModule)
+  private stats = container.resolve(StatsModule)
 
   private token = process.env.TELEGRAM_BOT_TOKEN!;
   readonly bot = new TB(this.token, {
@@ -49,7 +51,12 @@ export class TelegramBot {
   });
 
   onCommand = (command: string, callback: (msg: TB.Message, match: RegExpExecArray | null) => void) => {
-    return this.bot.onText(new RegExp(`^\/(${command}|${command}@${nick})$`), callback)
+    return this.bot.onText(new RegExp(`^\/(${command}|${command}@${nick})$`), (msg, match) => {
+      callback(msg, match)
+      if (msg.from) {
+        this.stats.onMessage(msg.from.id, msg.chat.id, command).catch(e => console.error('stat: failed to track tg message:', e))
+      }
+    })
   }
 
   sendEventMessage = async (event: SavedEvent) => {
@@ -307,6 +314,7 @@ And don't forget to pin the message with the button, so everyone can open the ap
               await this.eventsModule.updateAtendeeStatus(message.chat.id, message.message_thread_id, event._id.toHexString(), q.from.id, vote)
             }
           }
+          this.stats.onCallbackQuery(q.from.id, message.chat.id, data[0] ?? '').catch(e => console.error('stat: failed to track tg callback query:', e))
         }
         await this.bot.answerCallbackQuery(q.id);
       } catch (e) {

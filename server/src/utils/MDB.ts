@@ -86,6 +86,21 @@ const _initMDB = async () => {
       }
     );
 
+    await MDB.collection("stats").createIndex(
+      { type: 1 },
+      {
+        name: "stats:type",
+      }
+    );
+
+    await MDB.collection("stats").createIndex(
+      { start: 1 },
+      {
+        name: "stats:ws_session:start",
+        partialFilterExpression: { type: 'ws_session' }
+      },
+    );
+
   } catch (e) {
     console.error(e)
     throw (e)
