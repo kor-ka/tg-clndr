@@ -13,7 +13,7 @@ import { getChatToken } from "../Auth";
 import { __DEV__ } from "../../utils/dev";
 
 const renderEventMessage = async (event: SavedEvent) => {
-  const text = (await renderEvent(event)).join('\n');
+  const text = (await renderEvent(event));
 
   let key = [event.chatId, event.threadId].filter(Boolean).join('_');
   const token = getChatToken(event.chatId);
@@ -81,7 +81,7 @@ export class TelegramBot {
         renderAttendees: false,
         atChat: chatMeta ? { id: chatMeta.chatId, name: chatMeta.name } : undefined,
         renderDate: event.date - Date.now() >= 1000 * 60 * 60 * 24,
-      })).join('\n');
+      }));
     let key = [event.chatId, event.threadId].filter(Boolean).join('_');
     const token = getChatToken(event.chatId);
     key = [key, token].filter(Boolean).join('T');

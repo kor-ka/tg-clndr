@@ -11,8 +11,8 @@ export const renderPin = async (chatId: number, threadId: number | undefined, ev
   const timeZones = new Set<string>();
   events.forEach(e => timeZones.add(e.tz));
 
-  let lines = (await Promise.all(events.map(e => renderEvent(e, { timeZones })))).flat();
-  lines = lines.length > 0 ? lines : ['🗓️ no upcoming events']
+  let eventsText = (await Promise.all(events.map(e => renderEvent(e, { timeZones })))).join('\n\n').trim();
+  const lines = eventsText ? [eventsText] : ['🗓️ no upcoming events']
 
   lines.push('');
   const webcalUrl = `https://tg-clndr-4023e1d4419a.herokuapp.com/ics/${key}/cal.ics`;
