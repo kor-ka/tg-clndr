@@ -9,7 +9,7 @@ import {
 } from "react-router-dom";
 import { EventScreen } from "./EventScreen";
 import { VM } from "../utils/vm/VM";
-import { showAlert, WebApp, __DEV__ } from "./utils/webapp";
+import { getItem, reqestWriteAccess, setItem, showAlert, showConfirm, WebApp, __DEV__ } from "./utils/webapp";
 import { useSSRReadyLocation } from "./utils/navigation/useSSRReadyLocation";
 import { homeLoc, HomeLoc } from "./utils/navigation/useGoHome";
 import { useSSRReadyNavigate } from "./utils/navigation/useSSRReadyNavigate";
@@ -71,6 +71,31 @@ export const MainScreen = () => {
 }
 
 const MainScreenWithModel = ({ model }: { model: SessionModel }) => {
+    React.useEffect(() => {
+        (async () => {
+            await new Promise<void>(resolve => {
+                model.eventsModule.events.subscribe(e => {
+                    if (e.size > 0) {
+                        resolve()
+                    }
+                })
+            })
+            if (!model.userSettings.val.enableNotifications) {
+                const notificationsRequested = await getItem('notifications_enable_requested')
+                if (!notificationsRequested) {
+                    showConfirm("This bot can notify you about upcoming events by sending you a message. Enable notifications?", async confirmed => {
+                        if (confirmed) {
+                            const granted = await reqestWriteAccess()
+                            if (granted) {
+                                await model.updateUserSettings({ enableNotifications: true, notifyBefore: '1h' })
+                            }
+                        }
+                        await setItem('notifications_enable_requested', 'true')
+                    })
+                }
+            }
+        })();
+    }, []);
     return <MainScreenView eventsVM={model.eventsModule.events} />
 }
 

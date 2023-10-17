@@ -5,7 +5,6 @@ import { ChatContext, ChatSettings, ClientApiEventCommand, Event, EventUpdate, U
 import { Deffered } from "../utils/deffered";
 import { UsersModule } from "./UsersModule";
 import { EventsModule } from "./EventsModule";
-import { NotificationsModule } from "./NotificationsModule";
 
 type TgWebAppInitData = { chat?: { id: number }, user: { id: number }, start_param?: string } & unknown;
 const SPLIT_DOMAIN = 'https://tg-split.herokuapp.com';
@@ -14,7 +13,6 @@ export class SessionModel {
     readonly tgWebApp: TgWebAppInitData;
     readonly eventsModule = new EventsModule();
     readonly users: UsersModule;
-    private notificationsModule: NotificationsModule;
     readonly chatId: number
 
     readonly chatSettings = new VM<ChatSettings>({ allowPublicEdit: false, enableEventMessages: false })
@@ -42,7 +40,6 @@ export class SessionModel {
         Cookies.set("time_zone", Intl.DateTimeFormat().resolvedOptions().timeZone, { path: "/", sameSite: 'None', secure: true, expires: 7 });
 
         this.users = new UsersModule(params.initDataUnsafe.user.id);
-        this.notificationsModule = new NotificationsModule(this);
 
         this.tgWebApp = params.initDataUnsafe
         const endpoint =
