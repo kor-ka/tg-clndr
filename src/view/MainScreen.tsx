@@ -83,7 +83,7 @@ const MainScreenWithModel = ({ model }: { model: SessionModel }) => {
             if (!model.userSettings.val.enableNotifications) {
                 const notificationsRequested = await getItem('notifications_enable_requested')
                 if (!notificationsRequested) {
-                    showConfirm("This bot can notify you about upcoming events by sending you a message. Enable notifications?", async confirmed => {
+                    showConfirm("This bot can notify you about upcoming events you attend by sending you a message. Enable notifications?", async confirmed => {
                         if (confirmed) {
                             const granted = await reqestWriteAccess()
                             if (granted) {
