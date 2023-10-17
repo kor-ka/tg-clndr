@@ -5,6 +5,7 @@ import { ChatContext, ChatSettings, ClientApiEventCommand, Event, EventUpdate, U
 import { Deffered } from "../utils/deffered";
 import { UsersModule } from "./UsersModule";
 import { EventsModule } from "./EventsModule";
+import { NotificationsModule } from "./NotificationsModule";
 
 type TgWebAppInitData = { chat?: { id: number }, user: { id: number }, start_param?: string } & unknown;
 const SPLIT_DOMAIN = 'https://tg-split.herokuapp.com';
@@ -13,6 +14,7 @@ export class SessionModel {
     readonly tgWebApp: TgWebAppInitData;
     readonly eventsModule = new EventsModule();
     readonly users: UsersModule;
+    private notificationsModule: NotificationsModule;
     readonly chatId: number
 
     readonly chatSettings = new VM<ChatSettings>({ allowPublicEdit: false, enableEventMessages: false })
@@ -34,12 +36,13 @@ export class SessionModel {
     constructor(params: { initDataUnsafe: TgWebAppInitData, initData: string }) {
         const [chat_descriptor, token] = (params.initDataUnsafe.start_param ?? '').split('T') ?? [];
         const [chatId, threadId] = chat_descriptor.split('_').map(Number) ?? [];
-        this.chatId = chatId
+        this.chatId = chatId;
 
-        Cookies.set("user_id", params.initDataUnsafe.user.id.toString(), { path: "/", sameSite: 'None', secure: true, expires: 7 })
-        Cookies.set("time_zone", Intl.DateTimeFormat().resolvedOptions().timeZone, { path: "/", sameSite: 'None', secure: true, expires: 7 })
+        Cookies.set("user_id", params.initDataUnsafe.user.id.toString(), { path: "/", sameSite: 'None', secure: true, expires: 7 });
+        Cookies.set("time_zone", Intl.DateTimeFormat().resolvedOptions().timeZone, { path: "/", sameSite: 'None', secure: true, expires: 7 });
 
-        this.users = new UsersModule(params.initDataUnsafe.user.id)
+        this.users = new UsersModule(params.initDataUnsafe.user.id);
+        this.notificationsModule = new NotificationsModule(this);
 
         this.tgWebApp = params.initDataUnsafe
         const endpoint =

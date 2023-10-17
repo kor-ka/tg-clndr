@@ -28,3 +28,36 @@ export const reqestWriteAccess = () => {
         })
     })
 }
+
+export const setItem = (key: string, value: string) => {
+    return new Promise<boolean>((resolve, reject) => {
+        if (WebApp) {
+            WebApp.CloudStorage.setItem(key, value, (error: string | null, stored?: boolean) => {
+                if (error) {
+                    reject(new Error(error))
+                } else {
+                    resolve(!!stored)
+                }
+            })
+        } else {
+            reject(new Error('WebApp is undefined'))
+        }
+    })
+}
+
+export const getItem = (key: string) => {
+    return new Promise<string | undefined>((resolve, reject) => {
+        if (WebApp) {
+            WebApp.CloudStorage.getItem(key, (error: string | null, value?: string) => {
+                if (error) {
+                    reject(new Error(error))
+                } else {
+                    resolve(value)
+                }
+            })
+        } else {
+            reject(new Error('WebApp is undefined'))
+        }
+    })
+}
+
