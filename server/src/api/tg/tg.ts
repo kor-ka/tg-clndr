@@ -255,8 +255,24 @@ And don't forget to pin the message with the button, so everyone can open the ap
 
     this.onCommand('pin', async (upd) => {
       try {
-        await this.chatMetaModule.updateChat(upd.chat.id, upd.chat.title ?? "");
-        await this.createPin(upd.chat.id, upd.message_thread_id);
+        let canCreatePin = false
+
+        if (upd.chat.type === 'private') {
+          canCreatePin = true
+        } else if (upd.from) {
+          const member = await this.bot.getChatMember(upd.chat.id, upd.from.id)
+          if (member.status === 'administrator' || member.status === 'creator') {
+            canCreatePin = true
+          }
+        }
+
+        if (canCreatePin) {
+          await this.chatMetaModule.updateChat(upd.chat.id, upd.chat.title ?? "");
+          await this.createPin(upd.chat.id, upd.message_thread_id);
+        } else {
+          await this.bot.sendMessage(upd.chat.id, "Only admin can update pin message")
+        }
+
       } catch (e) {
         console.log(e);
       }
