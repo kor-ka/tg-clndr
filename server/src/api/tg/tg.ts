@@ -270,7 +270,7 @@ And don't forget to pin the message with the button, so everyone can open the ap
           await this.chatMetaModule.updateChat(upd.chat.id, upd.chat.title ?? "");
           await this.createPin(upd.chat.id, upd.message_thread_id);
         } else {
-          await this.bot.sendMessage(upd.chat.id, "Only admin can update pin message")
+          await this.bot.sendMessage(upd.chat.id, "Only admins can create a pin message")
         }
 
       } catch (e) {
