@@ -198,13 +198,17 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
     const time = React.useMemo(() => new Date(date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h24', timeZone }), [date]);
 
     return <ListItem
-        onClick={onClick} style={deleted ? { textDecoration: 'line-through' } : undefined}
+        style={{
+            minHeight: 48,
+            textDecoration: deleted ? 'line-through' : undefined
+        }}
+        onClick={onClick}
         titile={title}
         subtitle={description}
         subTitleStyle={{ filter: 'grayscale(1)' }}
-        subtitleView={<div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        subtitleView={(geo || !!attendees.yes.length) && <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {geo && <div style={{ filter: 'grayscale(1)', fontSize: '0.8em', color: "var(--tg-theme-hint-color)", whiteSpace: 'pre-wrap', textOverflow: 'ellipsis', overflow: 'hidden' }}><Link href={`https://maps.google.com/?q=${geo.location[0]},${geo.location[1]}`}>📍{geo.address}</Link></div>}
-            <UsersPics uids={attendees.yes} />
+            {!!attendees.yes.length && <UsersPics uids={attendees.yes} />}
         </div>}
         right={<span style={{ fontSize: '1.2em' }}> {time} </span>}
     />
@@ -264,16 +268,30 @@ const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, V
     return <>
         {!!today.length && <Card key="today">{today.map(({ vm, date }, i) => {
             return <React.Fragment key={vm.val.id}>
-                {showDates && timeZone && i === 0 && <DateView date={date} isToday={true} />}
-                {<EventItem key={vm.val.id} eventVM={vm} />}
+
+                {(showDates && timeZone && i === 0) ?
+                    <DateView date={date} isToday={true} /> :
+                    i !== 0 ?
+                        <div style={{ width: '100%', borderBottom: '1px solid rgba(127, 127, 127, .1)' }} /> :
+                        null}
+
+                <EventItem key={vm.val.id} eventVM={vm} />
+                {i !== today.length - 1 && <div style={{ width: '100%', borderBottom: '1px solid rgba(127, 127, 127, .1)' }} />}
+
             </React.Fragment>
         })}</Card>}
-        {!!log.length && <CardLight key="log" style={{ paddingTop: today.length === 0 ? 8 : 0 }}>{log.map(({ vm, date }) => {
+        {!!log.length && <CardLight key="log" style={{ paddingTop: today.length === 0 ? 8 : 0 }}>{log.map(({ vm, date }, i) => {
             const show = timeZone && (date !== prevDate);
             prevDate = date;
             return <React.Fragment key={vm.val.id}>
-                {showDates && show && date && <DateView date={date} />}
-                {<EventItem key={vm.val.id} eventVM={vm} />}
+
+                {(showDates && show && date) ?
+                    <DateView date={date} /> :
+                    i !== 0 ?
+                        <div style={{ width: '100%', borderBottom: '1px solid rgba(127, 127, 127, .1)' }} /> :
+                        null}
+
+                <EventItem key={vm.val.id} eventVM={vm} />
             </React.Fragment>
         })}</CardLight>}
 
