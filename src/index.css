@@ -120,3 +120,7 @@ select {
   text-align: right;
   text-align-last: right;
 }
+
+.week:first-child {
+  justify-content: flex-end;
+}

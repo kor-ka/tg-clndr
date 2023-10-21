@@ -5,45 +5,116 @@ import { useVMvalue } from "../utils/vm/useVM"
 import { VM } from "../utils/vm/VM";
 import { getItem, reqestWriteAccess, setItem, showAlert, showConfirm, WebApp, __DEV__ } from "./utils/webapp";
 import { useSSRReadyNavigate } from "./utils/navigation/useSSRReadyNavigate";
-import { BackButtonController } from "./uikit/tg/BackButtonController";
 import { MainButtonController } from "./uikit/tg/MainButtonController";
 import { Card, ListItem, UsersPics, CardLight, Link } from "./uikit/kit";
 import { ModelContext } from "./ModelContext";
 import { WithModel } from "./utils/withModelHOC";
 import { SettignsIcon } from "./uikit/SettingsIcon";
 import { SplitAvailableContext, UsersProviderContext, TimezoneContext, HomeLocSetup } from "./App";
+import { dayViewHeight, calTitleHeight, SelectedDateContext, MonthCalendar } from "./monthcal/MonthCal";
 
 export const MainScreen = WithModel(({ model }: { model: SessionModel }) => {
+    const nav = useSSRReadyNavigate();
+    const toSettings = React.useCallback(() => nav("/tg/settings"), [nav])
+    const { BBComponent, state: mode } = useMainScreenBackButtonController()
+
+    const startDate = React.useMemo(() => {
+        const now = new Date()
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+    }, [])
+    const [selectedDate, setSelectedDate] = React.useState<number>(startDate)
+
+    const [eventsVM, setEventsVM] = React.useState<VM<Map<string, VM<Event>>>>()
+
     React.useEffect(() => {
-        (async () => {
-            await new Promise<void>(resolve => {
-                model.eventsModule.events.subscribe(e => {
-                    if (e.size > 0) {
-                        resolve()
-                    }
-                })
-            })
-            if (!model.userSettings.val.enableNotifications) {
-                const notificationsRequested = await getItem('notifications_enable_requested')
-                if (!notificationsRequested) {
-                    showConfirm("This bot can notify you about upcoming events you attend by sending you a message. Enable notifications?", async confirmed => {
-                        if (confirmed) {
-                            const granted = await reqestWriteAccess()
-                            if (granted) {
-                                await model.updateUserSettings({ enableNotifications: true, notifyBefore: '1h' })
-                            }
-                        }
-                        await setItem('notifications_enable_requested', 'true')
-                    })
-                }
-            }
-        })();
-    }, []);
-    return <>
+        if (mode === 'month' && selectedDate) {
+            console.log('selected month', selectedDate)
+            setEventsVM(new VM(new Map()))
+        }
+    }, [mode, selectedDate])
+
+    React.useEffect(() => {
+        if (mode === 'month') {
+            setSelectedDate(startDate)
+        }
+    }, [mode])
+
+    const calHeight = 6 * dayViewHeight + calTitleHeight
+
+    return <div style={{ display: 'flex', flexDirection: 'column', paddingBottom: 96 }}>
         <HomeLocSetup />
-        <MainScreenView eventsVM={model.eventsModule.events} />
-    </>
+        {BBComponent}
+
+        <SelectedDateContext.Provider value={{ selectDate: setSelectedDate, date: selectedDate }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
+                <MonthCalendar show={mode === 'month'} />
+            </div>
+        </SelectedDateContext.Provider>
+        <div style={{
+            display: 'flex',
+            paddingTop: '8px',
+            zIndex: 1,
+            minHeight: calHeight,
+            background: 'var(--tg-theme-bg-color)',
+            flexDirection: 'column',
+            willChange: 'transform',
+            transform: mode === 'month' ? `translateY(${calHeight}px)` : undefined,
+            transition: `transform ease-in-out 250ms`,
+            marginBottom: mode === 'month' ? calHeight : undefined
+        }}>
+            {mode === 'month' ?
+                eventsVM && <EventsView key={mode} mode={'month'} eventsVM={eventsVM} /> :
+                <>
+                    <EventsView key={mode} mode={'upcoming'} eventsVM={model.eventsModule.events} />
+                    <Card onClick={toSettings}>
+                        <ListItem
+                            titleView={
+                                <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+                                    <div style={{ width: 46, height: 46, borderRadius: 46, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: 'var(--tg-theme-button-color)' }}>
+                                        <SettignsIcon />
+                                    </div>
+                                    <span style={{ margin: 8 }}>Settings</span>
+                                </div>
+                            } />
+                    </Card>
+                </>}
+
+
+        </div>
+
+        <MainScreenAddEventButton />
+
+        <ToSplit />
+
+        <RequestNotifications model={model} />
+
+    </div >
 })
+
+const useMainScreenBackButtonController = () => {
+    const bb = React.useMemo(() => WebApp?.BackButton, [])
+
+    const [state, setState] = React.useState<"upcoming" | "month">('upcoming')
+
+    const onClick = React.useCallback(() => {
+        setState(s => s === 'month' ? 'upcoming' : 'month')
+    }, [])
+
+
+    React.useEffect(() => {
+        bb.show()
+    }, [])
+
+    React.useEffect(() => {
+        bb.onClick(onClick)
+        return () => {
+            bb.offClick(onClick)
+        }
+    }, [bb])
+
+    const BBComponent = __DEV__ ? <button style={{ position: 'absolute', zIndex: 2, top: 0, left: 0 }} onClick={onClick}>{`< ${state}`}</button> : null
+    return { BBComponent, state }
+}
 
 const ToSplit = React.memo(() => {
     const model = React.useContext(ModelContext);
@@ -79,32 +150,8 @@ const MainScreenAddEventButton = WithModel(({ model }: { model: SessionModel }) 
     return <MainButtonController onClick={onClick} text={"ADD EVENT"} />
 })
 
-export const MainScreenView = ({ eventsVM }: { eventsVM: VM<Map<string, VM<Event>>> }) => {
-    const nav = useSSRReadyNavigate();
-    const toSettings = React.useCallback(() => nav("/tg/settings"), [nav])
-    return <div style={{ display: 'flex', flexDirection: 'column', padding: "8px 0px", paddingBottom: 96 }}>
-        <BackButtonController />
-        <EventsView eventsVM={eventsVM} />
-        <Card onClick={toSettings}>
-            <ListItem
-                titleView={
-                    <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                        <div style={{ width: 46, height: 46, borderRadius: 46, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: 'var(--tg-theme-button-color)' }}>
-                            <SettignsIcon />
-                        </div>
-                        <span style={{ margin: 8 }}>Settings</span>
-                    </div>
-                } />
-        </Card>
-        <MainScreenAddEventButton />
-        <ToSplit />
-    </div>
-}
-
-
 const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
     const event = useVMvalue(eventVM)
-    const usersModule = React.useContext(UsersProviderContext)
 
     const { id, date, deleted, title, description, attendees, geo } = event;
 
@@ -154,7 +201,7 @@ const DateView = React.memo(({ date, isToday }: { date: string, isToday?: boolea
     </Card>
 });
 
-const EventsView = React.memo((({ eventsVM }: { eventsVM: VM<Map<string, VM<Event>>> }) => {
+const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, VM<Event>>>, mode: 'upcoming' | 'month' }) => {
     const timeZone = React.useContext(TimezoneContext);
     const eventsMap = useVMvalue(eventsVM);
     const [todayStr, todayYear] = React.useMemo(() => {
@@ -176,7 +223,7 @@ const EventsView = React.memo((({ eventsVM }: { eventsVM: VM<Map<string, VM<Even
     }, [eventsMap]);
     let prevDate: string | undefined = undefined;
     if (today.length == 0 && log.length === 0) {
-        return <Card><ListItem titile={'🗓️ no upcoming events'} /></Card>
+        return <Card><ListItem titile={`🗓️ no ${mode === 'upcoming' ? 'upcoming event' : 'events at this date'}`} /></Card>
     }
     return <>
         {!!today.length && <Card key="today">{today.map(({ vm, date }, i) => {
@@ -197,3 +244,32 @@ const EventsView = React.memo((({ eventsVM }: { eventsVM: VM<Map<string, VM<Even
         {(today.length + log.length) === 200 && <Card><ListItem subtitle={`Maybe there are more events, who knows 🤷‍♂️\nDeveloper was too lasy to implement pagination.`} /></Card>}
     </>
 }))
+
+const RequestNotifications = React.memo(({ model }: { model: SessionModel }) => {
+    React.useEffect(() => {
+        (async () => {
+            await new Promise<void>(resolve => {
+                model.eventsModule.events.subscribe(e => {
+                    if (e.size > 0) {
+                        resolve()
+                    }
+                })
+            })
+            if (!model.userSettings.val.enableNotifications) {
+                const notificationsRequested = await getItem('notifications_enable_requested')
+                if (!notificationsRequested) {
+                    showConfirm("This bot can notify you about upcoming events you attend by sending you a message. Enable notifications?", async confirmed => {
+                        if (confirmed) {
+                            const granted = await reqestWriteAccess()
+                            if (granted) {
+                                await model.updateUserSettings({ enableNotifications: true, notifyBefore: '1h' })
+                            }
+                        }
+                        await setItem('notifications_enable_requested', 'true')
+                    })
+                }
+            }
+        })();
+    }, []);
+    return null
+})
