@@ -11,7 +11,7 @@ const SPLIT_DOMAIN = 'https://tg-split.herokuapp.com';
 
 export class SessionModel {
     readonly tgWebApp: TgWebAppInitData;
-    readonly eventsModule = new EventsModule();
+    readonly eventsModule: EventsModule
     readonly users: UsersModule;
     readonly chatId: number
 
@@ -32,6 +32,8 @@ export class SessionModel {
     };
 
     constructor(params: { initDataUnsafe: TgWebAppInitData, initData: string }) {
+        this.eventsModule = new EventsModule(this);
+
         const [chat_descriptor, token] = (params.initDataUnsafe.start_param ?? '').split('T') ?? [];
         const [chatId, threadId] = chat_descriptor.split('_').map(Number) ?? [];
         this.chatId = chatId;
@@ -165,6 +167,19 @@ export class SessionModel {
                 d.reject(new Error(error))
             }
         });
+        return d.promise
+    }
+
+    getEventsRange = (from: number, to: number) => {
+        const d = new Deffered<Event[]>()
+        this.emit('get_events_range', { from, to }, ({ events, error }: { events: Event[], error: never } | { error: string, events: never }) => {
+            if (!error) {
+                events.forEach(this.addEvent)
+                d.resolve(events)
+            } else {
+                d.reject(new Error(error))
+            }
+        })
         return d.promise
     }
 

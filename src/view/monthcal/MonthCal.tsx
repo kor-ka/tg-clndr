@@ -1,4 +1,7 @@
 import React from "react";
+import { SessionModel } from "../../model/SessionModel";
+import { ModelContext } from "../ModelContext";
+import { WithModel } from "../utils/withModelHOC";
 
 enum WEEK_START {
     SYNDAY = 0,
@@ -76,6 +79,7 @@ const Month = React.memo(({ startDate, autofocus, intersectionObserver }: { star
     const titleRef = React.useRef<HTMLDivElement>(null)
     React.useEffect(() => {
         if (autofocus && titleRef.current) {
+            console.log('scrollIntoView')
             titleRef.current.scrollIntoView()
         }
     }, [autofocus])
@@ -109,7 +113,7 @@ const Month = React.memo(({ startDate, autofocus, intersectionObserver }: { star
     </div>
 })
 
-export const MonthCalendar = React.memo(({ show }: { show: boolean }) => {
+export const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: { show: boolean, model: SessionModel, scrollInto?: number }) => {
     const [months, startDate] = React.useMemo(() => {
         const now = new Date()
         const month = now.getMonth();
@@ -132,9 +136,22 @@ export const MonthCalendar = React.memo(({ show }: { show: boolean }) => {
     const selectedDateRef = React.useRef(new Date(selectedDate));
     selectedDateRef.current = new Date(selectedDate);
 
-    const onMonthSelected = React.useCallback((date: number) => {
-        if (!selectedDateRef.current || (new Date(selectedDateRef.current).getMonth() !== new Date(date).getMonth())) {
-            selectDate(date)
+    const activateMonthsAround = React.useCallback((time: number) => {
+        const date = new Date(time);
+        model.eventsModule.acivateMonthOnce(time);
+        model.eventsModule.acivateMonthOnce(new Date(date.getFullYear(), date.getMonth() - 1).getTime());
+        model.eventsModule.acivateMonthOnce(new Date(date.getFullYear(), date.getMonth() + 1).getTime())
+    }, [])
+
+    React.useEffect(() => {
+        activateMonthsAround(startDate.getTime())
+    }, [startDate])
+
+    const onMonthSelected = React.useCallback((time: number) => {
+        const date = new Date(time)
+        if (!selectedDateRef.current || (new Date(selectedDateRef.current).getMonth() !== date.getMonth())) {
+            selectDate(time);
+            activateMonthsAround(time);
         }
     }, [])
 
@@ -158,6 +175,7 @@ export const MonthCalendar = React.memo(({ show }: { show: boolean }) => {
     if (typeof window === 'undefined') {
         return null
     }
+
     return <>
         <div
             ref={containerRef}
@@ -171,9 +189,9 @@ export const MonthCalendar = React.memo(({ show }: { show: boolean }) => {
             {months.map((d, i) =>
                 <Month
                     startDate={d}
-                    autofocus={(d.getFullYear() === selectedDateRef.current.getFullYear() && d.getMonth() === selectedDateRef.current.getMonth()) && show}
+                    autofocus={(d.getTime() === scrollInto) && show}
                     intersectionObserver={intersectionObserver}
                 />)}
         </div>
     </>
-})
+}))

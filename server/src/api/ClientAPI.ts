@@ -15,10 +15,19 @@ import { ObjectId } from "mongodb";
 import { NOTIFICATIONS } from "../modules/notificationsModule/notificationsStore";
 import { StatsModule } from "../modules/statsModule/StatsModule";
 
+const processError = (e: any, ack: (message: { error: string }) => void) => {
+    console.error(e)
+    let message = 'unknown error'
+    if (e instanceof Error) {
+        message = e.message
+    }
+    ack({ error: message })
+}
+
 export class ClientAPI {
     private io: socketIo.Server;
 
-    private splitModule = container.resolve(EventsModule)
+    private eventsModule = container.resolve(EventsModule)
     private userModule = container.resolve(UserModule)
     private notificationsModule = container.resolve(NotificationsModule)
     private chatMetaModule = container.resolve(ChatMetaModule)
@@ -29,7 +38,7 @@ export class ClientAPI {
     }
 
     readonly init = () => {
-        this.splitModule.upateSubject.subscribe(state => {
+        this.eventsModule.upateSubject.subscribe(state => {
             const { chatId, threadId, event, type } = state
             const upd: EventUpdate = { event: savedEventToApiLight(event), type }
             this.io.to('chatClient_' + [chatId, threadId].filter(Boolean).join('_')).emit('update', upd)
@@ -92,20 +101,15 @@ export class ClientAPI {
 
                         const { type } = command;
                         if (type === 'create' || type === 'update') {
-                            const event = await this.splitModule.commitOperation(chatId, threadId, tgData.user.id, command);
+                            const event = await this.eventsModule.commitOperation(chatId, threadId, tgData.user.id, command);
                             ack({ patch: { event: await savedEventToApiFull(event, tgData.user.id), type } });
                         } else if (type === 'delete') {
-                            const event = await this.splitModule.deleteEvent(command.id)
+                            const event = await this.eventsModule.deleteEvent(command.id)
                             ack({ patch: { event: savedEventToApiLight(event), type } });
                         }
 
                     } catch (e) {
-                        console.error(e)
-                        let message = 'unknown error'
-                        if (e instanceof Error) {
-                            message = e.message
-                        }
-                        ack({ error: message })
+                        processError(e, ack);
                     }
                 });
                 socket.on("status", async (
@@ -115,15 +119,10 @@ export class ClientAPI {
                     },
                     ack: (res: { updated: Event, error?: never } | { error: string, updated?: never }) => void) => {
                     try {
-                        const event = await this.splitModule.updateAtendeeStatus(chatId, threadId, eventId, tgData.user.id, status);
+                        const event = await this.eventsModule.updateAtendeeStatus(chatId, threadId, eventId, tgData.user.id, status);
                         ack({ updated: await savedEventToApiFull(event, tgData.user.id) });
                     } catch (e) {
-                        console.error(e)
-                        let message = 'unknown error'
-                        if (e instanceof Error) {
-                            message = e.message
-                        }
-                        ack({ error: message })
+                        processError(e, ack);
                     }
                 });
                 socket.on("update_chat_settings", async (
@@ -137,12 +136,7 @@ export class ClientAPI {
                         const updated = await this.chatMetaModule.updateChatSetings(chatId, settings)
                         ack({ updated: updated?.settings ?? {} });
                     } catch (e) {
-                        console.error(e)
-                        let message = 'unknown error'
-                        if (e instanceof Error) {
-                            message = e.message
-                        }
-                        ack({ error: message })
+                        processError(e, ack);
                     }
                 });
 
@@ -153,12 +147,7 @@ export class ClientAPI {
                         const updated = await this.userModule.updateUserSettings(tgData.user.id, settings)
                         ack({ updated: updated.settings });
                     } catch (e) {
-                        console.error(e)
-                        let message = 'unknown error'
-                        if (e instanceof Error) {
-                            message = e.message
-                        }
-                        ack({ error: message })
+                        processError(e, ack);
                     }
                 });
 
@@ -169,14 +158,18 @@ export class ClientAPI {
                         await this.notificationsModule.updateNotification(new ObjectId(eventId), tgData.user.id, notification)
                         ack({});
                     } catch (e) {
-                        console.error(e)
-                        let message = 'unknown error'
-                        if (e instanceof Error) {
-                            message = e.message
-                        }
-                        ack({ error: message })
+                        processError(e, ack);
                     }
                 });
+
+                socket.on("get_events_range", async ({ from, to }: { from: number, to: number }, ack: (res: { events: Event[], error?: never } | { error: string, events?: never }) => void) => {
+                    try {
+                        const events = await savedEventsToApiFull(await this.eventsModule.getEventsDateRange(from, to, chatId, threadId), tgData.user.id);
+                        ack({ events });
+                    } catch (e) {
+                        processError(e, ack);
+                    }
+                })
 
                 sw.lap('subsciptions')
 
@@ -207,7 +200,7 @@ export class ClientAPI {
                                 disabled: false
                             }), 'updateUser'),
                             mesure(() => this.userModule.getUsersCached(chatId), 'getUsersCached'),
-                            mesure(() => this.splitModule.getEventsCached(chatId, threadId), 'getEventsCached'),
+                            mesure(() => this.eventsModule.getEventsCached(chatId, threadId), 'getEventsCached'),
                             mesure(() => this.chatMetaModule.getChatMeta(chatId), 'getChatMeta'),
                             mesure(() => this.bot.bot.getChatMember(chatId, tgData.user.id), 'getChatMember')
                         ])

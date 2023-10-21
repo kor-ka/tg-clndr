@@ -1,5 +1,6 @@
 import { Event, User } from "../shared/entity";
 import { VM } from "../utils/vm/VM";
+import { SessionModel } from "./SessionModel";
 
 export type EventsVM = VM<Map<string, VM<Event>>>
 
@@ -30,10 +31,14 @@ class DateModel {
     }
 }
 export class EventsModule {
+    constructor(private model: SessionModel) { }
+
     private frehsEnough = Date.now() - 1000 * 60 * 60 * 4;
     readonly futureEvents: EventsVM = new VM(new Map<string, VM<Event>>())
 
     private datesModels = new Map<number, DateModel>
+
+    private monthActivations = new Map<number, Promise<Event[]>>()
 
     readonly updateEventVM = (event: Event) => {
         let vm = this.futureEvents.val.get(event.id)
@@ -64,6 +69,26 @@ export class EventsModule {
 
         return vm
     }
+
+    acivateMonthOnce = (monthStart: number) => {
+        let activation = this.monthActivations.get(monthStart)
+
+        if (!activation) {
+            console.log('acivateMonthOnce', new Date(monthStart).toLocaleDateString('en', { year: '2-digit', month: 'long' }))
+            const date = new Date(monthStart)
+            const nextMonthStart = new Date(date.getFullYear(), date.getMonth() + 1, 0).getTime()
+            activation = this.model.getEventsRange(monthStart, nextMonthStart)
+            this.monthActivations.set(monthStart, activation)
+            activation.catch(e => {
+                console.error(e)
+                this.monthActivations.delete(monthStart)
+            })
+        }
+    }
+
+    // 
+    //  Getters
+    // 
 
     readonly getOperationOpt = <T = Event>(id: string): T | undefined => {
         return this.futureEvents.val.get(id)?.val as T

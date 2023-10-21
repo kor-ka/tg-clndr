@@ -15,7 +15,7 @@ import { dayViewHeight, calTitleHeight, SelectedDateContext, MonthCalendar } fro
 import { useSearchParams } from 'react-router-dom';
 import { EventsVM } from "../model/EventsModule";
 
-export const MainScreen = WithModel(({ model }: { model: SessionModel }) => {
+export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel }) => {
 
     const [searchParams, setSearchParams] = useSearchParams()
 
@@ -46,11 +46,14 @@ export const MainScreen = WithModel(({ model }: { model: SessionModel }) => {
         }
     }, [mode, selectedDate])
 
+    const [scrollInto, setScrollInto] = React.useState<number | undefined>(undefined)
     const savedSelectedDateRef = useRef(savedSelectedDate);
     React.useEffect(() => {
         if (mode === 'month') {
             // jump back to saved event initialy
             setSelectedDate(savedSelectedDateRef.current ?? startDate)
+            const scrollIntoDate = new Date(savedSelectedDateRef.current ?? startDate)
+            setScrollInto(new Date(scrollIntoDate.getFullYear(), scrollIntoDate.getMonth()).getTime())
             savedSelectedDateRef.current = undefined
         } else {
             setSearchParams(s => {
@@ -68,7 +71,7 @@ export const MainScreen = WithModel(({ model }: { model: SessionModel }) => {
 
         <SelectedDateContext.Provider value={{ selectDate: setSelectedDate, date: selectedDate }}>
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
-                <MonthCalendar show={mode === 'month'} />
+                <MonthCalendar show={mode === 'month'} scrollInto={scrollInto} />
             </div>
         </SelectedDateContext.Provider>
         <div style={{
@@ -96,7 +99,7 @@ export const MainScreen = WithModel(({ model }: { model: SessionModel }) => {
         <RequestNotifications model={model} />
 
     </div >
-})
+}))
 
 export const MainScreenView = React.memo(({ eventsVM }: { eventsVM: EventsVM }) => {
     const nav = useSSRReadyNavigate();
