@@ -13,10 +13,9 @@ import { SettignsIcon } from "./uikit/SettingsIcon";
 import { SplitAvailableContext, TimezoneContext, HomeLocSetup } from "./App";
 import { dayViewHeight, calTitleHeight, SelectedDateContext, MonthCalendar } from "./monthcal/MonthCal";
 import { useSearchParams } from 'react-router-dom';
+import { EventsVM } from "../model/EventsModule";
 
 export const MainScreen = WithModel(({ model }: { model: SessionModel }) => {
-    const nav = useSSRReadyNavigate();
-    const toSettings = React.useCallback(() => nav("/tg/settings"), [nav])
 
     const [searchParams, setSearchParams] = useSearchParams()
 
@@ -74,7 +73,6 @@ export const MainScreen = WithModel(({ model }: { model: SessionModel }) => {
         </SelectedDateContext.Provider>
         <div style={{
             display: 'flex',
-            paddingTop: '8px',
             zIndex: 1,
             minHeight: calHeight,
             background: 'var(--tg-theme-bg-color)',
@@ -86,20 +84,7 @@ export const MainScreen = WithModel(({ model }: { model: SessionModel }) => {
         }}>
             {mode === 'month' ?
                 eventsVM && <EventsView key={mode} mode={'month'} eventsVM={eventsVM} /> :
-                <>
-                    <EventsView key={mode} mode={'upcoming'} eventsVM={model.eventsModule.futureEvents} />
-                    <Card onClick={toSettings}>
-                        <ListItem
-                            titleView={
-                                <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                                    <div style={{ width: 46, height: 46, borderRadius: 46, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: 'var(--tg-theme-button-color)' }}>
-                                        <SettignsIcon />
-                                    </div>
-                                    <span style={{ margin: 8 }}>Settings</span>
-                                </div>
-                            } />
-                    </Card>
-                </>}
+                <MainScreenView eventsVM={model.eventsModule.futureEvents} />}
 
 
         </div>
@@ -111,6 +96,30 @@ export const MainScreen = WithModel(({ model }: { model: SessionModel }) => {
         <RequestNotifications model={model} />
 
     </div >
+})
+
+export const MainScreenView = React.memo(({ eventsVM }: { eventsVM: EventsVM }) => {
+    const nav = useSSRReadyNavigate();
+    const toSettings = React.useCallback(() => nav("/tg/settings"), [nav])
+
+    return <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        paddingTop: '8px',
+    }}>
+        <EventsView key={'upcoming'} mode={'upcoming'} eventsVM={eventsVM} />
+        <Card onClick={toSettings}>
+            <ListItem
+                titleView={
+                    <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+                        <div style={{ width: 46, height: 46, borderRadius: 46, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: 'var(--tg-theme-button-color)' }}>
+                            <SettignsIcon />
+                        </div>
+                        <span style={{ margin: 8 }}>Settings</span>
+                    </div>
+                } />
+        </Card>
+    </div>
 })
 
 const useMainScreenBackButtonController = (initialState?: "upcoming" | "month") => {

@@ -1,7 +1,7 @@
 import { Event, User } from "../shared/entity";
 import { VM } from "../utils/vm/VM";
 
-type EventsVM = VM<Map<string, VM<Event>>>
+export type EventsVM = VM<Map<string, VM<Event>>>
 
 class DateModel {
     readonly events: EventsVM = new VM(new Map<string, VM<Event>>())
