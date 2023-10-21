@@ -39,12 +39,12 @@ const Day = WithModel(React.memo(({ date, otherMonth, model }: { date: Date, oth
     >
         <div style={{
             display: 'flex',
-            width: dayViewHeight - 20,
-            height: dayViewHeight - 20,
+            width: dayViewHeight - 24,
+            height: dayViewHeight - 24,
             justifyContent: 'center',
             alignItems: 'center',
 
-            borderRadius: dayViewHeight - 20,
+            borderRadius: dayViewHeight - 24,
             textAlign: 'center',
             color: selected ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-button-text)',
             backgroundColor: selected ? 'var(--tg-theme-button-color)' : undefined,
