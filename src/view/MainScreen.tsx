@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Event } from "../shared/entity"
 import { SessionModel } from "../model/SessionModel"
 import { useVMvalue } from "../utils/vm/useVM"
@@ -10,32 +10,54 @@ import { Card, ListItem, UsersPics, CardLight, Link } from "./uikit/kit";
 import { ModelContext } from "./ModelContext";
 import { WithModel } from "./utils/withModelHOC";
 import { SettignsIcon } from "./uikit/SettingsIcon";
-import { SplitAvailableContext, UsersProviderContext, TimezoneContext, HomeLocSetup } from "./App";
+import { SplitAvailableContext, TimezoneContext, HomeLocSetup } from "./App";
 import { dayViewHeight, calTitleHeight, SelectedDateContext, MonthCalendar } from "./monthcal/MonthCal";
+import { useSearchParams } from 'react-router-dom';
 
 export const MainScreen = WithModel(({ model }: { model: SessionModel }) => {
     const nav = useSSRReadyNavigate();
     const toSettings = React.useCallback(() => nav("/tg/settings"), [nav])
-    const { BBComponent, state: mode } = useMainScreenBackButtonController()
+
+    const [searchParams, setSearchParams] = useSearchParams()
+
+    const savedSelectedDate = React.useMemo(() => {
+        const param = searchParams.get('selectedDate')
+        return param ? Number(param) : undefined
+    }, [])
+
+    const { BBComponent, state: mode } = useMainScreenBackButtonController(savedSelectedDate ? 'month' : undefined)
+
 
     const startDate = React.useMemo(() => {
         const now = new Date()
         return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
     }, [])
-    const [selectedDate, setSelectedDate] = React.useState<number>(startDate)
+    const [selectedDate, setSelectedDate] = React.useState<number>(savedSelectedDate ?? startDate)
 
     const [eventsVM, setEventsVM] = React.useState<VM<Map<string, VM<Event>>>>()
 
+
     React.useEffect(() => {
         if (mode === 'month' && selectedDate) {
-            console.log('selected month', selectedDate)
-            setEventsVM(new VM(new Map()))
+            setEventsVM(model.eventsModule.getDateModel(selectedDate).events)
+            setSearchParams(s => {
+                s.set('selectedDate', selectedDate.toString())
+                return s
+            })
         }
     }, [mode, selectedDate])
 
+    const savedSelectedDateRef = useRef(savedSelectedDate);
     React.useEffect(() => {
         if (mode === 'month') {
-            setSelectedDate(startDate)
+            // jump back to saved event initialy
+            setSelectedDate(savedSelectedDateRef.current ?? startDate)
+            savedSelectedDateRef.current = undefined
+        } else {
+            setSearchParams(s => {
+                s.delete('selectedDate')
+                return s
+            })
         }
     }, [mode])
 
@@ -65,7 +87,7 @@ export const MainScreen = WithModel(({ model }: { model: SessionModel }) => {
             {mode === 'month' ?
                 eventsVM && <EventsView key={mode} mode={'month'} eventsVM={eventsVM} /> :
                 <>
-                    <EventsView key={mode} mode={'upcoming'} eventsVM={model.eventsModule.events} />
+                    <EventsView key={mode} mode={'upcoming'} eventsVM={model.eventsModule.futureEvents} />
                     <Card onClick={toSettings}>
                         <ListItem
                             titleView={
@@ -91,10 +113,10 @@ export const MainScreen = WithModel(({ model }: { model: SessionModel }) => {
     </div >
 })
 
-const useMainScreenBackButtonController = () => {
+const useMainScreenBackButtonController = (initialState?: "upcoming" | "month") => {
     const bb = React.useMemo(() => WebApp?.BackButton, [])
 
-    const [state, setState] = React.useState<"upcoming" | "month">('upcoming')
+    const [state, setState] = React.useState<"upcoming" | "month">(initialState ?? 'upcoming')
 
     const onClick = React.useCallback(() => {
         setState(s => s === 'month' ? 'upcoming' : 'month')
@@ -202,6 +224,8 @@ const DateView = React.memo(({ date, isToday }: { date: string, isToday?: boolea
 });
 
 const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, VM<Event>>>, mode: 'upcoming' | 'month' }) => {
+    const showDates = mode === 'upcoming';
+    const groupToday = mode === 'upcoming';
     const timeZone = React.useContext(TimezoneContext);
     const eventsMap = useVMvalue(eventsVM);
     const [todayStr, todayYear] = React.useMemo(() => {
@@ -217,10 +241,10 @@ const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, V
             const date = new Date(vm.val.date)
             const dateYear = date.toLocaleString('en', { year: 'numeric', timeZone })
             const dateStr = date.toLocaleString('en', { month: 'short', day: 'numeric', year: dateYear !== todayYear ? 'numeric' : undefined, timeZone });
-            (dateStr === todayStr ? today : log).push({ vm, date: dateStr })
+            (((dateStr === todayStr) && groupToday) ? today : log).push({ vm, date: dateStr })
         }
         return { today, log }
-    }, [eventsMap]);
+    }, [eventsMap, groupToday]);
     let prevDate: string | undefined = undefined;
     if (today.length == 0 && log.length === 0) {
         return <Card><ListItem titile={`🗓️ no ${mode === 'upcoming' ? 'upcoming event' : 'events at this date'}`} /></Card>
@@ -228,7 +252,7 @@ const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, V
     return <>
         {!!today.length && <Card key="today">{today.map(({ vm, date }, i) => {
             return <React.Fragment key={vm.val.id}>
-                {timeZone && i === 0 && <DateView date={date} isToday={true} />}
+                {showDates && timeZone && i === 0 && <DateView date={date} isToday={true} />}
                 {<EventItem key={vm.val.id} eventVM={vm} />}
             </React.Fragment>
         })}</Card>}
@@ -236,7 +260,7 @@ const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, V
             const show = timeZone && (date !== prevDate);
             prevDate = date;
             return <React.Fragment key={vm.val.id}>
-                {show && date && <DateView date={date} />}
+                {showDates && show && date && <DateView date={date} />}
                 {<EventItem key={vm.val.id} eventVM={vm} />}
             </React.Fragment>
         })}</CardLight>}
@@ -249,7 +273,7 @@ const RequestNotifications = React.memo(({ model }: { model: SessionModel }) => 
     React.useEffect(() => {
         (async () => {
             await new Promise<void>(resolve => {
-                model.eventsModule.events.subscribe(e => {
+                model.eventsModule.futureEvents.subscribe(e => {
                     if (e.size > 0) {
                         resolve()
                     }

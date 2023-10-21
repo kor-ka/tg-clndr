@@ -67,7 +67,8 @@ export class SessionModel {
             // happens on reconnect and cache update
             // since some event may be deleted in between, rewrite whole event
             // TODO: detect deletions?
-            this.eventsModule.events.next(new Map(events.map(e => [e.id, new VM(e)])))
+            this.eventsModule.futureEvents.next(new Map())
+            events.map(this.addEvent)
             users.forEach(this.users.updateUser)
             this.ready.resolve()
         });
@@ -77,15 +78,15 @@ export class SessionModel {
         });
 
         this.socket.on("update", (update: EventUpdate) => {
-            if ((update.type === 'create') || this.eventsModule.events.val.has(update.event.id)) {
-                this.addOperation(update.event)
+            if ((update.type === 'create') || this.eventsModule.futureEvents.val.has(update.event.id)) {
+                this.addEvent(update.event)
             }
         });
 
     }
 
 
-    private addOperation = (event: Event) => {
+    private addEvent = (event: Event) => {
         this.eventsModule.updateEventVM(event)
     }
 
@@ -96,8 +97,8 @@ export class SessionModel {
             console.log("on_op_ack", res)
             const { patch, error } = res
             if (patch) {
-                if ((patch.type === 'create') || this.eventsModule.events.val.has(patch.event.id)) {
-                    this.addOperation(patch.event)
+                if ((patch.type === 'create') || this.eventsModule.futureEvents.val.has(patch.event.id)) {
+                    this.addEvent(patch.event)
                 }
                 d.resolve(patch.event)
             } else {
@@ -113,7 +114,7 @@ export class SessionModel {
             console.log("on_status_ack", res)
             const { updated, error } = res
             if (updated) {
-                this.addOperation(updated)
+                this.addEvent(updated)
                 d.resolve(updated)
             } else {
                 d.reject(new Error(error))

@@ -17,7 +17,6 @@ const Day = React.memo(({ date, otherMonth }: { date: Date, otherMonth: boolean 
         selectDate(date.getTime());
     }, [date, selectDate]);
 
-    const dateStr = React.useMemo(() => date.toLocaleDateString('en', { day: 'numeric' }), [])
 
     return <div
         style={{
@@ -43,7 +42,7 @@ const Day = React.memo(({ date, otherMonth }: { date: Date, otherMonth: boolean 
             backgroundColor: selected ? 'var(--tg-theme-button-color)' : undefined,
 
         }}>
-            <div style={{ display: 'flex' }}>{dateStr}</div>
+            <div style={{ display: 'flex' }}>{date.getDate()}</div>
         </div>
     </div>
 })
@@ -130,8 +129,8 @@ export const MonthCalendar = React.memo(({ show }: { show: boolean }) => {
     const containerRef = React.useRef<HTMLDivElement>(null)
 
     const { date: selectedDate, selectDate } = React.useContext(SelectedDateContext);
-    const selectedDateRef = React.useRef(selectedDate);
-    selectedDateRef.current = selectedDate;
+    const selectedDateRef = React.useRef(new Date(selectedDate));
+    selectedDateRef.current = new Date(selectedDate);
 
     const onMonthSelected = React.useCallback((date: number) => {
         if (!selectedDateRef.current || (new Date(selectedDateRef.current).getMonth() !== new Date(date).getMonth())) {
@@ -169,7 +168,12 @@ export const MonthCalendar = React.memo(({ show }: { show: boolean }) => {
                 scrollSnapType: 'y mandatory',
                 backgroundColor: 'var(--tg-theme-secondary-bg-color)',
             }}>
-            {months.map((d, i) => <Month startDate={d} autofocus={(i === 12) && show} intersectionObserver={intersectionObserver} />)}
+            {months.map((d, i) =>
+                <Month
+                    startDate={d}
+                    autofocus={(d.getFullYear() === selectedDateRef.current.getFullYear() && d.getMonth() === selectedDateRef.current.getMonth()) && show}
+                    intersectionObserver={intersectionObserver}
+                />)}
         </div>
     </>
 })

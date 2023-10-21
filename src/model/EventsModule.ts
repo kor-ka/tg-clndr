@@ -1,31 +1,87 @@
 import { Event, User } from "../shared/entity";
 import { VM } from "../utils/vm/VM";
 
+type EventsVM = VM<Map<string, VM<Event>>>
+
+class DateModel {
+    readonly events: EventsVM = new VM(new Map<string, VM<Event>>())
+
+    date: Date
+    constructor(time: number) {
+        this.date = new Date(time)
+    }
+
+    onUpdated = (vm: VM<Event>) => {
+        const nextMapEntries = [...this.events.val.entries(), [vm.val.id, vm] as const].sort((a, b) => a[1].val.date - b[1].val.date)
+        const nextMap = new Map(nextMapEntries)
+        // TODO: check span
+        const eventDate = new Date(vm.val.date)
+        if ((this.date.getFullYear() !== eventDate.getFullYear()) ||
+            (this.date.getMonth() !== eventDate.getMonth()) ||
+            (this.date.getDate() !== eventDate.getDate())) {
+            nextMap.delete(vm.val.id)
+            console.log('remove event', this.date, vm.val)
+
+        } else {
+            console.log('add event', this.date, vm.val)
+        }
+
+        this.events.next(nextMap)
+    }
+}
 export class EventsModule {
-    readonly events = new VM(new Map<string, VM<Event>>())
+    private frehsEnough = Date.now() - 1000 * 60 * 60 * 4;
+    readonly futureEvents: EventsVM = new VM(new Map<string, VM<Event>>())
+
+    private datesModels = new Map<number, DateModel>
 
     readonly updateEventVM = (event: Event) => {
-        let vm = this.events.val.get(event.id)
+        let vm = this.futureEvents.val.get(event.id)
         if (!vm) {
             vm = new VM(event)
-            this.events.val.set(event.id, vm)
+            this.futureEvents.val.set(event.id, vm)
         } else if (vm.val.seq > event.seq) {
             // skip outdated seq update
             return vm
         }
+        const prevDate = vm.val.date
         // merge light and full version
         vm.next({ ...vm.val, ...event });
-        const nextMapEntries = [...this.events.val.entries(), [event.id, vm] as const].sort((a, b) => a[1].val.date - b[1].val.date)
-        this.events.next(new Map(nextMapEntries))
+
+        const nextMapEntries = [...this.futureEvents.val.entries(), [event.id, vm] as const].sort((a, b) => a[1].val.date - b[1].val.date)
+        const nextMap = new Map(nextMapEntries)
+        if (vm.val.date <= this.frehsEnough) {
+            nextMap.delete(vm.val.id)
+        }
+
+        this.futureEvents.next(nextMap)
+
+        if (prevDate !== vm.val.date) {
+            this.getDateModel(prevDate).onUpdated(vm)
+        }
+        this.getDateModel(vm.val.date).onUpdated(vm)
+
+
         return vm
     }
 
     readonly getOperationOpt = <T = Event>(id: string): T | undefined => {
-        return this.events.val.get(id)?.val as T
+        return this.futureEvents.val.get(id)?.val as T
     }
 
     getEventVM = (id: string) => {
-        return this.events.val.get(id)
+        return this.futureEvents.val.get(id)
+    }
+
+    getDateModel = (rawdate: number) => {
+        const date = new Date(rawdate)
+        const time = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+        let dateModel = this.datesModels.get(time)
+        if (!dateModel) {
+            dateModel = new DateModel(time)
+            this.datesModels.set(time, dateModel)
+        }
+        return dateModel
     }
 
 }
