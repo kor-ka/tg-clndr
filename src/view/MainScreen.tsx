@@ -3,7 +3,7 @@ import { Event } from "../shared/entity"
 import { SessionModel } from "../model/SessionModel"
 import { useVMvalue } from "../utils/vm/useVM"
 import { VM } from "../utils/vm/VM";
-import { getItem, reqestWriteAccess, setItem, showAlert, showConfirm, WebApp, __DEV__ } from "./utils/webapp";
+import { expand, getItem, reqestWriteAccess, setItem, showAlert, showConfirm, WebApp, __DEV__ } from "./utils/webapp";
 import { useSSRReadyNavigate } from "./utils/navigation/useSSRReadyNavigate";
 import { MainButtonController } from "./uikit/tg/MainButtonController";
 import { Card, ListItem, UsersPics, CardLight, Link } from "./uikit/kit";
@@ -50,8 +50,10 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
     const savedSelectedDateRef = useRef(savedSelectedDate);
     React.useEffect(() => {
         if (mode === 'month') {
+            expand()
             // jump back to saved event initialy
             setSelectedDate(savedSelectedDateRef.current ?? startDate)
+            // scroll to seleced date on open month cal 
             const scrollIntoDate = new Date(savedSelectedDateRef.current ?? startDate)
             setScrollInto(new Date(scrollIntoDate.getFullYear(), scrollIntoDate.getMonth()).getTime())
             savedSelectedDateRef.current = undefined
@@ -65,12 +67,12 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
 
     const calHeight = 6 * dayViewHeight + calTitleHeight
 
-    return <div style={{ display: 'flex', flexDirection: 'column', paddingBottom: 96 }}>
+    return <div style={{ display: 'flex', flexDirection: 'column' }}>
         <HomeLocSetup />
         {BBComponent}
 
         <SelectedDateContext.Provider value={{ selectDate: setSelectedDate, date: selectedDate }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
+            <div style={{ position: 'fixed', top: 0, left: 0, right: 0 }}>
                 <MonthCalendar show={mode === 'month'} scrollInto={scrollInto} />
             </div>
         </SelectedDateContext.Provider>
@@ -83,7 +85,7 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
             willChange: 'transform',
             transform: mode === 'month' ? `translateY(${calHeight}px)` : undefined,
             transition: `transform ease-in-out 250ms`,
-            marginBottom: mode === 'month' ? calHeight : undefined
+            paddingBottom: 96
         }}>
             {mode === 'month' ?
                 eventsVM && <EventsView key={mode} mode={'month'} eventsVM={eventsVM} /> :
@@ -146,7 +148,7 @@ const useMainScreenBackButtonController = (initialState?: "upcoming" | "month") 
         }
     }, [bb])
 
-    const BBComponent = __DEV__ ? <button style={{ position: 'absolute', zIndex: 2, top: 0, left: 0 }} onClick={onClick}>{`< ${state}`}</button> : null
+    const BBComponent = __DEV__ ? <button style={{ position: 'fixed', zIndex: 2, top: 0, left: 0 }} onClick={onClick}>{`< ${state}`}</button> : null
     return { BBComponent, state }
 }
 

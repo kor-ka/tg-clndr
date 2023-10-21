@@ -26,5 +26,5 @@ export const BackButtonController = React.memo(() => {
         }
     }, [bb])
 
-    return (canGoBack && __DEV__) ? <button style={{ position: 'absolute', top: 0, left: 0 }} onClick={goBack}>{"< back"}</button> : null
+    return (canGoBack && __DEV__) ? <button style={{ position: 'fixed', top: 0, left: 0 }} onClick={goBack}>{"< back"}</button> : null
 })

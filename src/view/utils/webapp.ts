@@ -61,3 +61,9 @@ export const getItem = (key: string) => {
     })
 }
 
+export const expand = () => {
+    if (WebApp) {
+        WebApp.expand()
+    }
+}
+
