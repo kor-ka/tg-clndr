@@ -79,16 +79,28 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
         <div style={{
             display: 'flex',
             zIndex: 1,
-            minHeight: calHeight,
-            background: 'var(--tg-theme-bg-color)',
+            height: mode === 'month' ? `calc(var(--tg-viewport-stable-height) - ${calHeight}px)` : undefined,
             flexDirection: 'column',
             willChange: 'transform',
             transform: mode === 'month' ? `translateY(${calHeight}px)` : undefined,
             transition: `transform ease-in-out 250ms`,
-            paddingBottom: 96
+            background: 'var(--tg-theme-bg-color)',
+            overflowY: 'visible'
         }}>
             {mode === 'month' ?
-                eventsVM && <EventsView key={mode} mode={'month'} eventsVM={eventsVM} /> :
+                eventsVM &&
+                <>
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        height: `calc(var(--tg-viewport-stable-height) - ${calHeight}px)`,
+                        overflowY: 'scroll',
+                        paddingTop: '8px',
+                        paddingBottom: 96,
+                    }}>
+                        <EventsView key={mode} mode={'month'} eventsVM={eventsVM} />
+                    </div>
+                </> :
                 <MainScreenView eventsVM={model.eventsModule.futureEvents} />}
 
 
@@ -111,6 +123,7 @@ export const MainScreenView = React.memo(({ eventsVM }: { eventsVM: EventsVM }) 
         display: 'flex',
         flexDirection: 'column',
         paddingTop: '8px',
+        paddingBottom: '96px'
     }}>
         <EventsView key={'upcoming'} mode={'upcoming'} eventsVM={eventsVM} />
         <Card onClick={toSettings}>
