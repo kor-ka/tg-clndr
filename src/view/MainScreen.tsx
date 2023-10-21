@@ -168,7 +168,7 @@ const ToSplit = React.memo(() => {
             WebApp?.openTelegramLink(`https://t.me/splitsimplebot`);
         }
     }, [splitAvailable]);
-    return <Card onClick={onClick} style={{ position: 'fixed', padding: 16, top: 'calc(var(--tg-viewport-stable-height) - 77px)', right: 0, borderRadius: '32px 0 0 32px', marginRight: 0, transition: 'transform ease-out 150ms, top ease 150ms' }}>⚡️</Card>
+    return <Card onClick={onClick} style={{ position: 'fixed', zIndex: 3, padding: 16, top: 'calc(var(--tg-viewport-stable-height) - 77px)', right: 0, borderRadius: '32px 0 0 32px', marginRight: 0, transition: 'transform ease-out 150ms, top ease 150ms' }}>⚡️</Card>
 });
 
 const MainScreenAddEventButton = WithModel(({ model }: { model: SessionModel }) => {
