@@ -8,7 +8,7 @@ enum WEEK_START {
     SYNDAY = 0,
     MONDAY = 1
 }
-export const dayViewHeight = 48;
+export const dayViewHeight = 56;
 export const calTitleHeight = 48;
 
 export const SelectedDateContext = React.createContext<{ date: number, selectDate: (date: number) => void }>({ date: new Date().getTime(), selectDate: () => { } })
