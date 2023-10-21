@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { SessionModel } from "../model/SessionModel";
 import { DurationDscrpitor, Event, NotifyBeforeOptions, Notification } from "../shared/entity";
 import { useVMvalue } from "../utils/vm/useVM";
-import { UsersProviderContext, UserContext } from "./MainScreen";
+import { UsersProviderContext, UserContext } from "./App";
 import { ListItem, UserPic, Card, Button } from "./uikit/kit";
 import { BackButtonController } from "./uikit/tg/BackButtonController";
 import { ClosingConfirmationController } from "./uikit/tg/ClosingConfirmationController";

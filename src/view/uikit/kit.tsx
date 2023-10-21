@@ -2,7 +2,7 @@ import React, { ReactNode, useContext } from "react";
 import Linkify from "linkify-react";
 import { WebApp } from "../utils/webapp";
 import { useVMvalue } from "../../utils/vm/useVM";
-import { UsersProviderContext } from "../MainScreen";
+import { UsersProviderContext } from "../App";
 
 export const BackgroundContext = React.createContext("var(--tg-theme-bg-color)")
 

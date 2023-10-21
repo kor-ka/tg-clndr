@@ -1,8 +1,6 @@
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import { SessionModel } from "./model/SessionModel";
-import { VM } from "./utils/vm/VM";
-import { Event } from "./shared/entity"
 import { PremountController as MainButtonPremountController } from "./view/uikit/tg/MainButtonPreMount";
 
 const tryInit = () => {
@@ -22,7 +20,7 @@ const tryInit = () => {
   );
 
 
-  import('./view/MainScreen').then(({ renderApp }) => {
+  import('./view/App').then(({ renderApp }) => {
     model.ready.promise.then(() => {
       root.render(renderApp(model))
     })

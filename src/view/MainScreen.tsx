@@ -1,17 +1,9 @@
 import React from "react";
 import { Event } from "../shared/entity"
 import { SessionModel } from "../model/SessionModel"
-import { UsersModule } from "../model/UsersModule";
 import { useVMvalue } from "../utils/vm/useVM"
-import {
-    createBrowserRouter,
-    RouterProvider,
-} from "react-router-dom";
-import { EventScreen } from "./EventScreen";
 import { VM } from "../utils/vm/VM";
 import { getItem, reqestWriteAccess, setItem, showAlert, showConfirm, WebApp, __DEV__ } from "./utils/webapp";
-import { useSSRReadyLocation } from "./utils/navigation/useSSRReadyLocation";
-import { homeLoc, HomeLoc } from "./utils/navigation/useGoHome";
 import { useSSRReadyNavigate } from "./utils/navigation/useSSRReadyNavigate";
 import { BackButtonController } from "./uikit/tg/BackButtonController";
 import { MainButtonController } from "./uikit/tg/MainButtonController";
@@ -19,58 +11,9 @@ import { Card, ListItem, UsersPics, CardLight, Link } from "./uikit/kit";
 import { ModelContext } from "./ModelContext";
 import { WithModel } from "./utils/withModelHOC";
 import { SettignsIcon } from "./uikit/SettingsIcon";
-import { SettingsScreen } from "./settigns/SettingsScreen";
+import { SplitAvailableContext, UsersProviderContext, TimezoneContext, HomeLocSetup } from "./App";
 
-export const UserContext = React.createContext<number | undefined>(undefined);
-export const UsersProviderContext = React.createContext<UsersModule>(new UsersModule());
-export const SplitAvailableContext = React.createContext(false);
-export const TimezoneContext = React.createContext<string | undefined>(undefined);
-
-export const renderApp = (model: SessionModel) => {
-    const router = createBrowserRouter([
-        {
-            path: "/tg",
-            element: <MainScreen />,
-        },
-        {
-            path: "/tg/addEvent",
-            element: <EventScreen />,
-        },
-        {
-            path: "/tg/editEvent",
-            element: <EventScreen />,
-        },
-        {
-            path: "/tg/settings",
-            element: <SettingsScreen />,
-        },
-    ]);
-
-    return <TimezoneContext.Provider value={Intl.DateTimeFormat().resolvedOptions().timeZone}>
-        <SplitAvailableContext.Provider value={model.splitAvailableSync()}>
-            <ModelContext.Provider value={model}>
-                <UserContext.Provider value={model.tgWebApp.user.id}>
-                    <UsersProviderContext.Provider value={model.users}>
-                        <HomeLoc.Provider value={homeLoc}>
-                            <RouterProvider router={router} />
-                        </HomeLoc.Provider>
-                    </UsersProviderContext.Provider>
-                </UserContext.Provider>
-            </ModelContext.Provider>
-        </SplitAvailableContext.Provider>
-    </TimezoneContext.Provider>
-}
-
-export const MainScreen = () => {
-    const homeLoc = React.useContext(HomeLoc);
-    const loc = useSSRReadyLocation();
-    homeLoc.location = loc;
-
-    const model = React.useContext(ModelContext)
-    return model ? <MainScreenWithModel model={model} /> : null
-}
-
-const MainScreenWithModel = ({ model }: { model: SessionModel }) => {
+export const MainScreen = WithModel(({ model }: { model: SessionModel }) => {
     React.useEffect(() => {
         (async () => {
             await new Promise<void>(resolve => {
@@ -96,8 +39,11 @@ const MainScreenWithModel = ({ model }: { model: SessionModel }) => {
             }
         })();
     }, []);
-    return <MainScreenView eventsVM={model.eventsModule.events} />
-}
+    return <>
+        <HomeLocSetup />
+        <MainScreenView eventsVM={model.eventsModule.events} />
+    </>
+})
 
 const ToSplit = React.memo(() => {
     const model = React.useContext(ModelContext);
