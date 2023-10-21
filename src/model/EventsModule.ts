@@ -35,6 +35,7 @@ export class EventsModule {
 
     private frehsEnough = Date.now() - 1000 * 60 * 60 * 4;
     readonly futureEvents: EventsVM = new VM(new Map<string, VM<Event>>())
+    readonly allEvents: EventsVM = new VM(new Map<string, VM<Event>>())
 
     private datesModels = new Map<number, DateModel>
 
@@ -53,12 +54,15 @@ export class EventsModule {
         // merge light and full version
         vm.next({ ...vm.val, ...event });
 
+        const nextAllEntries = [...this.allEvents.val.entries(), [event.id, vm] as const].sort((a, b) => a[1].val.date - b[1].val.date)
+        const nextAllMap = new Map(nextAllEntries)
+        this.allEvents.next(nextAllMap)
+
         const nextMapEntries = [...this.futureEvents.val.entries(), [event.id, vm] as const].sort((a, b) => a[1].val.date - b[1].val.date)
         const nextMap = new Map(nextMapEntries)
         if (vm.val.date <= this.frehsEnough) {
             nextMap.delete(vm.val.id)
         }
-
         this.futureEvents.next(nextMap)
 
         if (prevDate !== vm.val.date) {
@@ -91,11 +95,11 @@ export class EventsModule {
     // 
 
     readonly getOperationOpt = <T = Event>(id: string): T | undefined => {
-        return this.futureEvents.val.get(id)?.val as T
+        return this.allEvents.val.get(id)?.val as T
     }
 
     getEventVM = (id: string) => {
-        return this.futureEvents.val.get(id)
+        return this.allEvents.val.get(id)
     }
 
     getDateModel = (rawdate: number) => {
