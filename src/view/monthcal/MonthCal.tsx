@@ -1,5 +1,6 @@
 import React from "react";
 import { SessionModel } from "../../model/SessionModel";
+import { useVMvalue } from "../../utils/vm/useVM";
 import { ModelContext } from "../ModelContext";
 import { WithModel } from "../utils/withModelHOC";
 
@@ -12,22 +13,26 @@ export const calTitleHeight = 48;
 
 export const SelectedDateContext = React.createContext<{ date: number, selectDate: (date: number) => void }>({ date: new Date().getTime(), selectDate: () => { } })
 
-const Day = React.memo(({ date, otherMonth }: { date: Date, otherMonth: boolean }) => {
+const Day = WithModel(React.memo(({ date, otherMonth, model }: { date: Date, otherMonth: boolean, model: SessionModel }) => {
     const { date: selectedDate, selectDate } = React.useContext(SelectedDateContext);
+
+    const eventsCount = useVMvalue(model.eventsModule.getDateModel(date.getTime()).events).size
+
     const selected = (date.getTime() === selectedDate && !otherMonth);
 
     const onClick = React.useCallback(() => {
         selectDate(date.getTime());
     }, [date, selectDate]);
 
-
     return <div
         style={{
             display: 'flex',
+            flexDirection: 'column',
             width: 'calc(100%/7)',
             height: dayViewHeight,
-            justifyContent: 'center',
+            justifyContent: 'start',
             alignItems: 'center',
+            gap: 4,
             opacity: otherMonth ? .3 : undefined
         }}
         onClick={!otherMonth ? onClick : undefined}
@@ -47,8 +52,9 @@ const Day = React.memo(({ date, otherMonth }: { date: Date, otherMonth: boolean 
         }}>
             <div style={{ display: 'flex' }}>{date.getDate()}</div>
         </div>
+        {!!eventsCount && <div style={{ width: 4, height: 4, borderRadius: 4, backgroundColor: 'var(--tg-theme-hint-color)' }} />}
     </div>
-})
+}))
 
 const Week = React.memo(({ days, monthStart }: { days: Date[], monthStart: Date }) => {
     const month = React.useMemo(() => monthStart.getMonth(), [monthStart])
