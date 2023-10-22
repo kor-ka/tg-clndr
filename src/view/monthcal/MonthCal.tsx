@@ -208,6 +208,7 @@ export const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: 
                 overflowX: useHorisontal ? 'scroll' : undefined,
                 overflowY: useHorisontal ? undefined : 'scroll',
                 scrollSnapType: `${useHorisontal ? 'x' : 'y'} mandatory`,
+                scrollSnapStop: 'always',
                 backgroundColor: 'var(--tg-theme-secondary-bg-color)',
             }}>
             {months.map((d, i) =>
