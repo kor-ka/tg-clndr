@@ -80,9 +80,7 @@ export class SessionModel {
         });
 
         this.socket.on("update", (update: EventUpdate) => {
-            if ((update.type === 'create') || this.eventsModule.futureEvents.val.has(update.event.id)) {
-                this.addEvent(update.event)
-            }
+            this.addEvent(update.event)
         });
 
     }
@@ -99,9 +97,7 @@ export class SessionModel {
             console.log("on_op_ack", res)
             const { patch, error } = res
             if (patch) {
-                if ((patch.type === 'create') || this.eventsModule.futureEvents.val.has(patch.event.id)) {
-                    this.addEvent(patch.event)
-                }
+                this.addEvent(patch.event)
                 d.resolve(patch.event)
             } else {
                 d.reject(new Error(error))
