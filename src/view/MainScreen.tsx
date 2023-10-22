@@ -62,12 +62,18 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
             const scrollIntoDate = new Date(selectedDate)
             setScrollInto(new Date(scrollIntoDate.getFullYear(), scrollIntoDate.getMonth()).getTime())
         } else {
+            // on android body scroll used for events in cal mode - jump back on return
+            if (forceBodyScrollForEvents) {
+                window.scrollTo(0, 0);
+            }
+
             setSearchParams(s => {
                 s.delete('selectedDate')
                 return s
             })
         }
         if (!forceBodyScrollForEvents) {
+            // prevent close app on cal scroll
             document.body.style.height = mode === 'month' ? '100%' : ''
             document.body.style.overflow = mode === 'month' ? 'hidden' : ''
         }
@@ -110,6 +116,7 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                             height: `calc(var(--tg-viewport-stable-height) - ${calHeight}px)`,
                             overflowY: !forceBodyScrollForEvents ? 'scroll' : undefined,
                             paddingTop: '8px',
+                            background: 'var(--tg-theme-bg-color)',
                             paddingBottom: 96,
                         }}>
                             <EventsView key={mode} mode={'month'} eventsVM={eventsVM} />
