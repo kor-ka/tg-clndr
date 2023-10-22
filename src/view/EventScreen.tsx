@@ -78,9 +78,17 @@ export const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
 
     const startDate = React.useMemo(() => {
         const startDateStr = searchParams.get("selectedDate");
-        let nowDate = startDateStr ? new Date(Number(startDateStr)) : new Date();
-        return new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate(), startDateStr ? 13 : nowDate.getHours() + 1)
-    }, [])
+        if (editEv?.date) {
+            return new Date(editEv?.date);
+        } else if (startDateStr) {
+            let date = new Date(Number(startDateStr));
+            return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 13);
+        } else {
+            let nowDate = new Date();
+            return new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate(), nowDate.getHours() + 1);
+        }
+
+    }, [editEv])
 
 
     const [date, setDate] = React.useState(startDate);
