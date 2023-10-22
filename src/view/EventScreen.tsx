@@ -9,7 +9,7 @@ import { BackButtonController } from "./uikit/tg/BackButtonController";
 import { ClosingConfirmationController } from "./uikit/tg/ClosingConfirmationController";
 import { MainButtonController } from "./uikit/tg/MainButtonController";
 import { useHandleOperation } from "./useHandleOperation";
-import { useGoHome } from "./utils/navigation/useGoHome";
+import { useGoBack, useGoHome } from "./utils/navigation/useGoHome";
 import { showConfirm } from "./utils/webapp";
 import { WithModel } from "./utils/withModelHOC";
 
@@ -89,7 +89,7 @@ export const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
         setEdited(true);
     }, []);
 
-    const goHome = useGoHome();
+    const goBack = useGoBack();
     const [handleOperation, loading] = useHandleOperation();
 
     disable = disable || loading;
@@ -109,10 +109,10 @@ export const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
                         description: description.trim(),
                         date: date.getTime(),
                     }
-                }), goHome)
+                }), goBack)
         }
 
-    }, [date, title, description, model, editEv, handleOperation, goHome]);
+    }, [date, title, description, model, editEv, handleOperation, goBack]);
 
     // 
     // STATUS
@@ -144,10 +144,10 @@ export const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
                     model.commitCommand({
                         type: 'delete',
                         id: editEvId
-                    }), goHome)
+                    }), goBack)
             }
         })
-    }, [model, editEvId, handleOperation, goHome]);
+    }, [model, editEvId, handleOperation, goBack]);
 
     const upsertAvailable = (!editEv || edited) && canEdit;
 

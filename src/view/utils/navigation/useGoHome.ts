@@ -11,3 +11,10 @@ export const useGoHome = () => {
         nav(homeLoc ?? -1 as To)
     }, []);
 }
+
+export const useGoBack = () => {
+    const nav = useNavigate();
+    return React.useCallback(() => {
+        nav(-1)
+    }, []);
+}
