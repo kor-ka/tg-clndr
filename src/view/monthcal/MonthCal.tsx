@@ -10,6 +10,7 @@ enum WEEK_START {
 }
 export const dayViewHeight = 56;
 export const calTitleHeight = 48;
+export const calHeight = 6 * dayViewHeight + calTitleHeight;
 
 export const SelectedDateContext = React.createContext<{ selectedDate: number | undefined, startDate: number, selectDate: (date: number, openCal?: boolean) => void }>({ selectedDate: Date.now(), startDate: Date.now(), selectDate: () => { } })
 
@@ -190,7 +191,7 @@ export const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: 
             ref={containerRef}
             style={{
                 width: '100%',
-                height: 7 * dayViewHeight,
+                height: calHeight,
                 overflow: 'scroll',
                 scrollSnapType: 'y mandatory',
                 backgroundColor: 'var(--tg-theme-secondary-bg-color)',

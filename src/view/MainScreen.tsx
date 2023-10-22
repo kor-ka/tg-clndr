@@ -11,7 +11,7 @@ import { ModelContext } from "./ModelContext";
 import { WithModel } from "./utils/withModelHOC";
 import { SettignsIcon } from "./uikit/SettingsIcon";
 import { SplitAvailableContext, TimezoneContext, HomeLocSetup } from "./App";
-import { dayViewHeight, calTitleHeight, SelectedDateContext, MonthCalendar } from "./monthcal/MonthCal";
+import { SelectedDateContext, MonthCalendar, calHeight } from "./monthcal/MonthCal";
 import { useSearchParams } from 'react-router-dom';
 import { EventsVM } from "../model/EventsModule";
 import { BackButtonController } from "./uikit/tg/BackButtonController";
@@ -73,7 +73,6 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
         document.body.style.overflow = mode === 'month' ? 'hidden' : ''
     }, [mode])
 
-    const calHeight = 6 * dayViewHeight + calTitleHeight
 
     return <div style={{ display: 'flex', flexDirection: 'column', ...mode === 'month' ? { height: '100vh', minHeight: '100%', overflow: 'hidden' } : {} }}>
         <HomeLocSetup />
@@ -95,13 +94,12 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
             <div style={{
                 display: 'flex',
                 zIndex: 1,
-                height: mode === 'month' ? `calc(var(--tg-viewport-stable-height) - ${calHeight}px)` : undefined,
                 flexDirection: 'column',
-                willChange: 'transform',
                 transform: mode === 'month' ? `translateY(${calHeight}px)` : undefined,
                 transition: `transform ease-in-out 250ms`,
                 background: 'var(--tg-theme-bg-color)',
-                overflow: 'hidden'
+                height: mode === 'month' ? `calc(var(--tg-viewport-stable-height) - ${calHeight}px)` : undefined,
+                overflow: mode === 'month' ? 'hidden' : undefined
             }}>
                 {mode === 'month' ?
                     eventsVM &&
@@ -125,8 +123,6 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
 
         <MainScreenAddEventButton />
 
-        <ToSplit />
-
         <RequestNotifications model={model} />
 
     </div >
@@ -136,25 +132,28 @@ export const MainScreenView = React.memo(({ eventsVM }: { eventsVM: EventsVM }) 
     const nav = useSSRReadyNavigate();
     const toSettings = React.useCallback(() => nav("/tg/settings"), [nav])
 
-    return <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        paddingTop: '8px',
-        paddingBottom: '96px'
-    }}>
-        <EventsView key={'upcoming'} mode={'upcoming'} eventsVM={eventsVM} />
-        <Card onClick={toSettings}>
-            <ListItem
-                titleView={
-                    <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                        <div style={{ width: 46, height: 46, borderRadius: 46, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: 'var(--tg-theme-button-color)' }}>
-                            <SettignsIcon />
+    return <>
+        <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            paddingTop: '8px',
+            paddingBottom: '96px'
+        }}>
+            <EventsView key={'upcoming'} mode={'upcoming'} eventsVM={eventsVM} />
+            <Card onClick={toSettings}>
+                <ListItem
+                    titleView={
+                        <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+                            <div style={{ width: 46, height: 46, borderRadius: 46, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: 'var(--tg-theme-button-color)' }}>
+                                <SettignsIcon />
+                            </div>
+                            <span style={{ margin: 8 }}>Settings</span>
                         </div>
-                        <span style={{ margin: 8 }}>Settings</span>
-                    </div>
-                } />
-        </Card>
-    </div>
+                    } />
+            </Card>
+        </div>
+        <ToSplit />
+    </>
 })
 
 const ToSplit = React.memo(() => {
@@ -245,11 +244,11 @@ const DateView = React.memo(({ date, time, isToday }: { date: string, time: numb
     }, [shouldAnimate]);
     const style = React.useMemo(() => {
         return isToday ?
-            { alignSelf: 'start', margin: 0, padding: 0, fontSize: '1.2em', borderRadius: 12, position: 'sticky', top: 16, transition: "max-height ease-in 300ms", maxHeight, overflow: 'hidden' } :
-            { alignSelf: 'center', margin: 0, padding: 0, fontSize: '0.7em', borderRadius: 12, position: 'sticky', top: 16, transition: "max-height ease-in 300ms", maxHeight, overflow: 'hidden' };
+            { alignSelf: 'start', margin: 0, padding: 0, fontSize: '1.2em', borderRadius: 12, transition: "max-height ease-in 300ms", maxHeight, overflow: 'hidden' } :
+            { alignSelf: 'center', margin: 0, padding: 0, fontSize: '0.7em', borderRadius: 12, transition: "max-height ease-in 300ms", maxHeight, overflow: 'hidden' };
 
     }, [isToday, maxHeight])
-    return <div onClick={onClick} style={{ display: 'flex', alignSelf: 'center', padding: 16, margin: -16 }}>
+    return <div onClick={onClick} style={{ display: 'flex', alignSelf: isToday ? 'start' : 'center', position: 'sticky', zIndex: 3, top: 16 }}>
         <Card key={'date'} style={style}>
             <ListItem titile={isToday ? "Today" : date} titleStyle={{ padding: 0, fontWeight: 500 }} leftStyle={{ padding: '0 4px' }} />
         </Card>
