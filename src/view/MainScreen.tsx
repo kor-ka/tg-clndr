@@ -142,6 +142,9 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
 
         <MainScreenAddEventButton />
 
+        {/* render only in browser since here is no willChange: transform which breaks position: fixed */}
+        {typeof window !== 'undefined' && <ToSplit />}
+
         <RequestNotifications model={model} />
 
     </div >
@@ -171,7 +174,9 @@ export const MainScreenView = React.memo(({ eventsVM }: { eventsVM: EventsVM }) 
                     } />
             </Card>
         </div>
-        {/* <ToSplit /> */}
+        {/* render only in ssr since there is no willChange: transform which breaks position: fixed */}
+        {typeof window === 'undefined' && <ToSplit />}
+
     </>
 })
 
