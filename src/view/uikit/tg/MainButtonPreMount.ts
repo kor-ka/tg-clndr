@@ -24,6 +24,8 @@ export class PremountController {
             if (this.pending) {
                 this.pending = false
                 this.wa?.MainButton.hideProgress()
+                console.log('PremountController: onClick call')
+
                 onClick()
             }
         }
