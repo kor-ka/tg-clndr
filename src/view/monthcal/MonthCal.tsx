@@ -117,7 +117,8 @@ const Month = React.memo(({ startDate, scrollInto, intersectionObserver }: { sta
             flexShrink: 0,
             flexDirection: 'column',
             alignItems: 'flex-start',
-            scrollSnapAlign: 'start'
+            scrollSnapAlign: 'start',
+            scrollSnapStop: 'always',
         }}>
         <div ref={titleRef} style={{ display: 'flex', height: calTitleHeight, alignItems: 'center', paddingLeft: 24, fontWeight: 600 }}>{startDate.toLocaleDateString('en', { month: 'long', year: 'numeric' })}</div>
         <div style={{ display: 'flex', flexDirection: 'column', alignSelf: 'stretch' }}>
@@ -208,7 +209,6 @@ export const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: 
                 overflowX: useHorisontal ? 'scroll' : undefined,
                 overflowY: useHorisontal ? undefined : 'scroll',
                 scrollSnapType: `${useHorisontal ? 'x' : 'y'} mandatory`,
-                scrollSnapStop: 'always',
                 backgroundColor: 'var(--tg-theme-secondary-bg-color)',
             }}>
             {months.map((d, i) =>
