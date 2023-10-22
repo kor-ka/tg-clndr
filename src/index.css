@@ -59,7 +59,7 @@ body {
   color: var(--tg-theme-text-color);
   font-size: large;
   background-color: var(--tg-theme-bg-color);
-
+  -webkit-tap-highlight-color: transparent;
 }
 
 button {
