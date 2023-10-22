@@ -77,8 +77,17 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
         <BackButtonController canGoBack={mode === 'month'} goBack={closeCal} />
 
         <SelectedDateContext.Provider value={{ selectDate, startDate, selectedDate }}>
-            <div style={{ position: 'fixed', top: 0, left: 0, right: 0 }}>
+            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, overflow: 'hidden' }}>
                 <MonthCalendar show={mode === 'month'} scrollInto={scrollInto} />
+                {/* overlay */}
+                <div style={{
+                    position: 'absolute', top: 0, width: '100%',
+                    height: calHeight,
+                    willChange: 'transform',
+                    transform: mode === 'month' ? `translateY(${calHeight}px)` : undefined,
+                    transition: `transform ease-in-out 250ms`,
+                    background: 'var(--tg-theme-bg-color)',
+                }} />
             </div>
             <div style={{
                 display: 'flex',
