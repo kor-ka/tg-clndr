@@ -127,11 +127,11 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                             minHeight: (mode === 'month' && !forceBodyScrollForEvents) ? `calc(var(--tg-viewport-stable-height) - ${calHeight}px)` : undefined,
 
                             overflowY: !forceBodyScrollForEvents ? 'scroll' : undefined,
-                            paddingTop: '8px',
+                            paddingTop: 8,
                             background: 'var(--tg-theme-bg-color)',
-                            paddingBottom: 96,
                         }}>
                             <EventsView key={mode} mode={'month'} eventsVM={eventsVM} />
+                            <div style={{ display: 'flex', flexShrink: 0, height: 96 }} />
                         </div>
                     </> :
                     <MainScreenView eventsVM={model.eventsModule.futureEvents} />}
