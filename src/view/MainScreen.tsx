@@ -177,14 +177,15 @@ const ToSplit = React.memo(() => {
 
 const MainScreenAddEventButton = WithModel(({ model }: { model: SessionModel }) => {
     const nav = useSSRReadyNavigate();
+    const [searchParams] = useSearchParams();
     const onClick = React.useCallback(() => {
         const canEdit = model.chatSettings.val.allowPublicEdit || model.context.val.isAdmin
         if (canEdit) {
-            nav("/tg/addEvent")
+            nav({ pathname: "/tg/addEvent", search: `?${searchParams.toString()}` })
         } else {
             showAlert("Only admins can add events in this groups")
         }
-    }, [nav])
+    }, [nav, searchParams])
     return <MainButtonController onClick={onClick} text={"ADD EVENT"} />
 })
 

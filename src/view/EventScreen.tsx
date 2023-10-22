@@ -76,7 +76,14 @@ export const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
         setEdited(true);
     }, []);
 
-    const [date, setDate] = React.useState(new Date(editEv?.date ?? Date.now() + 1000 * 60 * 60));
+    const startDate = React.useMemo(() => {
+        const startDateStr = searchParams.get("selectedDate");
+        let nowDate = startDateStr ? new Date(Number(startDateStr)) : new Date();
+        return new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate(), startDateStr ? 13 : nowDate.getHours() + 1)
+    }, [])
+
+
+    const [date, setDate] = React.useState(startDate);
     const onDateInputChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setDate(new Date(e.target.value));
         setEdited(true);
