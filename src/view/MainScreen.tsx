@@ -83,14 +83,14 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
         }
         if (!forceBodyScrollForEvents) {
             // prevent close app on cal scroll
-            document.body.style.height = mode === 'month' ? '100%' : ''
+            document.body.style.height = mode === 'month' ? '100vh' : ''
             document.body.style.overflow = mode === 'month' ? 'hidden' : ''
         }
 
     }, [mode, forceBodyScrollForEvents])
 
 
-    return <div style={{ display: 'flex', flexDirection: 'column' }}>
+    return <div style={{ display: 'flex', flexDirection: 'column', ...mode === 'month' && !forceBodyScrollForEvents ? { height: '100vh', minHeight: '100%' } : {} }}>
         <HomeLocSetup />
         <BackButtonController canGoBack={mode === 'month'} goBack={closeCal} />
 
@@ -114,7 +114,7 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                 transform: mode === 'month' ? `translateY(${calHeight}px)` : undefined,
                 transition: `transform ease-in-out 250ms`,
                 background: 'var(--tg-theme-bg-color)',
-                height: mode === 'month' ? `calc(var(--tg-viewport-stable-height) - ${calHeight}px)` : undefined,
+                height: (mode === 'month' && !forceBodyScrollForEvents) ? `calc(var(--tg-viewport-stable-height) - ${calHeight}px)` : undefined,
             }}>
                 {mode === 'month' ?
                     eventsVM &&
@@ -122,7 +122,9 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                         <div style={{
                             display: 'flex',
                             flexDirection: 'column',
-                            height: `calc(var(--tg-viewport-stable-height) - ${calHeight}px)`,
+                            height: (mode === 'month' && !forceBodyScrollForEvents) ? `calc(var(--tg-viewport-stable-height) - ${calHeight}px)` : undefined,
+                            minHeight: (mode === 'month' && !forceBodyScrollForEvents) ? `calc(var(--tg-viewport-stable-height) - ${calHeight}px)` : undefined,
+
                             overflowY: !forceBodyScrollForEvents ? 'scroll' : undefined,
                             paddingTop: '8px',
                             background: 'var(--tg-theme-bg-color)',
