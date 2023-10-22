@@ -139,8 +139,11 @@ export const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: 
     const containerRef = React.useRef<HTMLDivElement>(null)
 
     const { selectedDate: selectedDate, selectDate } = React.useContext(SelectedDateContext);
+    // refs used to prevent IntersectionObserver from re createing
     const selectedDateRef = React.useRef(selectedDate && new Date(selectedDate));
     selectedDateRef.current = selectedDate && new Date(selectedDate);
+    const selectDateRef = React.useRef(selectDate);
+    selectDateRef.current = selectDate;
 
     const activateMonthsAround = React.useCallback((time: number) => {
         const date = new Date(time);
@@ -156,7 +159,7 @@ export const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: 
     const onMonthSelected = React.useCallback((time: number) => {
         const date = new Date(time)
         if (!selectedDateRef.current || (new Date(selectedDateRef.current).getMonth() !== date.getMonth())) {
-            selectDate(time);
+            selectDateRef.current?.(time);
             activateMonthsAround(time);
         }
     }, [])
