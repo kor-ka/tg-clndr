@@ -17,6 +17,7 @@ import { EventsVM } from "../model/EventsModule";
 import { BackButtonController } from "./uikit/tg/BackButtonController";
 
 export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel }) => {
+    const forceBodyScrollForEvents = React.useMemo(() => isAndroid(), []);
 
     const [searchParams, setSearchParams] = useSearchParams()
 
@@ -24,8 +25,6 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
         const param = searchParams.get('selectedDate')
         return param ? Number(param) : undefined
     }, [])
-
-
 
     const startDate = React.useMemo(() => {
         const now = new Date()
@@ -68,10 +67,13 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                 return s
             })
         }
+        if (!forceBodyScrollForEvents) {
+            document.body.style.height = mode === 'month' ? '100%' : ''
+            document.body.style.overflow = mode === 'month' ? 'hidden' : ''
+        }
 
-    }, [mode])
+    }, [mode, forceBodyScrollForEvents])
 
-    const forceBodyScrollForEvents = React.useMemo(() => isAndroid(), []);
 
     return <div style={{ display: 'flex', flexDirection: 'column' }}>
         <HomeLocSetup />
