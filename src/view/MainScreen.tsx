@@ -111,6 +111,7 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                 display: 'flex',
                 zIndex: 1,
                 flexDirection: 'column',
+                willChange: 'transform',
                 transform: mode === 'month' ? `translateY(${calHeight}px)` : undefined,
                 transition: `transform ease-in-out 250ms`,
                 background: 'var(--tg-theme-bg-color)',
@@ -170,7 +171,7 @@ export const MainScreenView = React.memo(({ eventsVM }: { eventsVM: EventsVM }) 
                     } />
             </Card>
         </div>
-        <ToSplit />
+        {/* <ToSplit /> */}
     </>
 })
 
