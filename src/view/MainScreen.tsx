@@ -68,11 +68,14 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                 return s
             })
         }
+
+        document.body.style.height = mode === 'month' ? '100%' : ''
+        document.body.style.overflow = mode === 'month' ? 'hidden' : ''
     }, [mode])
 
     const calHeight = 6 * dayViewHeight + calTitleHeight
 
-    return <div style={{ display: 'flex', flexDirection: 'column', height: mode === 'month' ? '100vh' : undefined }}>
+    return <div style={{ display: 'flex', flexDirection: 'column', ...mode === 'month' ? { height: '100vh', minHeight: '100%', overflow: 'hidden' } : {} }}>
         <HomeLocSetup />
         <BackButtonController canGoBack={mode === 'month'} goBack={closeCal} />
 
@@ -98,7 +101,7 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                 transform: mode === 'month' ? `translateY(${calHeight}px)` : undefined,
                 transition: `transform ease-in-out 250ms`,
                 background: 'var(--tg-theme-bg-color)',
-                overflowY: 'hidden'
+                overflow: 'hidden'
             }}>
                 {mode === 'month' ?
                     eventsVM &&
