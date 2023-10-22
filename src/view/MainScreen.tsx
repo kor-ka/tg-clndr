@@ -246,7 +246,7 @@ const DateView = React.memo(({ date, time, isToday }: { date: string, time: numb
             { alignSelf: 'center', margin: 0, padding: 0, fontSize: '0.7em', borderRadius: 12, transition: "max-height ease-in 300ms", maxHeight, overflow: 'hidden' };
 
     }, [isToday, maxHeight])
-    return <div onClick={onClick} style={{ display: 'flex', alignSelf: isToday ? 'start' : 'center', position: 'sticky', zIndex: 3, top: 16 }}>
+    return <div onClick={onClick} style={{ display: 'flex', alignSelf: isToday ? 'start' : 'center', padding: 16, margin: -16, position: 'sticky', zIndex: 3, top: 16 }}>
         <Card key={'date'} style={style}>
             <ListItem titile={isToday ? "Today" : date} titleStyle={{ padding: 0, fontWeight: 500 }} leftStyle={{ padding: '0 4px' }} />
         </Card>
