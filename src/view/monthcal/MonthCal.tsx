@@ -1,7 +1,7 @@
 import React from "react";
 import { SessionModel } from "../../model/SessionModel";
 import { useVMvalue } from "../../utils/vm/useVM";
-import { ModelContext } from "../ModelContext";
+import { isAndroid } from "../utils/webapp";
 import { WithModel } from "../utils/withModelHOC";
 
 enum WEEK_START {
@@ -85,9 +85,9 @@ const Month = React.memo(({ startDate, autofocus, intersectionObserver }: { star
 
     const titleRef = React.useRef<HTMLDivElement>(null)
     React.useEffect(() => {
-        if (autofocus && titleRef.current) {
+        if (autofocus && containerRef.current) {
             console.log('scrollIntoView')
-            titleRef.current.scrollIntoView()
+            containerRef.current.scrollIntoView()
         }
     }, [autofocus])
 
@@ -109,6 +109,8 @@ const Month = React.memo(({ startDate, autofocus, intersectionObserver }: { star
         ref={containerRef}
         style={{
             display: 'flex',
+            width: '100%',
+            flexShrink: 0,
             flexDirection: 'column',
             alignItems: 'flex-start',
             scrollSnapAlign: 'start'
@@ -182,6 +184,8 @@ export const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: 
 
     }, [])
 
+    const useHorisontal = React.useMemo(() => isAndroid(), [])
+
     if (typeof window === 'undefined') {
         return null
     }
@@ -190,10 +194,13 @@ export const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: 
         <div
             ref={containerRef}
             style={{
+                display: 'flex',
+                flexDirection: useHorisontal ? 'row' : 'column',
                 width: '100%',
                 height: calHeight,
-                overflow: 'scroll',
-                scrollSnapType: 'y mandatory',
+                overflowX: useHorisontal ? 'scroll' : undefined,
+                overflowY: useHorisontal ? undefined : 'scroll',
+                scrollSnapType: `${useHorisontal ? 'x' : 'y'} mandatory`,
                 backgroundColor: 'var(--tg-theme-secondary-bg-color)',
             }}>
             {months.map((d, i) =>

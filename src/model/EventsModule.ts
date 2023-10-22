@@ -21,10 +21,6 @@ class DateModel {
             (this.date.getMonth() !== eventDate.getMonth()) ||
             (this.date.getDate() !== eventDate.getDate())) {
             nextMap.delete(vm.val.id)
-            console.log('remove event', this.date, vm.val)
-
-        } else {
-            console.log('add event', this.date, vm.val)
         }
 
         this.events.next(nextMap)

@@ -3,7 +3,7 @@ import { Event } from "../shared/entity"
 import { SessionModel } from "../model/SessionModel"
 import { useVMvalue } from "../utils/vm/useVM"
 import { VM } from "../utils/vm/VM";
-import { expand, getItem, reqestWriteAccess, setItem, showAlert, showConfirm, WebApp, __DEV__ } from "./utils/webapp";
+import { expand, getItem, isAndroid, reqestWriteAccess, setItem, showAlert, showConfirm, WebApp, __DEV__ } from "./utils/webapp";
 import { useSSRReadyNavigate } from "./utils/navigation/useSSRReadyNavigate";
 import { MainButtonController } from "./uikit/tg/MainButtonController";
 import { Card, ListItem, UsersPics, CardLight, Link } from "./uikit/kit";
@@ -69,12 +69,11 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
             })
         }
 
-        document.body.style.height = mode === 'month' ? '100%' : ''
-        document.body.style.overflow = mode === 'month' ? 'hidden' : ''
     }, [mode])
 
+    const forceBodyScrollForEvents = React.useMemo(() => isAndroid(), []);
 
-    return <div style={{ display: 'flex', flexDirection: 'column', ...mode === 'month' ? { height: '100vh', minHeight: '100%', overflow: 'hidden' } : {} }}>
+    return <div style={{ display: 'flex', flexDirection: 'column' }}>
         <HomeLocSetup />
         <BackButtonController canGoBack={mode === 'month'} goBack={closeCal} />
 
@@ -99,7 +98,6 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                 transition: `transform ease-in-out 250ms`,
                 background: 'var(--tg-theme-bg-color)',
                 height: mode === 'month' ? `calc(var(--tg-viewport-stable-height) - ${calHeight}px)` : undefined,
-                overflow: mode === 'month' ? 'hidden' : undefined
             }}>
                 {mode === 'month' ?
                     eventsVM &&
@@ -108,7 +106,7 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                             display: 'flex',
                             flexDirection: 'column',
                             height: `calc(var(--tg-viewport-stable-height) - ${calHeight}px)`,
-                            overflowY: 'scroll',
+                            overflowY: !forceBodyScrollForEvents ? 'scroll' : undefined,
                             paddingTop: '8px',
                             paddingBottom: 96,
                         }}>

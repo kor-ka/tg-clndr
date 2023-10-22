@@ -67,3 +67,9 @@ export const expand = () => {
     }
 }
 
+export const isAndroid = () => {
+    if (WebApp) {
+        return WebApp.platform === 'android'
+    }
+}
+
