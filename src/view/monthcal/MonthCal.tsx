@@ -11,10 +11,10 @@ enum WEEK_START {
 export const dayViewHeight = 56;
 export const calTitleHeight = 48;
 
-export const SelectedDateContext = React.createContext<{ date: number, selectDate: (date: number) => void }>({ date: new Date().getTime(), selectDate: () => { } })
+export const SelectedDateContext = React.createContext<{ selectedDate: number | undefined, startDate: number, selectDate: (date: number, openCal?: boolean) => void }>({ selectedDate: Date.now(), startDate: Date.now(), selectDate: () => { } })
 
 const Day = WithModel(React.memo(({ date, otherMonth, model }: { date: Date, otherMonth: boolean, model: SessionModel }) => {
-    const { date: selectedDate, selectDate } = React.useContext(SelectedDateContext);
+    const { selectedDate: selectedDate, selectDate } = React.useContext(SelectedDateContext);
 
     const eventsCount = useVMvalue(model.eventsModule.getDateModel(date.getTime()).events).size
 
@@ -138,9 +138,9 @@ export const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: 
     const [intersectionObserver, setIntersectionObserver] = React.useState<IntersectionObserver>()
     const containerRef = React.useRef<HTMLDivElement>(null)
 
-    const { date: selectedDate, selectDate } = React.useContext(SelectedDateContext);
-    const selectedDateRef = React.useRef(new Date(selectedDate));
-    selectedDateRef.current = new Date(selectedDate);
+    const { selectedDate: selectedDate, selectDate } = React.useContext(SelectedDateContext);
+    const selectedDateRef = React.useRef(selectedDate && new Date(selectedDate));
+    selectedDateRef.current = selectedDate && new Date(selectedDate);
 
     const activateMonthsAround = React.useCallback((time: number) => {
         const date = new Date(time);

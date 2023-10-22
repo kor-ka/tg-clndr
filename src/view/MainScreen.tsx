@@ -14,6 +14,7 @@ import { SplitAvailableContext, TimezoneContext, HomeLocSetup } from "./App";
 import { dayViewHeight, calTitleHeight, SelectedDateContext, MonthCalendar } from "./monthcal/MonthCal";
 import { useSearchParams } from 'react-router-dom';
 import { EventsVM } from "../model/EventsModule";
+import { BackButtonController } from "./uikit/tg/BackButtonController";
 
 export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel }) => {
 
@@ -24,39 +25,43 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
         return param ? Number(param) : undefined
     }, [])
 
-    const { BBComponent, state: mode } = useMainScreenBackButtonController(savedSelectedDate ? 'month' : undefined)
 
 
     const startDate = React.useMemo(() => {
         const now = new Date()
         return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
     }, [])
-    const [selectedDate, setSelectedDate] = React.useState<number>(savedSelectedDate ?? startDate)
+    const [selectedDate, setSelectedDate] = React.useState<number | undefined>(savedSelectedDate)
+    const selectDate = React.useCallback((date: number, openCal?: boolean) => {
+        if (selectedDate || openCal) {
+            setSelectedDate(date)
+        }
+    }, [selectedDate])
 
     const [eventsVM, setEventsVM] = React.useState<VM<Map<string, VM<Event>>>>()
 
+    const closeCal = React.useCallback(() => {
+        setSelectedDate(undefined)
+    }, [])
 
     React.useEffect(() => {
-        if (mode === 'month' && selectedDate) {
+        if (selectedDate) {
             setEventsVM(model.eventsModule.getDateModel(selectedDate).events)
             setSearchParams(s => {
                 s.set('selectedDate', selectedDate.toString())
                 return s
             })
         }
-    }, [mode, selectedDate])
+    }, [selectedDate])
 
+    const mode = selectedDate ? 'month' : 'upcoming';
     const [scrollInto, setScrollInto] = React.useState<number | undefined>(undefined)
-    const savedSelectedDateRef = useRef(savedSelectedDate);
     React.useEffect(() => {
-        if (mode === 'month') {
+        if (selectedDate) {
             expand()
-            // jump back to saved event initialy
-            setSelectedDate(savedSelectedDateRef.current ?? startDate)
             // scroll to seleced date on open month cal 
-            const scrollIntoDate = new Date(savedSelectedDateRef.current ?? startDate)
+            const scrollIntoDate = new Date(selectedDate)
             setScrollInto(new Date(scrollIntoDate.getFullYear(), scrollIntoDate.getMonth()).getTime())
-            savedSelectedDateRef.current = undefined
         } else {
             setSearchParams(s => {
                 s.delete('selectedDate')
@@ -67,44 +72,44 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
 
     const calHeight = 6 * dayViewHeight + calTitleHeight
 
-    return <div style={{ display: 'flex', flexDirection: 'column' }}>
+    return <div style={{ display: 'flex', flexDirection: 'column', height: mode === 'month' ? '100vh' : undefined }}>
         <HomeLocSetup />
-        {BBComponent}
+        <BackButtonController canGoBack={mode === 'month'} goBack={closeCal} />
 
-        <SelectedDateContext.Provider value={{ selectDate: setSelectedDate, date: selectedDate }}>
+        <SelectedDateContext.Provider value={{ selectDate, startDate, selectedDate }}>
             <div style={{ position: 'fixed', top: 0, left: 0, right: 0 }}>
                 <MonthCalendar show={mode === 'month'} scrollInto={scrollInto} />
             </div>
+            <div style={{
+                display: 'flex',
+                zIndex: 1,
+                height: mode === 'month' ? `calc(var(--tg-viewport-stable-height) - ${calHeight}px)` : undefined,
+                flexDirection: 'column',
+                willChange: 'transform',
+                transform: mode === 'month' ? `translateY(${calHeight}px)` : undefined,
+                transition: `transform ease-in-out 250ms`,
+                background: 'var(--tg-theme-bg-color)',
+                overflowY: 'hidden'
+            }}>
+                {mode === 'month' ?
+                    eventsVM &&
+                    <>
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            height: `calc(var(--tg-viewport-stable-height) - ${calHeight}px)`,
+                            overflowY: 'scroll',
+                            paddingTop: '8px',
+                            paddingBottom: 96,
+                        }}>
+                            <EventsView key={mode} mode={'month'} eventsVM={eventsVM} />
+                        </div>
+                    </> :
+                    <MainScreenView eventsVM={model.eventsModule.futureEvents} />}
+
+
+            </div>
         </SelectedDateContext.Provider>
-        <div style={{
-            display: 'flex',
-            zIndex: 1,
-            height: mode === 'month' ? `calc(var(--tg-viewport-stable-height) - ${calHeight}px)` : undefined,
-            flexDirection: 'column',
-            willChange: 'transform',
-            transform: mode === 'month' ? `translateY(${calHeight}px)` : undefined,
-            transition: `transform ease-in-out 250ms`,
-            background: 'var(--tg-theme-bg-color)',
-            overflowY: 'visible'
-        }}>
-            {mode === 'month' ?
-                eventsVM &&
-                <>
-                    <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        height: `calc(var(--tg-viewport-stable-height) - ${calHeight}px)`,
-                        overflowY: 'scroll',
-                        paddingTop: '8px',
-                        paddingBottom: 96,
-                    }}>
-                        <EventsView key={mode} mode={'month'} eventsVM={eventsVM} />
-                    </div>
-                </> :
-                <MainScreenView eventsVM={model.eventsModule.futureEvents} />}
-
-
-        </div>
 
         <MainScreenAddEventButton />
 
@@ -139,31 +144,6 @@ export const MainScreenView = React.memo(({ eventsVM }: { eventsVM: EventsVM }) 
         </Card>
     </div>
 })
-
-const useMainScreenBackButtonController = (initialState?: "upcoming" | "month") => {
-    const bb = React.useMemo(() => WebApp?.BackButton, [])
-
-    const [state, setState] = React.useState<"upcoming" | "month">(initialState ?? 'upcoming')
-
-    const onClick = React.useCallback(() => {
-        setState(s => s === 'month' ? 'upcoming' : 'month')
-    }, [])
-
-
-    React.useEffect(() => {
-        bb.show()
-    }, [])
-
-    React.useEffect(() => {
-        bb.onClick(onClick)
-        return () => {
-            bb.offClick(onClick)
-        }
-    }, [bb])
-
-    const BBComponent = __DEV__ ? <button style={{ position: 'fixed', zIndex: 2, top: 0, left: 0 }} onClick={onClick}>{`< ${state}`}</button> : null
-    return { BBComponent, state }
-}
 
 const ToSplit = React.memo(() => {
     const model = React.useContext(ModelContext);
@@ -231,10 +211,18 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
 
 
 let amimateDateOnce = true
-const DateView = React.memo(({ date, isToday }: { date: string, isToday?: boolean }) => {
+const DateView = React.memo(({ date, time, isToday }: { date: string, time: number, isToday?: boolean }) => {
     const model = React.useContext(ModelContext);
     const shouldAnimate = React.useMemo(() => model && !model.ssrTimeSone() && amimateDateOnce, []);
     const [maxHeight, setMaxHeight] = React.useState(shouldAnimate ? 0 : 50);
+
+    const { selectDate } = React.useContext(SelectedDateContext);
+
+    const onClick = React.useCallback(() => {
+        const d = new Date(time)
+        selectDate(new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(), true)
+    }, [selectDate, date]);
+
     React.useEffect(() => {
         if (shouldAnimate) {
             amimateDateOnce = false;
@@ -249,9 +237,11 @@ const DateView = React.memo(({ date, isToday }: { date: string, isToday?: boolea
             { alignSelf: 'center', margin: 0, padding: 0, fontSize: '0.7em', borderRadius: 12, position: 'sticky', top: 16, transition: "max-height ease-in 300ms", maxHeight, overflow: 'hidden' };
 
     }, [isToday, maxHeight])
-    return <Card key={'date'} style={style}>
-        <ListItem titile={isToday ? "Today" : date} titleStyle={{ padding: 0, fontWeight: 500 }} leftStyle={{ padding: '0 4px' }} />
-    </Card>
+    return <div onClick={onClick} style={{ display: 'flex', alignSelf: 'center', padding: 16, margin: -16 }}>
+        <Card key={'date'} style={style}>
+            <ListItem titile={isToday ? "Today" : date} titleStyle={{ padding: 0, fontWeight: 500 }} leftStyle={{ padding: '0 4px' }} />
+        </Card>
+    </div>
 });
 
 const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, VM<Event>>>, mode: 'upcoming' | 'month' }) => {
@@ -266,26 +256,33 @@ const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, V
         return [todayStr, todayYear]
     }, [timeZone]);
     const { today, log } = React.useMemo(() => {
-        const today: { vm: VM<Event>, date: string }[] = [];
-        const log: { vm: VM<Event>, date: string }[] = [];
+        const today: { vm: VM<Event>, date: string, time: number }[] = [];
+        const log: { vm: VM<Event>, date: string, time: number }[] = [];
         for (let vm of eventsMap.values()) {
             const date = new Date(vm.val.date)
             const dateYear = date.toLocaleString('en', { year: 'numeric', timeZone })
             const dateStr = date.toLocaleString('en', { month: 'short', day: 'numeric', year: dateYear !== todayYear ? 'numeric' : undefined, timeZone });
-            (((dateStr === todayStr) && groupToday) ? today : log).push({ vm, date: dateStr })
+            (((dateStr === todayStr) && groupToday) ? today : log).push({ vm, date: dateStr, time: date.getTime() })
         }
         return { today, log }
     }, [eventsMap, groupToday]);
-    let prevDate: string | undefined = undefined;
+
+    const { selectDate, startDate } = React.useContext(SelectedDateContext);
+    const onClick = React.useCallback(() => {
+        selectDate(startDate, true);
+    }, [selectDate, startDate]);
+
     if (today.length == 0 && log.length === 0) {
-        return <Card><ListItem titile={`🗓️ no ${mode === 'upcoming' ? 'upcoming event' : 'events at this date'}`} /></Card>
+        return <Card onClick={mode === 'upcoming' ? onClick : undefined}><ListItem titile={`🗓️ no ${mode === 'upcoming' ? 'upcoming events' : 'events at this date'}`} /></Card>
     }
+
+    let prevDate: string | undefined = undefined;
     return <>
-        {!!today.length && <Card key="today">{today.map(({ vm, date }, i) => {
+        {!!today.length && <Card key="today">{today.map(({ vm, date, time }, i) => {
             return <React.Fragment key={vm.val.id}>
 
                 {(showDates && timeZone && i === 0) ?
-                    <DateView date={date} isToday={true} /> :
+                    <DateView date={date} isToday={true} time={time} /> :
                     i !== 0 ?
                         <div style={{ width: '100%', borderBottom: '1px solid rgba(127, 127, 127, .1)' }} /> :
                         null}
@@ -295,13 +292,13 @@ const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, V
 
             </React.Fragment>
         })}</Card>}
-        {!!log.length && <CardLight key="log" style={{ paddingTop: today.length === 0 ? 8 : 0 }}>{log.map(({ vm, date }, i) => {
+        {!!log.length && <CardLight key="log" style={{ paddingTop: today.length === 0 ? 8 : 0 }}>{log.map(({ vm, date, time }, i) => {
             const show = timeZone && (date !== prevDate);
             prevDate = date;
             return <React.Fragment key={vm.val.id}>
 
                 {(showDates && show && date) ?
-                    <DateView date={date} /> :
+                    <DateView date={date} time={time} /> :
                     i !== 0 ?
                         <div style={{ width: '100%', borderBottom: '1px solid rgba(127, 127, 127, .1)' }} /> :
                         null}
