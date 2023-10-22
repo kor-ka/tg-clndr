@@ -12,14 +12,19 @@ export const dayViewHeight = 56;
 export const calTitleHeight = 48;
 export const calHeight = 6 * dayViewHeight + calTitleHeight;
 
-export const SelectedDateContext = React.createContext<{ selectedDate: number | undefined, startDate: number, selectDate: (date: number, openCal?: boolean) => void }>({ selectedDate: Date.now(), startDate: Date.now(), selectDate: () => { } })
+export const SelectedDateContext = React.createContext<{ selectedDate: number | undefined, startDate: number, selectDate: (date: number, options?: { openCal?: boolean, forceScroll?: boolean }) => void }>({ selectedDate: Date.now(), startDate: Date.now(), selectDate: () => { } })
 
 const Day = WithModel(React.memo(({ date, otherMonth, model }: { date: Date, otherMonth: boolean, model: SessionModel }) => {
     const { selectedDate: selectedDate, selectDate } = React.useContext(SelectedDateContext);
 
     const eventsCount = useVMvalue(model.eventsModule.getDateModel(date.getTime()).events).size
 
-    const selected = (date.getTime() === selectedDate && !otherMonth);
+    const isSelected = (date.getTime() === selectedDate && !otherMonth);
+
+    const isToday = React.useMemo(() => {
+        const today = new Date()
+        return date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth() && date.getDate() === today.getDate()
+    }, [date])
 
     const onClick = React.useCallback(() => {
         selectDate(date.getTime());
@@ -47,8 +52,8 @@ const Day = WithModel(React.memo(({ date, otherMonth, model }: { date: Date, oth
 
             borderRadius: dayViewHeight - 24,
             textAlign: 'center',
-            color: selected ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-button-text)',
-            backgroundColor: selected ? 'var(--tg-theme-button-color)' : undefined,
+            color: isSelected ? 'var(--tg-theme-button-text-color)' : isToday ? 'var(--tg-theme-bg-color)' : 'var(--tg-theme-text-color)',
+            backgroundColor: isSelected ? 'var(--tg-theme-button-color)' : isToday ? 'var(--tg-theme-text-color)' : undefined,
 
         }}>
             <div style={{ display: 'flex' }}>{date.getDate()}</div>
@@ -64,7 +69,7 @@ const Week = React.memo(({ days, monthStart }: { days: Date[], monthStart: Date 
     </div>
 })
 
-const Month = React.memo(({ startDate, autofocus, intersectionObserver }: { startDate: Date, autofocus?: boolean, intersectionObserver?: IntersectionObserver }) => {
+const Month = React.memo(({ startDate, scrollInto, intersectionObserver }: { startDate: Date, scrollInto?: { date: number }, intersectionObserver?: IntersectionObserver }) => {
     const weeks = React.useMemo(() => {
         const weekDay = (startDate.getDay() + 7 - WEEK_START.MONDAY) % 7
         const weeksCount = 6
@@ -85,11 +90,10 @@ const Month = React.memo(({ startDate, autofocus, intersectionObserver }: { star
 
     const titleRef = React.useRef<HTMLDivElement>(null)
     React.useEffect(() => {
-        if (autofocus && containerRef.current) {
-            console.log('scrollIntoView')
+        if (scrollInto && containerRef.current) {
             containerRef.current.scrollIntoView()
         }
-    }, [autofocus])
+    }, [scrollInto])
 
     const containerRef = React.useRef<HTMLDivElement>(null)
     React.useEffect(() => {
@@ -122,13 +126,12 @@ const Month = React.memo(({ startDate, autofocus, intersectionObserver }: { star
     </div>
 })
 
-export const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: { show: boolean, model: SessionModel, scrollInto?: number }) => {
-    const [months, startDate] = React.useMemo(() => {
+export const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: { show: boolean, model: SessionModel, scrollInto?: { date: number } }) => {
+    const [months, monthStartDate] = React.useMemo(() => {
         const now = new Date()
         const month = now.getMonth();
         const year = now.getFullYear();
         const startDate = new Date(year, month, 1)
-        console.log(startDate)
         const months: Date[] = [startDate];
         for (let i = 1; i <= 12; i++) {
             months.unshift(new Date(year, month - i, 1));
@@ -141,7 +144,7 @@ export const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: 
     const [intersectionObserver, setIntersectionObserver] = React.useState<IntersectionObserver>()
     const containerRef = React.useRef<HTMLDivElement>(null)
 
-    const { selectedDate: selectedDate, selectDate } = React.useContext(SelectedDateContext);
+    const { selectedDate, selectDate, startDate } = React.useContext(SelectedDateContext);
     // refs used to prevent IntersectionObserver from re createing
     const selectedDateRef = React.useRef(selectedDate && new Date(selectedDate));
     selectedDateRef.current = selectedDate && new Date(selectedDate);
@@ -156,8 +159,8 @@ export const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: 
     }, [])
 
     React.useEffect(() => {
-        activateMonthsAround(startDate.getTime())
-    }, [startDate])
+        activateMonthsAround(monthStartDate.getTime())
+    }, [monthStartDate])
 
     const onMonthSelected = React.useCallback((time: number) => {
         const date = new Date(time)
@@ -184,6 +187,10 @@ export const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: 
 
     }, [])
 
+    const toStartDate = React.useCallback(() => {
+        selectDate(startDate, { forceScroll: true })
+    }, [selectDate, startDate])
+
     const useHorisontal = React.useMemo(() => isAndroid(), [])
 
     if (typeof window === 'undefined') {
@@ -206,9 +213,12 @@ export const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: 
             {months.map((d, i) =>
                 <Month
                     startDate={d}
-                    autofocus={(d.getTime() === scrollInto) && show}
+                    scrollInto={(d.getTime() === scrollInto?.date) ? scrollInto : undefined}
                     intersectionObserver={intersectionObserver}
                 />)}
+        </div>
+        <div style={{ position: 'fixed', top: 0, right: 24, display: 'flex', justifyContent: 'center', alignItems: 'center', height: calTitleHeight, }}>
+            <button onClick={toStartDate}>Today</button>
         </div>
     </>
 }))

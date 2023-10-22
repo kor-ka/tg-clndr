@@ -16,6 +16,11 @@ import { useSearchParams } from 'react-router-dom';
 import { EventsVM } from "../model/EventsModule";
 import { BackButtonController } from "./uikit/tg/BackButtonController";
 
+const getMonthStart = (time: number) => {
+    const date = new Date(time)
+    return new Date(date.getFullYear(), date.getMonth()).getTime();
+}
+
 export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel }) => {
     const forceBodyScrollForEvents = React.useMemo(() => isAndroid(), []);
 
@@ -31,9 +36,14 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
         return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
     }, [])
     const [selectedDate, setSelectedDate] = React.useState<number | undefined>(savedSelectedDate)
-    const selectDate = React.useCallback((date: number, openCal?: boolean) => {
-        if (selectedDate || openCal) {
+    const [scrollInto, setScrollInto] = React.useState<{ date: number } | undefined>(undefined)
+
+    const selectDate = React.useCallback((date: number, options?: { openCal?: boolean, forceScroll?: boolean }) => {
+        if (selectedDate || options?.openCal) {
             setSelectedDate(date)
+            if (options?.forceScroll) {
+                setScrollInto({ date: getMonthStart(date) })
+            }
         }
     }, [selectedDate])
 
@@ -54,13 +64,12 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
     }, [selectedDate])
 
     const mode = selectedDate ? 'month' : 'upcoming';
-    const [scrollInto, setScrollInto] = React.useState<number | undefined>(undefined)
     React.useEffect(() => {
         if (selectedDate) {
             expand()
             // scroll to seleced date on open month cal 
-            const scrollIntoDate = new Date(selectedDate)
-            setScrollInto(new Date(scrollIntoDate.getFullYear(), scrollIntoDate.getMonth()).getTime())
+            const scrollIntoDate = new Date()
+            setScrollInto({ date: getMonthStart(selectedDate) })
         } else {
             // on android body scroll used for events in cal mode - jump back on return
             if (forceBodyScrollForEvents) {
@@ -239,7 +248,7 @@ const DateView = React.memo(({ date, time, isToday }: { date: string, time: numb
 
     const onClick = React.useCallback(() => {
         const d = new Date(time)
-        selectDate(new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(), true)
+        selectDate(new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(), { openCal: true })
     }, [selectDate, date]);
 
     React.useEffect(() => {
@@ -288,7 +297,7 @@ const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, V
 
     const { selectDate, startDate } = React.useContext(SelectedDateContext);
     const onClick = React.useCallback(() => {
-        selectDate(startDate, true);
+        selectDate(startDate, { openCal: true });
     }, [selectDate, startDate]);
 
     if (today.length == 0 && log.length === 0) {
