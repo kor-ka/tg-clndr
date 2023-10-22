@@ -207,8 +207,13 @@ const MainScreenAddEventButton = WithModel(({ model }: { model: SessionModel }) 
     const onClick = React.useCallback(() => {
         const canEdit = model.chatSettings.val.allowPublicEdit || model.context.val.isAdmin
         if (canEdit) {
-            console.log('MainScreenAddEventButton: navigate -> addEvent')
-            nav({ pathname: "/tg/addEvent", search: `?${searchParams.toString()}` })
+            console.log('MainScreenAddEventButton: navigate -> addEvent');
+            // random bullshit go
+            (async () => {
+                await null
+                nav({ pathname: "/tg/addEvent", search: `?${searchParams.toString()}` })
+
+            })();
         } else {
             showAlert("Only admins can add events in this groups")
         }
