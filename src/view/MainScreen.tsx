@@ -6,7 +6,7 @@ import { VM } from "../utils/vm/VM";
 import { expand, getItem, isAndroid, reqestWriteAccess, setItem, showAlert, showConfirm, WebApp, __DEV__ } from "./utils/webapp";
 import { useSSRReadyNavigate } from "./utils/navigation/useSSRReadyNavigate";
 import { MainButtonController } from "./uikit/tg/MainButtonController";
-import { Card, ListItem, UsersPics, CardLight, Link } from "./uikit/kit";
+import { Card, ListItem, UsersPics, CardLight, Link, BackgroundContext } from "./uikit/kit";
 import { ModelContext } from "./ModelContext";
 import { WithModel } from "./utils/withModelHOC";
 import { SettignsIcon } from "./uikit/SettingsIcon";
@@ -224,7 +224,7 @@ const MainScreenAddEventButton = WithModel(({ model }: { model: SessionModel }) 
 const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
     const event = useVMvalue(eventVM)
 
-    const { id, date, deleted, title, description, attendees, geo } = event;
+    const { id, date, deleted, title, description, attendees, geo, imageURL } = event;
 
     const nav = useSSRReadyNavigate()
     const onClick = React.useCallback(() => {
@@ -234,21 +234,48 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
     const timeZone = React.useContext(TimezoneContext);
     const time = React.useMemo(() => new Date(date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h24', timeZone }), [date]);
 
-    return <ListItem
-        style={{
-            minHeight: 48,
-            textDecoration: deleted ? 'line-through' : undefined
-        }}
-        onClick={onClick}
-        titile={title}
-        subtitle={description}
-        subTitleStyle={{ filter: 'grayscale(1)' }}
-        subtitleView={(geo || !!attendees.yes.length) && <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {geo && <div style={{ filter: 'grayscale(1)', fontSize: '0.8em', color: "var(--tg-theme-hint-color)", whiteSpace: 'pre-wrap', textOverflow: 'ellipsis', overflow: 'hidden' }}><Link href={`https://maps.google.com/?q=${geo.location[0]},${geo.location[1]}`}>📍{geo.address}</Link></div>}
-            {!!attendees.yes.length && <UsersPics uids={attendees.yes} />}
-        </div>}
-        right={<span style={{ fontSize: '1.2em' }}> {time} </span>}
-    />
+    const bg = React.useContext(BackgroundContext)
+    return <>
+        <ListItem
+            style={{
+                minHeight: 48,
+                textDecoration: deleted ? 'line-through' : undefined,
+                borderRadius: 16,
+                position: 'relative',
+            }}
+            onClick={onClick}
+            titile={title}
+            subtitle={description}
+            subTitleStyle={{ filter: 'grayscale(1)' }}
+            before={
+                !!imageURL && <>
+                    <img
+                        src={imageURL}
+                        style={{
+                            position: 'absolute',
+                            objectFit: 'cover',
+                            opacity: 0.1,
+                            width: 'calc(100%)', height: 'calc(100%)', top: 0, bottom: 0, left: 0, right: 0,
+
+                        }} />
+                    <div style={{
+                        position: 'absolute',
+                        width: 'calc(100%)', height: 'calc(100%)', top: 0, bottom: 0, left: 0, right: 0,
+                        boxShadow: `inset 0 0  16px 16px ${bg}`,
+                    }} />
+                </>
+            }
+            subtitleView={
+                (geo || !!attendees.yes.length) &&
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {geo && <div style={{ filter: 'grayscale(1)', fontSize: '0.8em', color: "var(--tg-theme-hint-color)", whiteSpace: 'pre-wrap', textOverflow: 'ellipsis', overflow: 'hidden' }}><Link href={`https://maps.google.com/?q=${geo.location[0]},${geo.location[1]}`}>📍{geo.address}</Link></div>}
+                    {!!attendees.yes.length && <UsersPics uids={attendees.yes} />}
+
+                </div>
+            }
+            right={<span style={{ fontSize: '1.2em' }}> {time} </span>}
+        />
+    </>
 })
 
 
