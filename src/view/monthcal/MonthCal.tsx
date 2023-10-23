@@ -59,7 +59,7 @@ const Day = WithModel(React.memo(({ date, otherMonth, model }: { date: Date, oth
             borderRadius: imageURL ? 8 : dayViewHeight - 20,
             border: `2px solid ${isSelected ? 'var(--tg-theme-button-color)' : isToday ? 'var(--tg-theme-text-color)' : 'var(--tg-theme-secondary-bg-color)'}`,
             color: (isToday && !imageURL) ? 'var(--tg-theme-bg-color)' : isSelected ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)',
-            background: imageURL ? `url(${imageURL}) 0% 0% / cover no-repeat` : undefined,
+            background: imageURL ? `url(${imageURL}) center center / cover no-repeat` : undefined,
             backgroundColor: isToday ? 'var(--tg-theme-text-color)' : isSelected ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-secondary-bg-color)',
 
         }}>
