@@ -50,6 +50,7 @@ export type Event = {
         address: string
         location: readonly [number, number]
     } | null
+    imageURL?: string,
     notification?: Notification | null
 }
 

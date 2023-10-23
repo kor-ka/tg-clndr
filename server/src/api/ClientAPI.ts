@@ -260,7 +260,6 @@ export const savedEventsToApiLight = (saved: SavedEvent[]): Event[] => {
 export const savedEventToApiFull = async (saved: SavedEvent, userId: number): Promise<Event> => {
     const event = savedEventToApiLight(saved)
     event.notification = await NOTIFICATIONS().findOne({ eventId: saved._id, userId })
-    console.log('savedEventToApiFull', event)
     return event
 }
 

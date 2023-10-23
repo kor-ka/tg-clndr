@@ -6,7 +6,8 @@ import { Subject } from "../../utils/subject";
 import { ClientApiEventUpsertCommand } from "../../../../src/shared/entity";
 import { GeoModule } from "../geoModule/GeoModule";
 import { NotificationsModule } from "../notificationsModule/NotificationsModule";
-
+import * as linkify from 'linkifyjs';
+import { parseMeta as getMeta } from "./metaParser";
 @singleton()
 export class EventsModule {
   private geo = container.resolve(GeoModule)
@@ -78,13 +79,26 @@ export class EventsModule {
       })
     }
 
-    // geo udpate - experiment with ios cal
+    // try get meta
     if (_id && command.event.description) {
-      await this.geo.geocode(command.event.description)
+      // geo
+      this.geo.geocode(command.event.description)
         .then(geo => this.events.updateOne({ _id }, { $set: { geo } }))
         // ignore geocoding errors - it's optional
         .catch(e => console.error(e))
+
+      // meta images
+      const url = linkify.find(event.description, 'url').find(u => u.isLink)?.href
+      if (url) {
+        getMeta(url)
+          .then((meta) => meta && this.events.updateOne({ _id }, { $set: { imageURL: meta.og.image || meta.images?.[0].src } }))
+          .catch(e => console.error(e))
+      }
     }
+
+
+
+    // 
 
     // non-blocking cache update
     this.getEvents(chatId, threadId).catch((e) => console.error(e));

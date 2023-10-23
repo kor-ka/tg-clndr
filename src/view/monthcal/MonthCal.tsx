@@ -17,7 +17,12 @@ export const SelectedDateContext = React.createContext<{ selectedDate: number | 
 const Day = WithModel(React.memo(({ date, otherMonth, model }: { date: Date, otherMonth: boolean, model: SessionModel }) => {
     const { selectedDate: selectedDate, selectDate } = React.useContext(SelectedDateContext);
 
-    const eventsCount = useVMvalue(model.eventsModule.getDateModel(date.getTime()).events).size
+    const events = useVMvalue(model.eventsModule.getDateModel(date.getTime()).events)
+    const eventsCount = events.size
+    const imageURL = React.useMemo(() => {
+        // not that reactive, but who cares
+        return [...events.values()].find(e => e.val.imageURL)?.val.imageURL
+    }, [events])
 
     const isSelected = (date.getTime() === selectedDate && !otherMonth);
 
@@ -44,16 +49,18 @@ const Day = WithModel(React.memo(({ date, otherMonth, model }: { date: Date, oth
         onClick={!otherMonth ? onClick : undefined}
     >
         <div style={{
+            boxSizing: 'border-box',
             display: 'flex',
-            width: dayViewHeight - 24,
-            height: dayViewHeight - 24,
+            width: dayViewHeight - 20,
+            height: dayViewHeight - 20,
             justifyContent: 'center',
             alignItems: 'center',
-
-            borderRadius: dayViewHeight - 24,
             textAlign: 'center',
-            color: isSelected ? 'var(--tg-theme-button-text-color)' : isToday ? 'var(--tg-theme-bg-color)' : 'var(--tg-theme-text-color)',
-            backgroundColor: isSelected ? 'var(--tg-theme-button-color)' : isToday ? 'var(--tg-theme-text-color)' : undefined,
+            borderRadius: imageURL ? 8 : dayViewHeight - 20,
+            border: `2px solid ${isSelected ? 'var(--tg-theme-button-color)' : isToday ? 'var(--tg-theme-text-color)' : 'var(--tg-theme-secondary-bg-color)'}`,
+            color: (isToday && !imageURL) ? 'var(--tg-theme-bg-color)' : isSelected ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)',
+            background: imageURL ? `url(${imageURL}) 0% 0% / cover no-repeat` : undefined,
+            backgroundColor: isToday ? 'var(--tg-theme-text-color)' : isSelected ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-secondary-bg-color)',
 
         }}>
             <div style={{ display: 'flex' }}>{date.getDate()}</div>
