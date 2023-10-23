@@ -31,16 +31,18 @@ const usersListStr = async (uids: number[]) => {
 const renderAtChat = (atChat?: { name: string, id: number }) => {
     if (atChat) {
         const { name, id } = atChat;
-        let linkChatId = id
-        let linkChatIdStr = new Number(id).toString()
-        if (linkChatIdStr.startsWith('-1')) {
+        // is supergroup
+        if (id <= -1000000000000 && id >= -1999999999999) {
+            let linkChatId = id
+            let linkChatIdStr = new Number(id).toString()
             linkChatIdStr = linkChatIdStr.replace('-1', '')
             linkChatId = Number.parseInt(linkChatIdStr)
+            return `<a href="https://t.me/c/${linkChatId}/-1">@‌${htmlEntities(name.trim())}</a>`
+        } else {
+            return `@‌${htmlEntities(name.trim())}`
         }
-        return `<a href="https://t.me/c/${linkChatId}/-1">@‌${htmlEntities(name)}</a>`
-    } else {
-        return ""
     }
+    return ""
 }
 
 export const renderEvent = async ({ date, tz, title, description, attendees, deleted, geo }: SavedEvent, options?: { timeZones?: Set<string>, renderDate?: boolean, renderAttendees?: boolean, atChat?: { name: string, id: number } }) => {
