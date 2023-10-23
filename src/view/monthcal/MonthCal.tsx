@@ -11,6 +11,7 @@ enum WEEK_START {
 export const dayViewHeight = 56;
 export const calTitleHeight = 48;
 export const calHeight = 6 * dayViewHeight + calTitleHeight;
+const selectedCircleSize = dayViewHeight - 22;
 
 export const SelectedDateContext = React.createContext<{ selectedDate: number | undefined, startDate: number, selectDate: (date: number, options?: { openCal?: boolean, forceScroll?: boolean }) => void }>({ selectedDate: Date.now(), startDate: Date.now(), selectDate: () => { } })
 
@@ -51,15 +52,15 @@ const Day = WithModel(React.memo(({ date, otherMonth, model }: { date: Date, oth
         <div style={{
             boxSizing: 'border-box',
             display: 'flex',
-            width: dayViewHeight - 20,
-            height: dayViewHeight - 20,
+            width: selectedCircleSize,
+            height: selectedCircleSize,
             justifyContent: 'center',
             alignItems: 'center',
             textAlign: 'center',
-            borderRadius: imageURL ? 8 : dayViewHeight - 20,
-            border: `2px solid ${isSelected ? 'var(--tg-theme-button-color)' : isToday ? 'var(--tg-theme-text-color)' : 'var(--tg-theme-secondary-bg-color)'}`,
+            borderRadius: imageURL ? 8 : selectedCircleSize,
+            border: `2px solid ${isSelected ? 'var(--tg-theme-button-color)' : isToday ? 'var(--tg-theme-text-color)' : 'transparent'}`,
             color: (isToday && !imageURL) ? 'var(--tg-theme-bg-color)' : isSelected ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)',
-            background: imageURL ? `url(${imageURL}) center center / cover no-repeat` : undefined,
+            background: imageURL ? `url(${imageURL}) center center / cover no-repeat border-box` : undefined,
             backgroundColor: isToday ? 'var(--tg-theme-text-color)' : isSelected ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-secondary-bg-color)',
 
         }}>
