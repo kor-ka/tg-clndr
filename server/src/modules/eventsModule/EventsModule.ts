@@ -79,17 +79,22 @@ export class EventsModule {
       })
     }
 
+    // combine non-critical promises
+    const syncActions: Promise<unknown>[] = []
+
     // try get meta
     if (_id) {
       // geo
       if (command.event.description) {
         this.geo.geocode(command.event.description)
+          // never wait 3d party APIs
           .then(geo => this.events.updateOne({ _id }, { $set: { geo } }))
           .catch(e => console.error(e));
-        // ignore geocoding errors - it's optional
       } else {
-        this.events.updateOne({ _id }, { $set: { geo: undefined } })
-          .catch(e => console.error(e));
+        syncActions.push(
+          this.events.updateOne({ _id }, { $set: { geo: undefined } })
+            .catch(e => console.error(e))
+        );
       }
 
       // meta images
@@ -99,24 +104,26 @@ export class EventsModule {
         clearMeta = clearMeta || !url;
         if (url) {
           getMeta(url)
+            // never wait 3d party APIs
             .then((meta) => meta && this.events.updateOne({ _id }, { $set: { imageURL: meta.og.image || meta.images?.[0].src } }))
             .catch(e => console.error(e));
         }
       }
       if (clearMeta) {
-        this.events.updateOne({ _id }, { $set: { imageURL: undefined } })
-          .catch(e => console.error(e))
+        syncActions.push(
+          this.events.updateOne({ _id }, { $set: { imageURL: undefined } })
+            .catch(e => console.error(e))
+        );
       }
     }
-
-
-
-    // 
 
     // non-blocking cache update
     this.getEvents(chatId, threadId).catch((e) => console.error(e));
 
-    const updatedEvent = await this.events.findOne({ _id });
+    syncActions.push(
+      this.events.findOne({ _id })
+    );
+    const updatedEvent = (await Promise.all(syncActions))[syncActions.length - 1] as WithId<ServerEvent> | null
     if (!updatedEvent) {
       throw new Error("operation lost during " + type);
     }
