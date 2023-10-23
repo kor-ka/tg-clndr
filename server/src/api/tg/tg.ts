@@ -87,7 +87,7 @@ export class TelegramBot {
       {
         renderAttendees: false,
         atChat: chatMeta ? { id: chatMeta.chatId, name: chatMeta.name } : undefined,
-        renderDate: event.date - Date.now() >= 1000 * 60 * 60 * 24,
+        renderDate: event.date - Date.now() >= 1000 * 60 * 60 * 12,
       }));
     let key = [event.chatId, event.threadId].filter(Boolean).join('_');
     const token = getChatToken(event.chatId);
