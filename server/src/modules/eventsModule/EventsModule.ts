@@ -80,18 +80,31 @@ export class EventsModule {
     }
 
     // try get meta
-    if (_id && command.event.description) {
+    if (_id) {
       // geo
-      this.geo.geocode(command.event.description)
-        .then(geo => this.events.updateOne({ _id }, { $set: { geo } }))
+      if (command.event.description) {
+        this.geo.geocode(command.event.description)
+          .then(geo => this.events.updateOne({ _id }, { $set: { geo } }))
+          .catch(e => console.error(e));
         // ignore geocoding errors - it's optional
-        .catch(e => console.error(e))
+      } else {
+        this.events.updateOne({ _id }, { $set: { geo: undefined } })
+          .catch(e => console.error(e));
+      }
 
       // meta images
-      const url = linkify.find(event.description, 'url').find(u => u.isLink)?.href
-      if (url) {
-        getMeta(url)
-          .then((meta) => meta && this.events.updateOne({ _id }, { $set: { imageURL: meta.og.image || meta.images?.[0].src } }))
+      let clearMeta = !command.event.description;
+      if (command.event.description) {
+        const url = linkify.find(event.description, 'url').find(u => u.isLink)?.href;
+        clearMeta = clearMeta || !url;
+        if (url) {
+          getMeta(url)
+            .then((meta) => meta && this.events.updateOne({ _id }, { $set: { imageURL: meta.og.image || meta.images?.[0].src } }))
+            .catch(e => console.error(e));
+        }
+      }
+      if (clearMeta) {
+        this.events.updateOne({ _id }, { $set: { imageURL: undefined } })
           .catch(e => console.error(e))
       }
     }
