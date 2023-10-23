@@ -21,6 +21,7 @@ class DateModel {
             (this.date.getMonth() !== eventDate.getMonth()) ||
             (this.date.getDate() !== eventDate.getDate())) {
             nextMap.delete(vm.val.id)
+            console.log('date model delete', this.date, vm)
         }
 
         this.events.next(nextMap)
@@ -30,18 +31,18 @@ export class EventsModule {
     constructor(private model: SessionModel) { }
 
     private frehsEnough = Date.now() - 1000 * 60 * 60 * 4;
+    private allEvents = new Map<string, VM<Event>>()
     readonly futureEvents: EventsVM = new VM(new Map<string, VM<Event>>())
-    readonly allEvents: EventsVM = new VM(new Map<string, VM<Event>>())
 
     private datesModels = new Map<number, DateModel>
 
     private monthActivations = new Map<number, Promise<Event[]>>()
 
     readonly updateEventVM = (event: Event) => {
-        let vm = this.futureEvents.val.get(event.id)
+        let vm = this.allEvents.get(event.id)
         if (!vm) {
-            vm = new VM(event)
-            this.futureEvents.val.set(event.id, vm)
+            vm = new VM(event);
+            this.allEvents.set(event.id, vm);
         } else if (vm.val.seq > event.seq) {
             // skip outdated seq update
             return vm
@@ -50,16 +51,12 @@ export class EventsModule {
         // merge light and full version
         vm.next({ ...vm.val, ...event });
 
-        const nextAllEntries = [...this.allEvents.val.entries(), [event.id, vm] as const].sort((a, b) => a[1].val.date - b[1].val.date)
-        const nextAllMap = new Map(nextAllEntries)
-        this.allEvents.next(nextAllMap)
-
-        const nextMapEntries = [...this.futureEvents.val.entries(), [event.id, vm] as const].sort((a, b) => a[1].val.date - b[1].val.date)
-        const nextMap = new Map(nextMapEntries)
+        const nextFutureMapEntries = [...this.futureEvents.val.entries(), [event.id, vm] as const].sort((a, b) => a[1].val.date - b[1].val.date)
+        const nextFutureMap = new Map(nextFutureMapEntries)
         if (vm.val.date <= this.frehsEnough) {
-            nextMap.delete(vm.val.id)
+            nextFutureMap.delete(vm.val.id)
         }
-        this.futureEvents.next(nextMap)
+        this.futureEvents.next(nextFutureMap)
 
         if (prevDate !== vm.val.date) {
             this.getDateModel(prevDate).onUpdated(vm)
@@ -91,11 +88,11 @@ export class EventsModule {
     // 
 
     readonly getOperationOpt = <T = Event>(id: string): T | undefined => {
-        return this.allEvents.val.get(id)?.val as T
+        return this.allEvents.get(id)?.val as T
     }
 
     getEventVM = (id: string) => {
-        return this.allEvents.val.get(id)
+        return this.allEvents.get(id)
     }
 
     getDateModel = (rawdate: number) => {
