@@ -73,6 +73,7 @@ button {
 
 .gost {
   background-color: var(--tg-theme-secondary-bg-color);
+  color: var(--tg-theme-text-color);
 }
 
 a {
