@@ -31,8 +31,8 @@ export const ChatSettings = WithModel(React.memo((({ model }: { model: SessionMo
             />}
             <ListItem
                 onClick={switchSendMessage}
-                titile="Send event messages"
-                subtitle="Enable to send message to the chat when a new event created"
+                titile="Send events messages"
+                subtitle="Enable to send message to the chat when a new event is created"
                 right={<>
                     <input checked={settings.enableEventMessages} readOnly={true} type="checkbox" disabled={loading} style={{ width: 20, height: 20, accentColor: 'var(--tg-theme-button-color)' }} /></>}
             /></Card>

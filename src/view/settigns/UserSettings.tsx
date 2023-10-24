@@ -37,7 +37,7 @@ export const UserSettings = WithModel(React.memo((({ model }: { model: SessionMo
             <ListItem
                 onClick={switchEnabledNotification}
                 titile="Enable notifications"
-                subtitle="Enable to allow bot send you notificaions about events"
+                subtitle="Enable to allow bot to send you notifications about upcoming events"
                 right={<>
                     <input checked={settings.enableNotifications} readOnly={true} type="checkbox" disabled={loading} style={{ width: 20, height: 20, accentColor: 'var(--tg-theme-button-color)' }} /></>}
             />
