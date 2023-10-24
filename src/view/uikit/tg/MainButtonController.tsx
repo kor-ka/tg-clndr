@@ -30,5 +30,5 @@ export const MainButtonController = React.memo(({ onClick, text, color, textColo
         mb.setParams({ text, color, text_color: textColor, is_active: isActive ?? true, is_visible: isVisible ?? true })
     }, [text, color, textColor, isActive, isVisible])
 
-    return (__DEV__ && isVisible !== false) ? <button style={{ position: 'fixed', zIndex: 2, top: 0, right: 0 }} disabled={isActive === false} onClick={onClick} >{text}{progress ? "⌛️" : ""}</button> : null
+    return (__DEV__ && isVisible !== false) ? <button style={{ position: 'fixed', zIndex: 2, bottom: 0, left: 0, right: 0 }} disabled={isActive === false} onClick={onClick} >{text}{progress ? "⌛️" : ""}</button> : null
 })

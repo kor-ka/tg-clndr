@@ -4,18 +4,18 @@ import { WebApp } from "../utils/webapp";
 import { useVMvalue } from "../../utils/vm/useVM";
 import { UsersProviderContext } from "../App";
 
-export const BackgroundContext = React.createContext("var(--tg-theme-bg-color)")
+export const BackgroundContext = React.createContext("var(--tg-theme-secondary-bg-color)")
 
 export const Card = ({ children, style, onClick }: { children: any, style?: any, onClick?: React.MouseEventHandler<HTMLDivElement> }) => {
-    return <div onClick={onClick} className={onClick ? "card" : undefined} style={{ display: 'flex', flexDirection: 'column', margin: '8px 16px', padding: 4, backgroundColor: "var(--tg-theme-secondary-bg-color)", borderRadius: 16, ...style }}>
-        <BackgroundContext.Provider value="var(--tg-theme-secondary-bg-color)">
+    return <div onClick={onClick} className={onClick ? "card" : undefined} style={{ display: 'flex', flexDirection: 'column', margin: '8px 16px', padding: 4, backgroundColor: "var(--tg-theme-bg-color)", borderRadius: 16, ...style }}>
+        <BackgroundContext.Provider value="var(--tg-theme-bg-color)">
             {children}
         </BackgroundContext.Provider>
     </div>
 }
 
 export const Button = ({ children, style, onClick, disabled }: { children: any, style?: any, onClick?: React.MouseEventHandler<HTMLButtonElement>, disabled?: boolean }) => {
-    return <button disabled={disabled} onClick={onClick} style={{ margin: '8px 16px', padding: 0, backgroundColor: "var(--tg-theme-secondary-bg-color)", borderRadius: 8, ...style }}>
+    return <button disabled={disabled} onClick={onClick} style={{ margin: '8px 16px', padding: 0, backgroundColor: "var(--tg-theme-bg-color)", borderRadius: 8, ...style }}>
         <div style={{ display: 'flex', flexDirection: 'column', padding: 4, opacity: disabled ? 0.8 : undefined }}>{children}</div>
     </button>
 }
@@ -61,7 +61,7 @@ export const ListItem = React.memo(({ titile: title, titleView, subtitle, subtit
                 {subtitleView}
             </div>}
         </div>
-        {!!right && <div style={{ zIndex: 1, display: 'flex', padding: '4px 16px', flexShrink: 0, alignItems: 'center', ...rightStyle }}>{right}</div>}
+        {!!right && <div style={{ zIndex: 1, display: 'flex', padding: '4px 0 4px 16px', flexShrink: 0, alignItems: 'center', ...rightStyle }}>{right}</div>}
     </div>
 }
 )

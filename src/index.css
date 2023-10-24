@@ -58,7 +58,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   color: var(--tg-theme-text-color);
   font-size: large;
-  background-color: var(--tg-theme-bg-color);
+  background-color: var(--tg-theme-secondary-bg-color);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -66,9 +66,13 @@ button {
   font-size: 1em;
   border: none;
   background-color: var(--tg-theme-button-color);
-  padding: 4px;
+  padding: 4px 8px;
   border-radius: 8px;
   color: var(--tg-theme-button-text-color);
+}
+
+.gost {
+  background-color: var(--tg-theme-secondary-bg-color);
 }
 
 a {
@@ -84,7 +88,7 @@ select,
 textarea {
   color: var(--tg-theme-text-color);
   font-size: 1.2em;
-  background-color: var(--tg-theme-bg-color);
+  background-color: var(--tg-theme-secondary-bg-color);
   border: none;
   outline: none;
 }
@@ -123,4 +127,42 @@ select {
 
 .week:first-child {
   justify-content: flex-end;
+}
+
+@keyframes events_slide_down {
+  from {
+    transform: translateY(56px);
+  }
+
+  to {
+    transform: translateY(384px);
+  }
+}
+
+.events_slide_down {
+  animation-name: events_slide_down;
+  animation-fill-mode: forwards;
+  animation-timing-function: ease-in-out;
+  animation-duration: 250ms;
+}
+
+@keyframes events_slide_up {
+  from {
+    transform: translateY(328px);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.events_slide_up {
+  animation-name: events_slide_up;
+  animation-fill-mode: forwards;
+  animation-timing-function: ease-in-out;
+  animation-duration: 250ms;
+}
+
+.instant {
+  animation-duration: 0s;
 }

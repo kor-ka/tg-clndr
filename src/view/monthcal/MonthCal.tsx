@@ -9,11 +9,11 @@ enum WEEK_START {
     MONDAY = 1
 }
 export const dayViewHeight = 56;
-export const calTitleHeight = 48;
+export const calTitleHeight = 56;
 export const calHeight = 6 * dayViewHeight + calTitleHeight;
 const selectedCircleSize = dayViewHeight - 22;
 
-export const SelectedDateContext = React.createContext<{ selectedDate: number | undefined, startDate: number, selectDate: (date: number, options?: { openCal?: boolean, forceScroll?: boolean }) => void }>({ selectedDate: Date.now(), startDate: Date.now(), selectDate: () => { } })
+export const SelectedDateContext = React.createContext<{ selectedDate: number | undefined, startDate: number, selectDate: (date: number, options?: { openCal?: boolean, forceScroll?: boolean }) => void, closeCal: () => void }>({ selectedDate: Date.now(), startDate: Date.now(), selectDate: () => { }, closeCal: () => { } })
 
 const Day = WithModel(React.memo(({ date, otherMonth, model }: { date: Date, otherMonth: boolean, model: SessionModel }) => {
     const { selectedDate: selectedDate, selectDate } = React.useContext(SelectedDateContext);
@@ -59,9 +59,9 @@ const Day = WithModel(React.memo(({ date, otherMonth, model }: { date: Date, oth
             textAlign: 'center',
             borderRadius: imageURL ? 8 : selectedCircleSize,
             border: `2px solid ${isSelected ? 'var(--tg-theme-button-color)' : isToday ? 'var(--tg-theme-text-color)' : 'transparent'}`,
-            color: (isToday && !imageURL) ? 'var(--tg-theme-bg-color)' : isSelected ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)',
+            color: (isToday && !imageURL) ? 'var(--tg-theme-secondary-bg-color)' : isSelected ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)',
             background: imageURL ? `url(${imageURL}) center center / cover no-repeat border-box` : undefined,
-            backgroundColor: isToday ? 'var(--tg-theme-text-color)' : isSelected ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-secondary-bg-color)',
+            backgroundColor: isToday ? 'var(--tg-theme-text-color)' : isSelected ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-bg-color)',
 
         }}>
             <div style={{ display: 'flex' }}>{date.getDate()}</div>
@@ -128,7 +128,7 @@ const Month = React.memo(({ startDate, scrollInto, intersectionObserver }: { sta
             scrollSnapAlign: 'start',
             scrollSnapStop: 'always',
         }}>
-        <div ref={titleRef} style={{ display: 'flex', height: calTitleHeight, alignItems: 'center', paddingLeft: 24, fontWeight: 600 }}>{startDate.toLocaleDateString('en', { month: 'long', year: 'numeric' })}</div>
+        <div ref={titleRef} style={{ display: 'flex', alignSelf: 'flex-end', height: calTitleHeight, alignItems: 'center', paddingRight: 20, fontWeight: 600 }}>{startDate.toLocaleDateString('en', { month: 'long', year: 'numeric' })}</div>
         <div style={{ display: 'flex', flexDirection: 'column', alignSelf: 'stretch' }}>
             {weeks.map(d => <Week days={d} monthStart={startDate} />)}
         </div>
@@ -153,7 +153,7 @@ export const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: 
     const [intersectionObserver, setIntersectionObserver] = React.useState<IntersectionObserver>()
     const containerRef = React.useRef<HTMLDivElement>(null)
 
-    const { selectedDate, selectDate, startDate } = React.useContext(SelectedDateContext);
+    const { selectedDate, selectDate, startDate, closeCal } = React.useContext(SelectedDateContext);
     // refs used to prevent IntersectionObserver from re createing
     const selectedDateRef = React.useRef(selectedDate && new Date(selectedDate));
     selectedDateRef.current = selectedDate && new Date(selectedDate);
@@ -196,14 +196,19 @@ export const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: 
 
     }, [])
 
-    const toStartDate = React.useCallback(() => {
-        selectDate(startDate, { forceScroll: true })
-    }, [selectDate, startDate])
+    const todayClick = React.useCallback(() => {
+        if (startDate === selectedDate) {
+            closeCal();
+        } else {
+            selectDate(startDate, { forceScroll: true });
 
-    const useHorisontal = React.useMemo(() => isAndroid(), [])
+        }
+    }, [selectDate, selectedDate, startDate, closeCal]);
+
+    const useHorisontal = React.useMemo(() => isAndroid(), []);
 
     if (typeof window === 'undefined') {
-        return null
+        return null;
     }
 
     return <>
@@ -217,7 +222,7 @@ export const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: 
                 overflowX: useHorisontal ? 'scroll' : undefined,
                 overflowY: useHorisontal ? undefined : 'scroll',
                 scrollSnapType: `${useHorisontal ? 'x' : 'y'} mandatory`,
-                backgroundColor: 'var(--tg-theme-secondary-bg-color)',
+                backgroundColor: 'var(--tg-theme-bg-color)',
             }}>
             {months.map((d, i) =>
                 <Month
@@ -226,8 +231,8 @@ export const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: 
                     intersectionObserver={intersectionObserver}
                 />)}
         </div>
-        <div style={{ position: 'fixed', top: 0, right: 24, display: 'flex', justifyContent: 'center', alignItems: 'center', height: calTitleHeight, }}>
-            <button onClick={toStartDate}>Today</button>
+        <div style={{ position: 'fixed', top: 0, left: 20, display: 'flex', justifyContent: 'center', alignItems: 'center', height: calTitleHeight, }}>
+            <button className="gost" onClick={todayClick}>Today</button>
         </div>
     </>
 }))

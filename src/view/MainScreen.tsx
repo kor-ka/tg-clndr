@@ -11,7 +11,7 @@ import { ModelContext } from "./ModelContext";
 import { WithModel } from "./utils/withModelHOC";
 import { SettignsIcon } from "./uikit/SettingsIcon";
 import { SplitAvailableContext, TimezoneContext, HomeLocSetup } from "./App";
-import { SelectedDateContext, MonthCalendar, calHeight } from "./monthcal/MonthCal";
+import { SelectedDateContext, MonthCalendar, calHeight, calTitleHeight } from "./monthcal/MonthCal";
 import { useSearchParams } from 'react-router-dom';
 import { EventsVM } from "../model/EventsModule";
 import { BackButtonController } from "./uikit/tg/BackButtonController";
@@ -22,6 +22,8 @@ const getMonthStart = (time: number) => {
 }
 
 export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel }) => {
+    const nav = useSSRReadyNavigate();
+
     const forceBodyScrollForEvents = React.useMemo(() => isAndroid(), []);
 
     const [searchParams, setSearchParams] = useSearchParams()
@@ -48,6 +50,10 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
     }, [selectedDate])
 
     const [eventsVM, setEventsVM] = React.useState<VM<Map<string, VM<Event>>>>()
+
+    const openCal = React.useCallback(() => {
+        setSelectedDate(startDate)
+    }, [startDate])
 
     const closeCal = React.useCallback(() => {
         setSelectedDate(undefined)
@@ -89,34 +95,76 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
 
     }, [mode, forceBodyScrollForEvents])
 
+    const toSettings = React.useCallback(() => nav("/tg/settings"), [nav])
+
+
+    const firstRender = React.useRef(true);
+    const animation = React.useMemo(() => [mode === 'month' ? 'events_slide_down' : 'events_slide_up', firstRender.current && 'instant'].filter(Boolean).join(' '), [mode]);
+    firstRender.current = false;
+
+    console.log('animation', animation);
 
     return <div style={{ display: 'flex', flexDirection: 'column', ...mode === 'month' && !forceBodyScrollForEvents ? { height: '100vh', minHeight: '100%' } : {} }}>
         <HomeLocSetup />
         <BackButtonController canGoBack={mode === 'month'} goBack={closeCal} />
 
-        <SelectedDateContext.Provider value={{ selectDate, startDate, selectedDate }}>
+        <SelectedDateContext.Provider value={{ selectDate, startDate, selectedDate, closeCal }}>
             <div style={{ position: 'fixed', top: 0, left: 0, right: 0, overflow: 'hidden' }}>
                 <MonthCalendar show={mode === 'month'} scrollInto={scrollInto} />
                 {/* overlay */}
-                <div style={{
-                    position: 'absolute', top: 0, width: '100%',
-                    height: calHeight,
-                    willChange: 'transform',
-                    transform: mode === 'month' ? `translateY(${calHeight}px)` : undefined,
-                    transition: `transform ease-in-out 250ms`,
-                    background: 'var(--tg-theme-bg-color)',
-                }} />
+                <div
+                    className={animation}
+                    style={{
+                        position: 'absolute', top: 0, width: '100%',
+                        height: calHeight,
+                        willChange: 'transform',
+                        background: 'var(--tg-theme-secondary-bg-color)',
+                    }} />
             </div>
-            <div style={{
-                display: 'flex',
-                zIndex: 1,
-                flexDirection: 'column',
-                willChange: 'transform',
-                transform: mode === 'month' ? `translateY(${calHeight}px)` : undefined,
-                transition: `transform ease-in-out 250ms`,
-                background: 'var(--tg-theme-bg-color)',
-                height: (mode === 'month' && !forceBodyScrollForEvents) ? `calc(var(--tg-viewport-stable-height) - ${calHeight}px)` : undefined,
-            }}>
+
+            {mode === 'upcoming' &&
+                <div
+                    className={animation}
+                    style={{
+                        position: 'fixed', top: 0, left: 20,
+                        zIndex: 4,
+                        height: calTitleHeight,
+                        display: 'flex',
+                        justifyContent: 'start',
+                        alignItems: 'center'
+                    }}>
+                    <button className="gost" onClick={openCal}>Month</button>
+                </div>}
+            {mode === 'upcoming' &&
+                <div
+                    className={animation}
+                    onClick={toSettings}
+                    style={{
+                        position: 'fixed', top: 0, right: 20,
+                        zIndex: 4,
+                        height: calTitleHeight,
+                        display: 'flex',
+                        justifyContent: 'start',
+                        alignItems: 'center',
+                        padding: ' 0 16px',
+                        margin: '0 -16px'
+                    }}>
+                    <SettignsIcon />
+
+                </div>}
+            <div
+                className={animation}
+
+                style={{
+                    display: 'flex',
+                    zIndex: 1,
+                    flexDirection: 'column',
+                    willChange: 'transform',
+                    // transform: mode === 'month' ? `translateY(${calHeight}px)` : undefined,
+                    background: 'var(--tg-theme-secondary-bg-color)',
+                    height: (mode === 'month' && !forceBodyScrollForEvents) ? `calc(var(--tg-viewport-stable-height) - ${calHeight}px)` : undefined,
+
+                }}>
                 {mode === 'month' ?
                     eventsVM &&
                     <>
@@ -127,16 +175,14 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                             minHeight: (mode === 'month' && !forceBodyScrollForEvents) ? `calc(var(--tg-viewport-stable-height) - ${calHeight}px)` : undefined,
 
                             overflowY: !forceBodyScrollForEvents ? 'scroll' : undefined,
-                            paddingTop: 8,
-                            background: 'var(--tg-theme-bg-color)',
+                            background: 'var(--tg-theme-secondary-bg-color)',
                         }}>
                             <EventsView key={mode} mode={'month'} eventsVM={eventsVM} />
                             <div style={{ display: 'flex', flexShrink: 0, height: 96 }} />
                         </div>
                     </> :
-                    <MainScreenView eventsVM={model.eventsModule.futureEvents} />}
-
-
+                    <MainScreenView eventsVM={model.eventsModule.futureEvents} />
+                }
             </div>
         </SelectedDateContext.Provider>
 
@@ -151,31 +197,43 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
 }))
 
 export const MainScreenView = React.memo(({ eventsVM }: { eventsVM: EventsVM }) => {
-    const nav = useSSRReadyNavigate();
-    const toSettings = React.useCallback(() => nav("/tg/settings"), [nav])
 
     return <>
+
         <div style={{
             display: 'flex',
             flexDirection: 'column',
-            paddingTop: '8px',
             paddingBottom: '96px'
         }}>
             <EventsView key={'upcoming'} mode={'upcoming'} eventsVM={eventsVM} />
-            <Card onClick={toSettings}>
-                <ListItem
-                    titleView={
-                        <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                            <div style={{ width: 46, height: 46, borderRadius: 46, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: 'var(--tg-theme-button-color)' }}>
-                                <SettignsIcon />
-                            </div>
-                            <span style={{ margin: 8 }}>Settings</span>
-                        </div>
-                    } />
-            </Card>
         </div>
         {/* render only in ssr since there is no willChange: transform which breaks position: fixed */}
-        {typeof window === 'undefined' && <ToSplit />}
+        {typeof window === 'undefined' &&
+            <>
+                <div style={{
+                    position: 'fixed', top: 0, left: 20,
+                    zIndex: 4,
+                    height: calTitleHeight,
+                    display: 'flex',
+                    justifyContent: 'start',
+                    alignItems: 'center'
+                }}>
+                    <button className="gost">Month</button>
+                </div>
+                <div style={{
+                    position: 'fixed', top: 0, right: 20,
+                    zIndex: 4,
+                    height: calTitleHeight,
+                    display: 'flex',
+                    justifyContent: 'start',
+                    alignItems: 'center'
+                }}>
+                    <SettignsIcon />
+
+                </div>
+                <ToSplit />
+            </>
+        }
 
     </>
 })
@@ -280,7 +338,7 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
 
 
 let amimateDateOnce = true
-const DateView = React.memo(({ date, time, isToday }: { date: string, time: number, isToday?: boolean }) => {
+const DateView = React.memo(({ date, time, isFirst }: { date: string, time: number, isFirst?: boolean }) => {
     const model = React.useContext(ModelContext);
     const shouldAnimate = React.useMemo(() => model && !model.ssrTimeSone() && amimateDateOnce, []);
     const [maxHeight, setMaxHeight] = React.useState(shouldAnimate ? 0 : 50);
@@ -300,83 +358,75 @@ const DateView = React.memo(({ date, time, isToday }: { date: string, time: numb
             }, 10);
         }
     }, [shouldAnimate]);
-    const style = React.useMemo(() => {
-        return isToday ?
-            { alignSelf: 'start', margin: 0, padding: 0, fontSize: '1.2em', borderRadius: 12, transition: "max-height ease-in 300ms", maxHeight, overflow: 'hidden' } :
-            { alignSelf: 'center', margin: 0, padding: 0, fontSize: '0.7em', borderRadius: 12, transition: "max-height ease-in 300ms", maxHeight, overflow: 'hidden' };
 
-    }, [isToday, maxHeight])
-    return <div onClick={onClick} style={{ display: 'flex', alignSelf: isToday ? 'start' : 'center', padding: isToday ? 8 : 16, margin: isToday ? -8 : -16, position: 'sticky', zIndex: 3, top: isToday ? -8 : 0 }}>
-        <Card key={'date'} style={style}>
-            <ListItem titile={isToday ? "Today" : date} titleStyle={{ padding: 0, fontWeight: 500 }} leftStyle={{ padding: '0 4px' }} />
+    return <div onClick={onClick} style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 3,
+        width: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        alignSelf: 'center',
+        padding: `16px 20px`,
+        margin: `0 20px`,
+        backgroundColor: isFirst ? 'var(--tg-theme-bg-color)' : undefined,
+    }}>
+        <Card key={'date'} style={{
+            alignSelf: 'center', margin: 0, padding: 0, fontSize: '0.7em', borderRadius: 12, transition: "max-height ease-in 300ms", maxHeight, overflow: 'hidden'
+        }}>
+            <ListItem style={{ height: 16 }} titile={date} titleStyle={{ padding: 0, fontWeight: 500 }} leftStyle={{ padding: '0 4px' }} />
         </Card>
     </div>
 });
 
+const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec']
+const currentYear = new Date().getFullYear()
 const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, VM<Event>>>, mode: 'upcoming' | 'month' }) => {
     const showDates = mode === 'upcoming';
-    const groupToday = mode === 'upcoming';
     const timeZone = React.useContext(TimezoneContext);
     const eventsMap = useVMvalue(eventsVM);
-    const [todayStr, todayYear] = React.useMemo(() => {
-        const todayDate = new Date()
-        const todayStr = todayDate.toLocaleString('en', { month: 'short', day: 'numeric', timeZone })
-        const todayYear = todayDate.toLocaleString('en', { year: 'numeric', timeZone })
-        return [todayStr, todayYear]
-    }, [timeZone]);
-    const { today, log } = React.useMemo(() => {
-        const today: { vm: VM<Event>, date: string, time: number }[] = [];
-        const log: { vm: VM<Event>, date: string, time: number }[] = [];
+    const events = React.useMemo(() => {
+        const events: { vm: VM<Event>, date: string, time: number }[] = [];
         for (let vm of eventsMap.values()) {
             const date = new Date(vm.val.date)
-            const dateYear = date.toLocaleString('en', { year: 'numeric', timeZone })
-            const dateStr = date.toLocaleString('en', { month: 'short', day: 'numeric', year: dateYear !== todayYear ? 'numeric' : undefined, timeZone });
-            (((dateStr === todayStr) && groupToday) ? today : log).push({ vm, date: dateStr, time: date.getTime() })
+            const dateYear = date.getFullYear()
+            const dateStr = `${date.getDate()} ${months[date.getMonth()]}${currentYear !== dateYear ? `, ${dateYear}` : ''}`;
+            events.push({ vm, date: dateStr, time: date.getTime() })
         }
-        return { today, log }
-    }, [eventsMap, groupToday]);
+        return events
+    }, [eventsMap]);
 
     const { selectDate, startDate } = React.useContext(SelectedDateContext);
     const onClick = React.useCallback(() => {
         selectDate(startDate, { openCal: true });
     }, [selectDate, startDate]);
 
-    if (today.length == 0 && log.length === 0) {
-        return <Card onClick={mode === 'upcoming' ? onClick : undefined}><ListItem titile={`🗓️ no ${mode === 'upcoming' ? 'upcoming events' : 'events at this date'}`} /></Card>
+    // if (true) {
+    if (eventsMap.size === 0) {
+        return <CardLight><DateView date={`🗓️ no ${mode === 'upcoming' ? 'upcoming events' : 'events at this date'}`} isFirst={mode === 'upcoming'} time={startDate} /></CardLight>
     }
 
     let prevDate: string | undefined = undefined;
     return <>
-        {!!today.length && <Card key="today">{today.map(({ vm, date, time }, i) => {
-            return <React.Fragment key={vm.val.id}>
 
-                {(showDates && timeZone && i === 0) ?
-                    <DateView date={date} isToday={true} time={time} /> :
-                    i !== 0 ?
-                        <div style={{ width: '100%', borderBottom: '1px solid rgba(127, 127, 127, .1)' }} /> :
-                        null}
-
-                <EventItem key={vm.val.id} eventVM={vm} />
-                {i !== today.length - 1 && <div style={{ width: '100%', borderBottom: '1px solid rgba(127, 127, 127, .1)' }} />}
-
-            </React.Fragment>
-        })}</Card>}
-        {!!log.length && <CardLight key="log" style={{ paddingTop: today.length === 0 ? 8 : 0 }}>{log.map(({ vm, date, time }, i) => {
+        <CardLight  >{events.map(({ vm, date, time }, i) => {
             const show = timeZone && (date !== prevDate);
             prevDate = date;
             return <React.Fragment key={vm.val.id}>
 
                 {(showDates && show && date) ?
-                    <DateView date={date} time={time} /> :
+                    <DateView date={date} time={time} isFirst={i === 0} /> :
                     i !== 0 ?
                         <div style={{ width: '100%', borderBottom: '1px solid rgba(127, 127, 127, .1)' }} /> :
                         null}
 
-                <EventItem key={vm.val.id} eventVM={vm} />
+                <div style={{ paddingTop: i === 0 ? 16 : 0 }}>
+                    <EventItem key={vm.val.id} eventVM={vm} />
+                </div>
             </React.Fragment>
-        })}</CardLight>}
+        })}</CardLight>
 
-        {(today.length + log.length) === 200 && <Card><ListItem subtitle={`Maybe there are more events, who knows 🤷‍♂️\nDeveloper was too lasy to implement pagination.`} /></Card>}
+        {(events.length) === 200 && <Card><ListItem subtitle={`Maybe there are more events, who knows 🤷‍♂️\nDeveloper was too lasy to implement pagination.`} /></Card>}
     </>
 }))
 
