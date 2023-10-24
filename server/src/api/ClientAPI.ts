@@ -187,7 +187,7 @@ export class ClientAPI {
 
                         const [
                             user,
-                            usersSaved,
+                            { users: usersSaved, usersPromise: usersSavedPromise },
                             { events, eventsPromise },
                             meta,
                             member
@@ -224,6 +224,7 @@ export class ClientAPI {
 
                         { // emit updated
                             const events = await savedEventsToApiFull(await eventsPromise, tgData.user.id);
+                            const users = await savedUsersToApi(await usersSavedPromise, chatId, threadId);
                             socket.emit("state", { events, users, chatSettings, userSettings, context });
                         }
 

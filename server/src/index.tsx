@@ -169,7 +169,7 @@ initMDB().then(() => {
       const eventsMap = new Map<string, VM<Event>>()
       savedEventsToApiLight(events).forEach(o => eventsMap.set(o.id, new VM(o)))
 
-      const users = await container.resolve(UserModule).getUsersCached(chatId)
+      const { users } = await container.resolve(UserModule).getUsersCached(chatId)
       const usersProvider = new UsersClientModule(userId)
       savedUsersToApi(users, chatId, threadId).forEach(usersProvider.updateUser)
       sw.lap('get data')
