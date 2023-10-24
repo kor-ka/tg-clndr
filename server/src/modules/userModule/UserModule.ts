@@ -35,7 +35,7 @@ export class UserModule {
       return update;
     }, {} as any);
 
-    await this.db.updateOne(
+    const userSaved = (await this.db.findOneAndUpdate(
       { id },
       {
         $set: {
@@ -47,10 +47,9 @@ export class UserModule {
           "settings.notifyBefore": null,
         }
       },
-      { upsert: true }
-    );
+      { upsert: true, returnDocument: 'after' }
+    )).value;
 
-    const userSaved = await this.getUser(id)
     if (!userSaved) {
       throw new Error(`updateUser: user not found ${user.id}`)
     }
