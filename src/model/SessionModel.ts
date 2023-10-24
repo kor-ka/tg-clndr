@@ -18,7 +18,7 @@ export class SessionModel {
     readonly chatSettings = new VM<ChatSettings>({ allowPublicEdit: false, enableEventMessages: false })
     readonly userSettings = new VM<UserSettings>({ notifyBefore: null })
 
-    readonly context = new VM<ChatContext>({ isAdmin: false })
+    readonly context = new VM<ChatContext>({ isAdmin: false, isPrivate: false })
 
     readonly ready = new Deffered<void>()
 

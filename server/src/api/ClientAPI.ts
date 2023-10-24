@@ -24,6 +24,16 @@ const processError = (e: any, ack: (message: { error: string }) => void) => {
     ack({ error: message })
 }
 
+const getIsAdmin = async (bot: TelegramBot, chatId: number, userId: number) => {
+    return (userId === chatId) || ['administrator', 'creator'].includes((await bot.bot.getChatMember(chatId, userId)).status)
+}
+
+const checkPMAccess = (chatId: number, userId: number) => {
+    if ((chatId >= 0) && (chatId !== userId)) {
+        throw new Error("Restricted")
+    }
+}
+
 export class ClientAPI {
     private io: socketIo.Server;
 
@@ -59,43 +69,49 @@ export class ClientAPI {
                 const { auth_date, hash } = tgData
                 const auth = checkTgAuth(decodeURIComponent(initData as string), hash, auth_date);
                 if (!auth) {
-                    return
+                    socket.disconnect();
+                    return;
                 }
                 const [chat_descriptor, token] = (tgData.start_param as string).split('T') ?? [];
                 const [chatId, threadId] = chat_descriptor?.split('_').map(Number) ?? []
 
                 if (chatId === undefined) {
-                    socket.disconnect()
-                    return
+                    socket.disconnect();
+                    return;
                 }
 
-                sw.lap('tg auth')
+                sw.lap('tg auth');
 
                 try {
+                    checkPMAccess(chatId, tgData.user.id);
                     checkChatToken(token, chatId);
                 } catch (e) {
-                    socket.disconnect()
-                    return
+                    socket.disconnect();
+                    return;
                 }
 
-                const sessionId = new ObjectId()
-                this.stats.onSessionStart(sessionId, tgData.user.id, chatId).catch(e => console.error('stat: failed to track session start:', e))
+                const sessionId = new ObjectId();
+                this.stats.onSessionStart(sessionId, tgData.user.id, chatId).catch(e => console.error('stat: failed to track session start:', e));
                 socket.on('disconnect', () => {
-                    this.stats.onSessionEnd(sessionId).catch(e => console.error('stat: failed to track session end:', e))
+                    this.stats.onSessionEnd(sessionId).catch(e => console.error('stat: failed to track session end:', e));
                 })
 
-                sw.lap('check chat token')
+                sw.lap('check chat token');
 
                 socket.on("command", async (
                     command: ClientApiEventCommand,
                     ack: (res: { patch: { type: 'create' | 'update' | 'delete', event: Event }, error?: never } | { error: string, patch?: never }) => void) => {
                     try {
                         // TODO: sanitise op
-                        const { settings } = (await this.chatMetaModule.getChatMeta(chatId))!
-                        if (!settings.allowPublicEdit) {
-                            const isAdmin = ['administrator', 'creator'].includes((await this.bot.bot.getChatMember(chatId, tgData.user.id)).status)
-                            if (!isAdmin) {
-                                throw new Error("Restricted")
+
+                        if (chatId >= 0) {
+                            // do not check settings for PMs
+                        } else {
+                            const { settings } = (await this.chatMetaModule.getChatMeta(chatId))!
+                            if (!settings.allowPublicEdit) {
+                                if (!(await getIsAdmin(this.bot, chatId, tgData.user.id))) {
+                                    throw new Error("Restricted");
+                                }
                             }
                         }
 
@@ -129,9 +145,8 @@ export class ClientAPI {
                     settings: Partial<ChatSettings>,
                     ack: (res: { updated: ChatSettings, error?: never } | { error: string, updated?: never }) => void) => {
                     try {
-                        const member = await this.bot.bot.getChatMember(chatId, tgData.user.id)
-                        if (!(member.status === 'administrator' || member.status === 'creator')) {
-                            throw new Error("Not an admin")
+                        if (!(await getIsAdmin(this.bot, chatId, tgData.user.id))) {
+                            throw new Error("Restricted")
                         }
                         const updated = await this.chatMetaModule.updateChatSetings(chatId, settings)
                         ack({ updated: updated?.settings ?? {} });
@@ -190,7 +205,7 @@ export class ClientAPI {
                             { users: usersSaved, usersPromise: usersSavedPromise },
                             { events, eventsPromise },
                             meta,
-                            member
+                            isAdmin
                         ] = await Promise.all([
                             mesure(() => this.userModule.updateUser(chatId, threadId, {
                                 id: tgData.user.id,
@@ -202,7 +217,7 @@ export class ClientAPI {
                             mesure(() => this.userModule.getUsersCached(chatId), 'getUsersCached'),
                             mesure(() => this.eventsModule.getEventsCached(chatId, threadId), 'getEventsCached'),
                             mesure(() => this.chatMetaModule.getChatMeta(chatId), 'getChatMeta'),
-                            mesure(() => this.bot.bot.getChatMember(chatId, tgData.user.id), 'getChatMember')
+                            mesure(() => getIsAdmin(this.bot, chatId, tgData.user.id), 'isAdmin')
                         ])
                         sw.lap('promises');
 
@@ -213,7 +228,7 @@ export class ClientAPI {
                         const users = savedUsersToApi(usersSaved, chatId, threadId)
                         const chatSettings = meta.settings;
                         const userSettings = user.settings
-                        const context = { isAdmin: member.status === 'administrator' || member.status === 'creator' };
+                        const context = { isAdmin, isPrivate: chatId === tgData.user.id };
 
                         sw.lap('convert');
 

@@ -34,6 +34,7 @@ export type ChatSettings = {
 
 export type ChatContext = {
     isAdmin: boolean;
+    isPrivate: boolean;
 }
 
 export type Event = {

@@ -32,7 +32,7 @@ export const UserSettings = WithModel(React.memo((({ model }: { model: SessionMo
     }, [settings])
 
     return <>
-        <CardLight><ListItem subtitle="Settings" /></CardLight>
+        <CardLight><ListItem subtitle="Global settings" /></CardLight>
         <Card >
             <ListItem
                 onClick={switchEnabledNotification}

@@ -125,9 +125,9 @@ export class TelegramBot {
     await this.bot.sendMessage(
       chatId,
       `Hi there! 
-I'll help you manage this groups calandar. 
+I'll help you manage this chat calendar. 
 To start, add your first event using the "calendar" button. 
-And don't forget to pin the message with the button, so everyone can open the app.`,
+And don't forget to pin the message with the button, so you can always open the app.`,
       { message_thread_id: threadId }
     );
   };
