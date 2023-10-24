@@ -25,6 +25,7 @@ import { ChatMetaModule } from "./modules/chatMetaModule/ChatMetaModule";
 import { ICSModule } from "./modules/icsModule/ICSModule";
 import { checkChatToken } from "./api/Auth";
 import cors from "cors";
+import { SW } from "./utils/stopwatch";
 
 var path = require("path");
 const PORT = process.env.PORT || 5001;
@@ -35,7 +36,7 @@ export const appRoot = path.resolve(__dirname);
 
 const indexFilePath = path.resolve(__dirname + "/../../../../build/index.html");
 
-const getIndexStrPromise = () => {
+const getIndexStr = () => {
   return new Promise<string>((resolve, reject) => {
     fs.readFile(indexFilePath, "utf8", (err, data) => {
       if (err) {
@@ -47,17 +48,26 @@ const getIndexStrPromise = () => {
   });
 };
 // index file for SSR
-let _indexFileStr: Promise<string> | undefined;
+let _indexFileStrPromise: Promise<string> | undefined;
+let _indexFileStr: string | undefined;
 
-const getIndexStr = () => {
-  if (!_indexFileStr) {
-    _indexFileStr = getIndexStrPromise().catch((e) => {
-      _indexFileStr = undefined;
-      throw e;
-    });
+const getIndexStrCachedPromise = () => {
+  if (!_indexFileStrPromise) {
+    _indexFileStrPromise = getIndexStr()
+      .then(s => {
+        _indexFileStr = s
+        return s
+      })
+      .catch((e) => {
+        _indexFileStrPromise = undefined;
+        throw e;
+      });
   }
-  return _indexFileStr;
+  return _indexFileStrPromise;
 };
+
+// init early - would be needed anyway
+getIndexStrCachedPromise().catch(e => console.error(e))
 
 // TODO: ref mdb access to async (how to resolve async chains?)
 // MDB is accessed statically
@@ -132,10 +142,13 @@ initMDB().then(() => {
   });
 
   app.use(compression()).get("/tg/", async (req, res) => {
+    const sw = new SW("get root page")
+    sw.lap()
     try {
       const [chat_descriptor, token] = (req.query.tgWebAppStartParam as string).split('T') ?? [];
       const [chatId, threadId] = chat_descriptor.split('_').map(Number) ?? [];
       checkChatToken(token, chatId);
+      sw.lap('auth')
 
       const eventsModule = container.resolve(EventsModule);
 
@@ -149,6 +162,7 @@ initMDB().then(() => {
       if (timeZone !== undefined) {
         res.cookie('ssr_time_zone', timeZone, { sameSite: 'none', secure: true })
       }
+      sw.lap('check cookies')
 
       const { events } = await eventsModule.getEventsCached(chatId, threadId)
 
@@ -158,7 +172,7 @@ initMDB().then(() => {
       const users = await container.resolve(UserModule).getUsersCached(chatId)
       const usersProvider = new UsersClientModule(userId)
       savedUsersToApi(users, chatId, threadId).forEach(usersProvider.updateUser)
-
+      sw.lap('get data')
 
 
       // const app = ''
@@ -175,10 +189,19 @@ initMDB().then(() => {
           </SplitAvailableContext.Provider>
         </TimezoneContext.Provider>
       );
-      const data = await getIndexStr();
-      res.send(
-        data.replace('<div id="root"></div>', `<div id="root">${app}</div>`)
-      );
+      sw.lap('render')
+
+      const data = _indexFileStr ?? await getIndexStrCachedPromise();
+      sw.lap('get index')
+
+      const result = data.replace('<div id="root"></div>', `<div id="root">${app}</div>`)
+      sw.lap('replace')
+
+      res.send(result);
+      sw.lap('send')
+
+      sw.report()
+
     } catch (e) {
       console.error("Something went wrong:", e);
       if (e instanceof Error) {
