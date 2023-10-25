@@ -9,7 +9,7 @@ export class PinsModule {
     messageId?: number, chatInstance?: string, text?: string, inlineKeyboardDescriptor?: string
   }) => {
     const { messageId, chatInstance, text, inlineKeyboardDescriptor } = options;
-    return await this.db.updateOne(
+    return await this.db.findOneAndUpdate(
       { chatId, threadId },
       {
         $set: {
@@ -20,7 +20,7 @@ export class PinsModule {
           ...inlineKeyboardDescriptor ? { inlineKeyboardDescriptor } : {},
         }
       },
-      { upsert: true }
+      { upsert: true, returnDocument: 'before' }
     );
   };
 
