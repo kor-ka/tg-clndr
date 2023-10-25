@@ -163,7 +163,7 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                     flexDirection: 'column',
                     willChange: 'transform',
                     background: 'var(--tg-theme-secondary-bg-color)',
-                    height: (mode === 'month' && !forceBodyScrollForEvents) ? `calc(var(--tg-viewport-stable-height) - ${calHeight}px)` : undefined,
+                    minHeight: mode === 'upcoming' ? '100vh' : undefined,
 
                 }}>
                 {mode === 'month' ?
@@ -204,7 +204,7 @@ export const MainScreenView = React.memo(({ eventsVM }: { eventsVM: EventsVM }) 
         <div style={{
             display: 'flex',
             flexDirection: 'column',
-            paddingBottom: '96px'
+            paddingBottom: '96px',
         }}>
             <EventsView key={'upcoming'} mode={'upcoming'} eventsVM={eventsVM} />
         </div>
@@ -389,8 +389,6 @@ const DateView = React.memo(({ text: date, time, isFirst, isHeader }: { text: st
         }
     }, [isHeader])
 
-    const firstRender = React.useRef(true);
-
     return <div ref={ref} style={{
         position: 'sticky',
         top: -16,
@@ -448,12 +446,12 @@ const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, V
     }, [selectDate, startDate]);
 
     if (eventsMap.size === 0) {
-        return <CardLight>
+        return <CardLight onClick={onClick}>
             <DateView
                 text={`🗓️ no ${mode === 'upcoming' ? 'upcoming events' : 'events at this date'}`}
                 isFirst={mode === 'upcoming'}
                 time={startDate}
-                isHeader={mode === 'upcoming'}
+                isHeader={false}
             />
         </CardLight>
     }

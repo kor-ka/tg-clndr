@@ -21,8 +21,8 @@ export const Button = ({ children, style, onClick, disabled }: { children: any, 
 }
 
 
-export const CardLight = ({ children, style }: { children: any, style?: any }) => {
-    return <div style={{ display: 'flex', flexDirection: 'column', margin: '0px 20px', ...style }}>{children}</div>
+export const CardLight = ({ children, style, onClick }: { children: any, style?: any, onClick?: React.MouseEventHandler<HTMLDivElement> }) => {
+    return <div onClick={onClick} style={{ display: 'flex', flexDirection: 'column', margin: '0px 20px', ...style }}>{children}</div>
 }
 
 const LinkComponent = ({ attributes, content }: { attributes: any, content: any }) => {
