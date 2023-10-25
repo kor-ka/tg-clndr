@@ -339,7 +339,22 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
 
 
 let amimateDateOnce = true
-const DateView = React.memo(({ date, time, isFirst }: { date: string, time: number, isFirst?: boolean }) => {
+
+
+let _datesObserver: IntersectionObserver | undefined
+const getDatesObserver = () => {
+    if (!_datesObserver) {
+        _datesObserver = new IntersectionObserver((ev) => {
+            ev.forEach(e => {
+                const isTop = e.intersectionRatio < 1 && ((e.target as HTMLDivElement).offsetTop - document.documentElement.scrollTop < 100);
+                (e.target as HTMLDivElement).style.fontSize = isTop ? '1em' : '0.7em';
+            })
+        }, { root: null, rootMargin: '0px', threshold: [1] });
+    }
+    return _datesObserver
+}
+
+const DateView = React.memo(({ text: date, time, isFirst, isHeader }: { text: string, time: number, isFirst?: boolean, isHeader?: boolean }) => {
     const model = React.useContext(ModelContext);
     const shouldAnimate = React.useMemo(() => model && !model.ssrTimeSone() && amimateDateOnce, []);
     const [maxHeight, setMaxHeight] = React.useState(shouldAnimate ? 0 : 50);
@@ -360,27 +375,57 @@ const DateView = React.memo(({ date, time, isFirst }: { date: string, time: numb
         }
     }, [shouldAnimate]);
 
-    return <div onClick={onClick} style={{
+    const ref = React.useRef<HTMLDivElement>(null)
+
+    React.useEffect(() => {
+        const target = ref.current
+        if (isHeader && !isFirst && target) {
+            getDatesObserver().observe(target)
+        }
+        return () => {
+            if (target) {
+                getDatesObserver().unobserve(target)
+            }
+        }
+    }, [isHeader])
+
+    const firstRender = React.useRef(true);
+
+    return <div ref={ref} style={{
         position: 'sticky',
-        top: 0,
+        top: -16,
         zIndex: 3,
         width: '100%',
         display: 'flex',
         justifyContent: 'center',
         alignSelf: 'center',
-        padding: `16px 20px`,
+        padding: `32px 20px 16px 20px`,
         margin: `0 20px`,
+        marginTop: -16,
         backgroundColor: isFirst ? 'var(--tg-theme-bg-color)' : undefined,
+        transition: 'font-size 100ms ease-out',
+        fontSize: isHeader && isFirst ? '1em' : '0.7em',
+        pointerEvents: 'none'
     }}>
-        <Card key={'date'} style={{
-            alignSelf: 'center', margin: 0, padding: 0, fontSize: '0.7em', borderRadius: 12, transition: "max-height ease-in 300ms", maxHeight, overflow: 'hidden'
-        }}>
+        <Card
+            onClick={onClick}
+            key={'date'}
+            style={{
+                alignSelf: 'center',
+                margin: 0,
+                padding: 0,
+                borderRadius: 12,
+                transition: "max-height ease-in 300ms",
+                maxHeight,
+                overflow: 'hidden',
+                pointerEvents: 'all'
+            }}>
             <ListItem style={{ height: 16 }} titile={date} titleStyle={{ padding: 0, fontWeight: 500 }} leftStyle={{ padding: '0 4px' }} />
         </Card>
     </div>
 });
 
-const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec']
+const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const currentYear = new Date().getFullYear()
 const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, VM<Event>>>, mode: 'upcoming' | 'month' }) => {
     const showDates = mode === 'upcoming';
@@ -402,9 +447,15 @@ const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, V
         selectDate(startDate, { openCal: true });
     }, [selectDate, startDate]);
 
-    // if (true) {
     if (eventsMap.size === 0) {
-        return <CardLight><DateView date={`🗓️ no ${mode === 'upcoming' ? 'upcoming events' : 'events at this date'}`} isFirst={mode === 'upcoming'} time={startDate} /></CardLight>
+        return <CardLight>
+            <DateView
+                text={`🗓️ no ${mode === 'upcoming' ? 'upcoming events' : 'events at this date'}`}
+                isFirst={mode === 'upcoming'}
+                time={startDate}
+                isHeader={mode === 'upcoming'}
+            />
+        </CardLight>
     }
 
     let prevDate: string | undefined = undefined;
@@ -416,7 +467,7 @@ const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, V
             return <React.Fragment key={vm.val.id}>
 
                 {(showDates && show && date) ?
-                    <DateView date={date} time={time} isFirst={i === 0} /> :
+                    <DateView text={date} time={time} isFirst={i === 0} isHeader={mode === 'upcoming'} /> :
                     i !== 0 ?
                         <div style={{ width: '100%', borderBottom: '1px solid rgba(127, 127, 127, .1)' }} /> :
                         null}
