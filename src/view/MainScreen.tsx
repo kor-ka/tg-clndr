@@ -118,7 +118,7 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                         position: 'absolute', top: 0, width: '100%',
                         height: calHeight,
                         willChange: 'transform',
-                        background: 'var(--tg-theme-secondary-bg-color)',
+                        background: mode === 'month' ? 'var(--tg-theme-secondary-bg-color)' : 'var(--tg-theme-bg-color)',
                     }} />
             </div>
 
@@ -160,7 +160,6 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                     zIndex: 1,
                     flexDirection: 'column',
                     willChange: 'transform',
-                    // transform: mode === 'month' ? `translateY(${calHeight}px)` : undefined,
                     background: 'var(--tg-theme-secondary-bg-color)',
                     height: (mode === 'month' && !forceBodyScrollForEvents) ? `calc(var(--tg-viewport-stable-height) - ${calHeight}px)` : undefined,
 

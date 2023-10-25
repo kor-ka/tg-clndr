@@ -1,6 +1,7 @@
 import React from "react";
 import { SessionModel } from "../../model/SessionModel";
 import { useVMvalue } from "../../utils/vm/useVM";
+import { ClosingConfirmationController } from "../uikit/tg/ClosingConfirmationController";
 import { isAndroid } from "../utils/webapp";
 import { WithModel } from "../utils/withModelHOC";
 
@@ -234,5 +235,6 @@ export const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: 
         <div style={{ position: 'fixed', top: 0, left: 20, display: 'flex', justifyContent: 'center', alignItems: 'center', height: calTitleHeight, }}>
             <button className="gost" onClick={todayClick}>Today</button>
         </div>
+        <ClosingConfirmationController />
     </>
 }))
