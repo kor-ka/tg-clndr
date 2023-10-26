@@ -19,7 +19,7 @@ const Attendee = React.memo(({ uid, status }: { uid: number, status: 'yes' | 'no
     return <ListItem titleView={<div style={{ display: 'flex', flexDirection: "row", alignItems: 'center' }}><UserPic uid={uid} style={{ marginRight: 8 }} />{user.fullName}</div>} right={status === 'yes' ? '✅' : status === 'no' ? '🙅' : status === 'maybe' ? '🤔' : ''} />
 })
 
-export const NotificationComponent = WithModel(React.memo((({ model, cahedEvent }: { model: SessionModel, cahedEvent: Event }) => {
+const NotificationComponent = WithModel(React.memo((({ model, cahedEvent }: { model: SessionModel, cahedEvent: Event }) => {
     const event = useVMvalue(model.eventsModule.getEventVM(cahedEvent.id)!)
 
     const [handleOperation, loading] = useHandleOperation()
@@ -47,7 +47,7 @@ export const NotificationComponent = WithModel(React.memo((({ model, cahedEvent 
 })))
 
 
-export const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
+const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
     const chatSettings = useVMvalue(model.chatSettings);
     const userSettings = useVMvalue(model.userSettings);
     const context = useVMvalue(model.context);
@@ -199,3 +199,5 @@ export const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
         <MainButtonController isVisible={upsertAvailable} onClick={onClick} text={editEv ? "SAVE" : "ADD EVENT"} progress={loading} />
     </>
 })
+
+export default EventScreen

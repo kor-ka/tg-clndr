@@ -1,5 +1,4 @@
-import * as _WebApp from '@twa-dev/sdk'
-export let WebApp: typeof _WebApp.default | undefined = undefined
+export let WebApp: any = undefined
 
 export let __DEV__ = false
 

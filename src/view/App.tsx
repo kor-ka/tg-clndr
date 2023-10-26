@@ -1,12 +1,9 @@
-import { AppearanceProvider } from "@twa-dev/mark42";
-import React from "react";
+import React, { lazy } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { SessionModel } from "../model/SessionModel";
 import { UsersModule } from "../model/UsersModule";
-import { EventScreen } from "./EventScreen";
 import { MainScreen } from "./MainScreen";
 import { ModelContext } from "./ModelContext";
-import { SettingsScreen } from "./settigns/SettingsScreen";
 import { HomeLoc, homeLoc } from "./utils/navigation/useGoHome";
 import { useSSRReadyLocation } from "./utils/navigation/useSSRReadyLocation";
 import { __DEV__ } from "./utils/webapp";
@@ -16,6 +13,9 @@ export const UsersProviderContext = React.createContext<UsersModule>(new UsersMo
 export const SplitAvailableContext = React.createContext(false);
 export const TimezoneContext = React.createContext<string | undefined>(undefined);
 
+const SettingsScreen = lazy(() => import("./settigns/SettingsScreen"));
+const EventScreen = lazy(() => import("./EventScreen"));
+
 export const renderApp = (model: SessionModel) => {
     const router = createBrowserRouter([
         {
@@ -24,15 +24,22 @@ export const renderApp = (model: SessionModel) => {
         },
         {
             path: "/tg/addEvent",
-            element: <EventScreen />,
+            element: <React.Suspense fallback={null}>
+                <EventScreen />
+            </React.Suspense>,
         },
         {
             path: "/tg/editEvent",
-            element: <EventScreen />,
+            element: <React.Suspense fallback={null}>
+                <EventScreen />
+            </React.Suspense>,
         },
         {
             path: "/tg/settings",
-            element: <SettingsScreen />,
+            element:
+                <React.Suspense fallback={null}>
+                    <SettingsScreen />
+                </React.Suspense>,
         },
     ]);
 
@@ -42,9 +49,8 @@ export const renderApp = (model: SessionModel) => {
                 <UserContext.Provider value={model.tgWebApp.user.id}>
                     <UsersProviderContext.Provider value={model.users}>
                         <HomeLoc.Provider value={homeLoc}>
-                            <AppearanceProvider platform={__DEV__ ? "ios" : undefined}>
-                                <RouterProvider router={router} />
-                            </AppearanceProvider>
+                            <RouterProvider router={router} />
+
                         </HomeLoc.Provider>
                     </UsersProviderContext.Provider>
                 </UserContext.Provider>

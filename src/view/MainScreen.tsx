@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { lazy, useRef } from "react";
 import { Event } from "../shared/entity"
 import { SessionModel } from "../model/SessionModel"
 import { useVMvalue } from "../utils/vm/useVM"
@@ -11,11 +11,13 @@ import { ModelContext } from "./ModelContext";
 import { WithModel } from "./utils/withModelHOC";
 import { SettignsIcon } from "./uikit/SettingsIcon";
 import { SplitAvailableContext, TimezoneContext, HomeLocSetup } from "./App";
-import { SelectedDateContext, MonthCalendar, calHeight, calTitleHeight } from "./monthcal/MonthCal";
 import { useSearchParams } from 'react-router-dom';
 import { EventsVM } from "../model/EventsModule";
 import { BackButtonController } from "./uikit/tg/BackButtonController";
 import { BackgroundColorController } from "./uikit/tg/BackgroundColorController";
+import { SelectedDateContext, calHeight, calTitleHeight } from "./monthcal/shared";
+
+const MonthCalendar = lazy(() => import('./monthcal/MonthCal'))
 
 const getMonthStart = (time: number) => {
     const date = new Date(time)
@@ -112,7 +114,10 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
 
         <SelectedDateContext.Provider value={{ selectDate, startDate, selectedDate, closeCal }}>
             <div style={{ position: 'fixed', top: 0, left: 0, right: 0, overflow: 'hidden' }}>
-                <MonthCalendar show={mode === 'month'} scrollInto={scrollInto} />
+
+                <React.Suspense fallback={null}>
+                    <MonthCalendar show={mode === 'month'} scrollInto={scrollInto} />
+                </React.Suspense>
                 {/* overlay */}
                 <div
                     className={animation}

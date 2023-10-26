@@ -3,17 +3,14 @@ import { SessionModel } from "../../model/SessionModel";
 import { useVMvalue } from "../../utils/vm/useVM";
 import { isAndroid } from "../utils/webapp";
 import { WithModel } from "../utils/withModelHOC";
+import { SelectedDateContext, dayViewHeight, calTitleHeight, calHeight } from "./shared";
 
 enum WEEK_START {
     SYNDAY = 0,
     MONDAY = 1
 }
-export const dayViewHeight = 56;
-export const calTitleHeight = 56;
-export const calHeight = 6 * dayViewHeight + calTitleHeight;
-const selectedCircleSize = dayViewHeight - 22;
 
-export const SelectedDateContext = React.createContext<{ selectedDate: number | undefined, startDate: number, selectDate: (date: number, options?: { openCal?: boolean, forceScroll?: boolean }) => void, closeCal: () => void }>({ selectedDate: Date.now(), startDate: Date.now(), selectDate: () => { }, closeCal: () => { } })
+const selectedCircleSize = dayViewHeight - 22;
 
 const Day = WithModel(React.memo(({ date, otherMonth, model }: { date: Date, otherMonth: boolean, model: SessionModel }) => {
     const { selectedDate: selectedDate, selectDate } = React.useContext(SelectedDateContext);
@@ -135,7 +132,7 @@ const Month = React.memo(({ startDate, scrollInto, intersectionObserver }: { sta
     </div>
 })
 
-export const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: { show: boolean, model: SessionModel, scrollInto?: { date: number } }) => {
+const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: { show: boolean, model: SessionModel, scrollInto?: { date: number } }) => {
     const [months, monthStartDate] = React.useMemo(() => {
         const now = new Date()
         const month = now.getMonth();
@@ -236,3 +233,5 @@ export const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: 
         </div>
     </>
 }))
+
+export default MonthCalendar
