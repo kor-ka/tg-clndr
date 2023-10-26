@@ -1,5 +1,10 @@
+import * as _WebApp from '@twa-dev/sdk'
+export let WebApp: typeof _WebApp.default | undefined = undefined
+
 export let __DEV__ = false
-export let WebApp: any = undefined
+
+// TODO: add withWebApp wrapper
+
 if (typeof window !== "undefined") {
     __DEV__ = window.location.hostname.indexOf("localhost") >= 0 || window.location.search.endsWith("_dev_=true")
     WebApp = (window as any).Telegram.WebApp

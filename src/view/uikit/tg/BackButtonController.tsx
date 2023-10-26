@@ -13,17 +13,17 @@ export const BackButtonController = React.memo(({ canGoBack: canGoBackProp, goBa
 
     React.useEffect(() => {
         if (canGoBack) {
-            bb.show()
+            bb?.show()
         } else {
-            bb.hide()
+            bb?.hide()
         }
     }, [canGoBack])
 
     React.useEffect(() => {
         console.log(bb)
-        bb.onClick(goBack)
+        bb?.onClick(goBack)
         return () => {
-            bb.offClick(goBack)
+            bb?.offClick(goBack)
         }
     }, [bb, goBack])
 

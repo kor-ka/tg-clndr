@@ -1,3 +1,4 @@
+import { AppearanceProvider } from "@twa-dev/mark42";
 import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { SessionModel } from "../model/SessionModel";
@@ -8,6 +9,7 @@ import { ModelContext } from "./ModelContext";
 import { SettingsScreen } from "./settigns/SettingsScreen";
 import { HomeLoc, homeLoc } from "./utils/navigation/useGoHome";
 import { useSSRReadyLocation } from "./utils/navigation/useSSRReadyLocation";
+import { __DEV__ } from "./utils/webapp";
 
 export const UserContext = React.createContext<number | undefined>(undefined);
 export const UsersProviderContext = React.createContext<UsersModule>(new UsersModule());
@@ -40,7 +42,9 @@ export const renderApp = (model: SessionModel) => {
                 <UserContext.Provider value={model.tgWebApp.user.id}>
                     <UsersProviderContext.Provider value={model.users}>
                         <HomeLoc.Provider value={homeLoc}>
-                            <RouterProvider router={router} />
+                            <AppearanceProvider platform={__DEV__ ? "ios" : undefined}>
+                                <RouterProvider router={router} />
+                            </AppearanceProvider>
                         </HomeLoc.Provider>
                     </UsersProviderContext.Provider>
                 </UserContext.Provider>
