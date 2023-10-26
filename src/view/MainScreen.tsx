@@ -120,7 +120,7 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                         position: 'absolute', top: 0, width: '100%',
                         height: calHeight,
                         willChange: 'transform',
-                        background: mode === 'month' ? 'var(--tg-theme-secondary-bg-color)' : 'var(--tg-theme-bg-color)',
+                        background: 'var(--tg-theme-secondary-bg-color)',
                     }} />
             </div>
 
