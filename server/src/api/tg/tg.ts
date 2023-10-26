@@ -205,18 +205,18 @@ ${pinned ? '' : "And don't forget to pin the message with the button, so you can
       }
     })
 
+
+    this.bot.on("my_chat_member", async (upd) => {
+      let botAdded = upd.new_chat_member.status === 'administrator' || upd.new_chat_member.status === 'member' || upd.new_chat_member.status === 'restricted'
+      if (botAdded) {
+        await this.chatMetaModule.updateChat(upd.chat.id, upd.chat.title ?? "");
+        await this.createPin(upd.chat.id, undefined);
+      }
+    })
+
     this.bot.on("new_chat_members", async (upd) => {
       try {
         console.log("new_chat_members", upd.new_chat_members);
-        let botAdded = upd.new_chat_members?.find(
-          (u) => u.id === 6289269904
-        );
-        if (botAdded) {
-          await this.chatMetaModule.updateChat(upd.chat.id, upd.chat.title ?? "");
-          await this.createPin(upd.chat.id, undefined)
-
-        }
-
         upd.new_chat_members?.filter(u => !u.is_bot || (upd.chat.title?.endsWith("__DEV__"))).forEach(u => {
           this.userModule.updateUser(upd.chat.id, undefined, {
             id: u.id,
