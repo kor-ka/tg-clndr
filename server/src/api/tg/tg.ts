@@ -117,7 +117,8 @@ export class TelegramBot {
       reply_markup: { inline_keyboard: buttonsRows },
       parse_mode: "HTML",
       disable_web_page_preview: true,
-      message_thread_id: threadId
+      message_thread_id: threadId,
+      disable_notification: true
     });
 
     const { message_id: messageId } = message
@@ -140,7 +141,10 @@ export class TelegramBot {
 I'll help you manage this chat calendar. 
 To start, add your first event using the "calendar" button. 
 ${pinned ? '' : "And don't forget to pin the message with the button, so you can always open the app."}`.trim(),
-      { message_thread_id: threadId }
+      {
+        message_thread_id: threadId,
+        disable_notification: true
+      }
     );
   };
 
