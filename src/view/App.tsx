@@ -1,9 +1,10 @@
-import React, { lazy } from "react";
+import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { SessionModel } from "../model/SessionModel";
 import { UsersModule } from "../model/UsersModule";
 import { MainScreen } from "./MainScreen";
 import { ModelContext } from "./ModelContext";
+import { lazyPreload } from "./utils/lazyPreload";
 import { HomeLoc, homeLoc } from "./utils/navigation/useGoHome";
 import { useSSRReadyLocation } from "./utils/navigation/useSSRReadyLocation";
 import { webAppReady, __DEV__ } from "./utils/webapp";
@@ -13,8 +14,8 @@ export const UsersProviderContext = React.createContext<UsersModule>(new UsersMo
 export const SplitAvailableContext = React.createContext(false);
 export const TimezoneContext = React.createContext<string | undefined>(undefined);
 
-const SettingsScreen = lazy(() => webAppReady.promise.then(() => import("./settigns/SettingsScreen")));
-const EventScreen = lazy(() => import("./EventScreen"));
+const SettingsScreen = lazyPreload(() => import("./settigns/SettingsScreen"), webAppReady.promise);
+const EventScreen = lazyPreload(() => import("./EventScreen"));
 
 export const renderApp = (model: SessionModel) => {
     const router = createBrowserRouter([
@@ -37,7 +38,7 @@ export const renderApp = (model: SessionModel) => {
         {
             path: "/tg/settings",
             element:
-                <React.Suspense fallback={null}>
+                <React.Suspense fallback={<div style={{ width: 100, height: 100, backgroundColor: 'red' }} />}>
                     <SettingsScreen />
                 </React.Suspense>,
         },
