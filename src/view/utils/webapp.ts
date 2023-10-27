@@ -1,3 +1,5 @@
+import { Deffered } from "../../utils/deffered"
+
 export let WebApp: any = undefined
 
 export let __DEV__ = false
@@ -77,3 +79,4 @@ export const isAndroid = () => {
     }
 }
 
+export const webAppReady = new Deffered()

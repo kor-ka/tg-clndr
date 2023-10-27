@@ -6,14 +6,14 @@ import { MainScreen } from "./MainScreen";
 import { ModelContext } from "./ModelContext";
 import { HomeLoc, homeLoc } from "./utils/navigation/useGoHome";
 import { useSSRReadyLocation } from "./utils/navigation/useSSRReadyLocation";
-import { __DEV__ } from "./utils/webapp";
+import { webAppReady, __DEV__ } from "./utils/webapp";
 
 export const UserContext = React.createContext<number | undefined>(undefined);
 export const UsersProviderContext = React.createContext<UsersModule>(new UsersModule());
 export const SplitAvailableContext = React.createContext(false);
 export const TimezoneContext = React.createContext<string | undefined>(undefined);
 
-const SettingsScreen = lazy(() => import("./settigns/SettingsScreen"));
+const SettingsScreen = lazy(() => webAppReady.promise.then(() => import("./settigns/SettingsScreen")));
 const EventScreen = lazy(() => import("./EventScreen"));
 
 export const renderApp = (model: SessionModel) => {
