@@ -3,6 +3,7 @@ import { ComponentType, lazy } from "react";
 export const lazyPreload = <T extends ComponentType<any>>(factory: () => Promise<{ default: T }>, waitFor?: Promise<unknown>) => {
     let cached: { default: T } | undefined
     const wrapped = async () => {
+        await waitFor
         cached = await factory()
         return cached
     }
@@ -10,14 +11,11 @@ export const lazyPreload = <T extends ComponentType<any>>(factory: () => Promise
     if (typeof window !== 'undefined') {
         preload = wrapped()
     }
-    const l = lazy(async () => {
-        if (waitFor) {
-            await waitFor
-        }
+    const lazyComponent = lazy(async () => {
         return preload ?? wrapped()
     })
     return ((props: any) => {
-        const Component = (cached?.default ?? l) as React.ExoticComponent<T>
+        const Component = (cached?.default ?? lazyComponent) as React.ExoticComponent<T>
         return <Component {...props} />
     }) as React.LazyExoticComponent<T>
 }

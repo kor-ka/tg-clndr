@@ -78,5 +78,3 @@ export const isAndroid = () => {
         return WebApp.platform === 'android'
     }
 }
-
-export const webAppReady = new Deffered()

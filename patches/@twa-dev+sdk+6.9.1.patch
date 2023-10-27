@@ -1,0 +1,13 @@
+diff --git a/node_modules/@twa-dev/sdk/dist/telegram-web-apps.js b/node_modules/@twa-dev/sdk/dist/telegram-web-apps.js
+index c399b5f..1b18724 100644
+--- a/node_modules/@twa-dev/sdk/dist/telegram-web-apps.js
++++ b/node_modules/@twa-dev/sdk/dist/telegram-web-apps.js
+@@ -776,7 +776,7 @@
+                 return;
+             }
+             curButtonState = btn_state;
+-            WebView.postEvent('web_app_setup_main_button', false, btn_params);
++            // WebView.postEvent('web_app_setup_main_button', false, btn_params);
+             if (initParams.tgWebAppDebug) {
+                 updateDebugButton(btn_params);
+             }

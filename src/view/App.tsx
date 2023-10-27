@@ -7,17 +7,19 @@ import { ModelContext } from "./ModelContext";
 import { lazyPreload } from "./utils/lazyPreload";
 import { HomeLoc, homeLoc } from "./utils/navigation/useGoHome";
 import { useSSRReadyLocation } from "./utils/navigation/useSSRReadyLocation";
-import { webAppReady, __DEV__ } from "./utils/webapp";
+import { __DEV__ } from "./utils/webapp";
+import { webAppReady } from "./utils/webAppReady";
 
 export const UserContext = React.createContext<number | undefined>(undefined);
 export const UsersProviderContext = React.createContext<UsersModule>(new UsersModule());
 export const SplitAvailableContext = React.createContext(false);
 export const TimezoneContext = React.createContext<string | undefined>(undefined);
 
-const SettingsScreen = lazyPreload(() => import("./settigns/SettingsScreen"), webAppReady.promise);
-const EventScreen = lazyPreload(() => import("./EventScreen"));
 
 export const renderApp = (model: SessionModel) => {
+    const SettingsScreen = lazyPreload(() => import("./settigns/SettingsScreen"), webAppReady.promise);
+    const EventScreen = lazyPreload(() => import("./EventScreen"));
+
     const router = createBrowserRouter([
         {
             path: "/tg",

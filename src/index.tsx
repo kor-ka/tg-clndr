@@ -2,7 +2,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import { SessionModel } from "./model/SessionModel";
 import { PremountController as MainButtonPremountController } from "./view/uikit/tg/MainButtonPreMount";
-import { webAppReady } from "./view/utils/webapp";
+import { webAppReady } from "./view/utils/webAppReady";
 
 const tryInit = () => {
   const wa = (window as any).Telegram?.WebApp
