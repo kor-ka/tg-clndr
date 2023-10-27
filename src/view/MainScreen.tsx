@@ -217,7 +217,7 @@ export const MainScreenView = React.memo(({ eventsVM }: { eventsVM: EventsVM }) 
         {typeof window === 'undefined' &&
             <>
                 <div style={{
-                    position: 'fixed', top: 0, left: 20,
+                    position: 'fixed', top: 0, left: 16,
                     zIndex: 4,
                     height: calTitleHeight,
                     display: 'flex',
@@ -227,7 +227,7 @@ export const MainScreenView = React.memo(({ eventsVM }: { eventsVM: EventsVM }) 
                     <button className="gost">Month</button>
                 </div>
                 <div style={{
-                    position: 'fixed', top: 0, right: 20,
+                    position: 'fixed', top: 0, right: 16,
                     zIndex: 4,
                     height: calTitleHeight,
                     display: 'flex',
