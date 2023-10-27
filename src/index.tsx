@@ -22,7 +22,6 @@ const tryInit = () => {
     { initData, initDataUnsafe }
   );
 
-
   import('./view/App').then(({ renderApp }) => {
     model.ready.promise.then(() => {
       root.render(renderApp(model))
