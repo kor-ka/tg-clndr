@@ -40,7 +40,7 @@ export const renderApp = (model: SessionModel) => {
         {
             path: "/tg/settings",
             element:
-                <React.Suspense fallback={<div style={{ width: 100, height: 100, backgroundColor: 'red' }} />}>
+                <React.Suspense fallback={null}>
                     <SettingsScreen />
                 </React.Suspense>,
         },
