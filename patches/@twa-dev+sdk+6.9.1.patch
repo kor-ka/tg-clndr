@@ -1,8 +1,16 @@
 diff --git a/node_modules/@twa-dev/sdk/dist/telegram-web-apps.js b/node_modules/@twa-dev/sdk/dist/telegram-web-apps.js
-index c399b5f..1b18724 100644
+index c399b5f..f682c7e 100644
 --- a/node_modules/@twa-dev/sdk/dist/telegram-web-apps.js
 +++ b/node_modules/@twa-dev/sdk/dist/telegram-web-apps.js
-@@ -776,7 +776,7 @@
+@@ -1,6 +1,7 @@
+ "use strict";
+ // WebView
+ (function () {
++    return;
+     var eventHandlers = {};
+     var locationHash = '';
+     try {
+@@ -776,7 +777,7 @@
                  return;
              }
              curButtonState = btn_state;
