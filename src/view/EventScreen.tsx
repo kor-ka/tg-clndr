@@ -4,7 +4,7 @@ import { SessionModel } from "../model/SessionModel";
 import { DurationDscrpitor, Event, NotifyBeforeOptions, Notification } from "../shared/entity";
 import { useVMvalue } from "../utils/vm/useVM";
 import { UsersProviderContext, UserContext } from "./App";
-import { ListItem, UserPic, Card, Button } from "./uikit/kit";
+import { ListItem, UserPic, Card, Button, Page, CardLight, Block } from "./uikit/kit";
 import { BackButtonController } from "./uikit/tg/BackButtonController";
 import { ClosingConfirmationController } from "./uikit/tg/ClosingConfirmationController";
 import { MainButtonController } from "./uikit/tg/MainButtonController";
@@ -164,9 +164,9 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
         return (new Date(date.getTime() - tzoffset)).toISOString().slice(0, -8);
     }, [date]);
 
-    return <>
+    return <Page>
         <BackButtonController />
-        <div style={{ display: 'flex', flexDirection: 'column', padding: '20px 0px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', padding: '16px 0px' }}>
 
             <Card>
                 <input value={title} onChange={onTitleInputChange} autoFocus={!editEv} disabled={disable || !canEdit} style={{ flexGrow: 1, padding: '8px 8px', background: 'var(--tg-theme-bg-color)' }} placeholder="Title" />
@@ -182,9 +182,9 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
             </Card>
 
             {editEv && <Card style={{ flexDirection: 'row', padding: 0, alignSelf: 'center' }}>
-                <Button key={'yes'} onClick={onStatusChangeYes} disabled={disable} style={{ backgroundColor: status === 'yes' ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-bg-color)', margin: 0 }}><ListItem titleStyle={{ color: status === 'yes' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} titile="Accept" /></Button>
-                <Button key={'maybe'} onClick={onStatusChangeMaybe} disabled={disable} style={{ backgroundColor: status === 'maybe' ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-bg-color)', margin: 0 }}><ListItem titleStyle={{ color: status === 'maybe' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} titile="Maybe" /></Button>
-                <Button key={'no'} onClick={onStatusChangeNo} disabled={disable} style={{ backgroundColor: status === 'no' ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-bg-color)', margin: 0 }}><ListItem titleStyle={{ color: status === 'no' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} titile="Decline" /></Button>
+                <Button key={'yes'} onClick={onStatusChangeYes} disabled={disable} style={{ backgroundColor: status === 'yes' ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-bg-color)', margin: 0 }}><span style={{ color: status === 'yes' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} >Accept</span></Button>
+                <Button key={'maybe'} onClick={onStatusChangeMaybe} disabled={disable} style={{ backgroundColor: status === 'maybe' ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-bg-color)', margin: 0 }}><span style={{ color: status === 'maybe' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} >Maybe</span></Button>
+                <Button key={'no'} onClick={onStatusChangeNo} disabled={disable} style={{ backgroundColor: status === 'no' ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-bg-color)', margin: 0 }}><span style={{ color: status === 'no' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} >Decline</span></Button>
             </Card>}
 
             {userSettings.enableNotifications && editEv && <NotificationComponent cahedEvent={editEv} />}
@@ -192,12 +192,14 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
             {((editEv?.attendees.yes.length ?? 0) > 0) && <Card key={'yes'}>{editEv?.attendees.yes.map(uid => <Attendee key={uid} uid={uid} status="yes" />)}</Card>}
             {((editEv?.attendees.maybe.length ?? 0) > 0) && <Card key={'maybe'}>{editEv?.attendees.maybe.map(uid => <Attendee key={uid} uid={uid} status="maybe" />)}</Card>}
             {((editEv?.attendees.no.length ?? 0) > 0) && <Card key={'no'}>{editEv?.attendees.no.map(uid => <Attendee key={uid} uid={uid} status="no" />)}</Card>}
+            <Block>
+                {editEv && canEdit && <Button disabled={disable} onClick={onDeleteClick} ><span style={{ color: "var(--text-destructive-color)", alignSelf: 'center' }}>DELETE EVENT</span></Button>}
+            </Block>
 
-            {editEv && canEdit && <Button disabled={disable} onClick={onDeleteClick}><ListItem titleStyle={{ color: "var(--text-destructive-color)", alignSelf: 'center' }} titile="DELETE EVENT" /></Button>}
         </div>
         {upsertAvailable && <ClosingConfirmationController />}
         <MainButtonController isVisible={upsertAvailable} onClick={onClick} text={editEv ? "SAVE" : "ADD EVENT"} progress={loading} />
-    </>
+    </Page>
 })
 
 export default EventScreen

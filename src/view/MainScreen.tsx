@@ -6,7 +6,7 @@ import { VM } from "../utils/vm/VM";
 import { expand, getItem, isAndroid, reqestWriteAccess, setItem, showAlert, showConfirm, WebApp, __DEV__ } from "./utils/webapp";
 import { useSSRReadyNavigate } from "./utils/navigation/useSSRReadyNavigate";
 import { MainButtonController } from "./uikit/tg/MainButtonController";
-import { Card, ListItem, UsersPics, CardLight, Link, BackgroundContext } from "./uikit/kit";
+import { Card, ListItem, UsersPics, CardLight, Link, BackgroundContext, Page } from "./uikit/kit";
 import { ModelContext } from "./ModelContext";
 import { WithModel } from "./utils/withModelHOC";
 import { SettignsIcon } from "./uikit/SettingsIcon";
@@ -133,7 +133,7 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                 <div
                     className={animation}
                     style={{
-                        position: 'fixed', top: 0, left: 20,
+                        position: 'fixed', top: 0, left: 16,
                         zIndex: 4,
                         height: calTitleHeight,
                         display: 'flex',
@@ -147,7 +147,7 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                     className={animation}
                     onClick={toSettings}
                     style={{
-                        position: 'fixed', top: 0, right: 20,
+                        position: 'fixed', top: 0, right: 16,
                         zIndex: 4,
                         height: calTitleHeight,
                         display: 'flex',
@@ -402,8 +402,8 @@ const DateView = React.memo(({ text: date, time, isFirst, isHeader }: { text: st
         display: 'flex',
         justifyContent: 'center',
         alignSelf: 'center',
-        padding: `32px 20px 16px 20px`,
-        margin: `0 20px`,
+        padding: `32px 16px 16px 16px`,
+        margin: `0 16px`,
         marginTop: -16,
         backgroundColor: isFirst ? 'var(--tg-theme-bg-color)' : undefined,
         transition: 'font-size 100ms ease-out',
@@ -423,7 +423,7 @@ const DateView = React.memo(({ text: date, time, isFirst, isHeader }: { text: st
                 overflow: 'hidden',
                 pointerEvents: 'all'
             }}>
-            <ListItem style={{ height: 16 }} titile={date} titleStyle={{ padding: 0, fontWeight: 500 }} leftStyle={{ padding: '0 4px' }} />
+            <ListItem style={{ height: 16, padding: 4 }} titile={date} titleStyle={{ padding: 0, fontWeight: 500 }} leftStyle={{ padding: '0 4px' }} />
         </Card>
     </div>
 });
@@ -464,7 +464,7 @@ const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, V
     let prevDate: string | undefined = undefined;
     return <>
 
-        <CardLight  >{events.map(({ vm, date, time }, i) => {
+        <Page >{events.map(({ vm, date, time }, i) => {
             const show = timeZone && (date !== prevDate);
             prevDate = date;
             return <React.Fragment key={vm.val.id}>
@@ -479,7 +479,7 @@ const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, V
                     <EventItem key={vm.val.id} eventVM={vm} />
                 </div>
             </React.Fragment>
-        })}</CardLight>
+        })}</Page>
 
         {(events.length) === 200 && <Card><ListItem subtitle={`Maybe there are more events, who knows 🤷‍♂️\nDeveloper was too lasy to implement pagination.`} /></Card>}
     </>
