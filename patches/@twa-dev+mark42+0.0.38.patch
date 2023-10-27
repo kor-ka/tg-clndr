@@ -1,0 +1,96 @@
+diff --git a/node_modules/@twa-dev/mark42/dist/Components/AppearanceProvider/AppearanceProvider.js b/node_modules/@twa-dev/mark42/dist/Components/AppearanceProvider/AppearanceProvider.js
+index 410f29c..4e07c4e 100644
+--- a/node_modules/@twa-dev/mark42/dist/Components/AppearanceProvider/AppearanceProvider.js
++++ b/node_modules/@twa-dev/mark42/dist/Components/AppearanceProvider/AppearanceProvider.js
+@@ -1,8 +1,9 @@
+ import _slicedToArray from "@babel/runtime/helpers/slicedToArray";
+ import { createContext, useEffect, useMemo, useState } from "react";
+-import WebApp from "@twa-dev/sdk";
+ import { jsx as _jsx } from "react/jsx-runtime";
+ 
++const WebApp = window.Telegram.WebApp
++
+ function resolveThemeByPlatform(platform) {
+   if (platform) {
+     return platform === "macos" || platform === "ios" ? "apple" : "material";
+@@ -13,21 +14,17 @@ function resolveThemeByPlatform(platform) {
+   }
+ }
+ 
+-export var AppearanceContext = /*#__PURE__*/createContext({
+-  colorScheme: WebApp.colorScheme,
+-  theme: resolveThemeByPlatform(WebApp.platform),
+-  platform: WebApp.platform
+-});
++export var AppearanceContext = /*#__PURE__*/createContext({});
+ export var AppearanceProvider = function AppearanceProvider(_ref) {
+   var children = _ref.children,
+-      themeProp = _ref.theme,
+-      platformProp = _ref.platform,
+-      colorSchemeProp = _ref.colorScheme;
++    themeProp = _ref.theme,
++    platformProp = _ref.platform,
++    colorSchemeProp = _ref.colorScheme;
+ 
+   var _useState = useState(colorSchemeProp || WebApp.colorScheme),
+-      _useState2 = _slicedToArray(_useState, 2),
+-      colorScheme = _useState2[0],
+-      setColorScheme = _useState2[1];
++    _useState2 = _slicedToArray(_useState, 2),
++    colorScheme = _useState2[0],
++    setColorScheme = _useState2[1];
+ 
+   var platform = platformProp || WebApp.platform;
+   var theme = useMemo(function () {
+diff --git a/node_modules/@twa-dev/mark42/dist/Components/Page/Page.js b/node_modules/@twa-dev/mark42/dist/Components/Page/Page.js
+index 1e9ed8a..bf36171 100644
+--- a/node_modules/@twa-dev/mark42/dist/Components/Page/Page.js
++++ b/node_modules/@twa-dev/mark42/dist/Components/Page/Page.js
+@@ -1,15 +1,15 @@
+ import { useEffect, Fragment } from "react";
+ import { useTheme } from "../../hooks/useTheme";
+ import { useColorScheme } from "../../hooks/useColorScheme";
+-import WebApp from "@twa-dev/sdk";
+ import { jsx as _jsx } from "react/jsx-runtime";
++const WebApp = window.Telegram.WebApp
+ var setHeaderColor = WebApp.setHeaderColor,
+-    setBackgroundColor = WebApp.setBackgroundColor,
+-    themeParams = WebApp.themeParams;
++  setBackgroundColor = WebApp.setBackgroundColor,
++  themeParams = WebApp.themeParams;
+ export var Page = function Page(_ref) {
+   var children = _ref.children,
+-      _ref$mode = _ref.mode,
+-      mode = _ref$mode === void 0 ? "primary" : _ref$mode;
++    _ref$mode = _ref.mode,
++    mode = _ref$mode === void 0 ? "primary" : _ref$mode;
+   var theme = useTheme();
+   var colorScheme = useColorScheme();
+   useEffect(function () {
+diff --git a/node_modules/@twa-dev/mark42/dist/Components/Switch/Switch.js b/node_modules/@twa-dev/mark42/dist/Components/Switch/Switch.js
+index 94088a4..b6e6bb1 100644
+--- a/node_modules/@twa-dev/mark42/dist/Components/Switch/Switch.js
++++ b/node_modules/@twa-dev/mark42/dist/Components/Switch/Switch.js
+@@ -9,16 +9,17 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
+ import { memo } from "react";
+ import cx from "classnames";
+ import { useTheme } from "../../hooks/useTheme";
+-import WebApp from "@twa-dev/sdk";
+ import styles from "./Switch.styles";
+ import { jsx as _jsx } from "react/jsx-runtime";
+ import { jsxs as _jsxs } from "react/jsx-runtime";
++const WebApp = window.Telegram.WebApp
++
+ export var Switch = /*#__PURE__*/memo(function (_ref) {
+   var className = _ref.className,
+-      style = _ref.style,
+-      theme = _ref.theme,
+-      onChange = _ref.onChange,
+-      restProps = _objectWithoutProperties(_ref, _excluded);
++    style = _ref.style,
++    theme = _ref.theme,
++    onChange = _ref.onChange,
++    restProps = _objectWithoutProperties(_ref, _excluded);
+ 
+   theme = useTheme(theme);
+ 
