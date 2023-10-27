@@ -195,7 +195,7 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
         <MainScreenAddEventButton />
 
         {/* render only in browser since here is no willChange: transform which breaks position: fixed */}
-        {typeof window !== 'undefined' && <ToSplit />}
+        {typeof window !== 'undefined' && mode === 'upcoming' && <ToSplit />}
 
         <RequestNotifications model={model} />
 
