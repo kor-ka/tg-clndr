@@ -145,10 +145,16 @@ initMDB().then(() => {
     const sw = new SW("get root page")
     sw.lap()
     try {
-      const [chat_descriptor, token] = (req.query.tgWebAppStartParam as string).split('T') ?? [];
+      const key = req.query.tgWebAppStartParam ?? req.cookies['key']
+      const [chat_descriptor, token] = (key as string).split('T') ?? [];
       const [chatId, threadId] = chat_descriptor.split('_').map(Number) ?? [];
-      checkChatToken(token, chatId);
-      sw.lap('auth')
+      try {
+        checkChatToken(token, chatId);
+      } catch (e) {
+        return res.send(_indexFileStr ?? await getIndexStrCachedPromise());
+      } finally {
+        sw.lap('auth')
+      }
 
       const eventsModule = container.resolve(EventsModule);
 
@@ -200,8 +206,6 @@ initMDB().then(() => {
       res.send(result);
       sw.lap('send')
 
-      sw.report()
-
     } catch (e) {
       console.error("Something went wrong:", e);
       if (e instanceof Error) {
@@ -209,6 +213,8 @@ initMDB().then(() => {
       } else {
         return res.status(500).send("Oops 🤷‍♂️");
       }
+    } finally {
+      sw.report()
     }
   });
   app

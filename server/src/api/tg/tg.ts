@@ -12,13 +12,12 @@ import { renderEvent } from "./renderEvent";
 import { getChatToken } from "../Auth";
 import { __DEV__ } from "../../utils/dev";
 import { StatsModule } from "../../modules/statsModule/StatsModule";
+import { getKey } from "./getKey";
 
 const renderEventMessage = async (event: SavedEvent) => {
   const text = (await renderEvent(event));
 
-  let key = [event.chatId, event.threadId].filter(Boolean).join('_');
-  const token = getChatToken(event.chatId);
-  key = [key, token].filter(Boolean).join('T');
+  const key = getKey(event.chatId, event.threadId);
 
   const buttons: TB.InlineKeyboardButton[][] = [
     [

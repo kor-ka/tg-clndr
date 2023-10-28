@@ -14,6 +14,7 @@ import { NotificationsModule } from "../modules/notificationsModule/Notification
 import { ObjectId } from "mongodb";
 import { NOTIFICATIONS } from "../modules/notificationsModule/notificationsStore";
 import { StatsModule } from "../modules/statsModule/StatsModule";
+import { getKey } from "./tg/getKey";
 
 const processError = (e: any, ack: (message: { error: string }) => void) => {
     console.error(e)
@@ -27,13 +28,6 @@ const processError = (e: any, ack: (message: { error: string }) => void) => {
 const getIsAdmin = async (bot: TelegramBot, chatId: number, userId: number) => {
     return (userId === chatId) || ['administrator', 'creator'].includes((await bot.bot.getChatMember(chatId, userId)).status)
 }
-
-const checkPMAccess = (chatId: number, userId: number) => {
-    if ((chatId >= 0) && (chatId !== userId)) {
-        throw new Error("Restricted")
-    }
-}
-
 export class ClientAPI {
     private io: socketIo.Server;
 
@@ -73,7 +67,18 @@ export class ClientAPI {
                     return;
                 }
                 const [chat_descriptor, token] = (tgData.start_param as string).split('T') ?? [];
-                const [chatId, threadId] = chat_descriptor?.split('_').map(Number) ?? []
+                let [chatId, threadId] = chat_descriptor?.split('_').map(Number) ?? []
+
+                if (tgData.start_param) {
+                    try {
+                        checkChatToken(token, chatId);
+                    } catch (e) {
+                        socket.disconnect();
+                        return;
+                    }
+                } else {
+                    chatId = tgData.user.id
+                }
 
                 if (chatId === undefined) {
                     socket.disconnect();
@@ -81,14 +86,6 @@ export class ClientAPI {
                 }
 
                 sw.lap('tg auth');
-
-                try {
-                    checkPMAccess(chatId, tgData.user.id);
-                    checkChatToken(token, chatId);
-                } catch (e) {
-                    socket.disconnect();
-                    return;
-                }
 
                 const sessionId = new ObjectId();
                 this.stats.onSessionStart(sessionId, tgData.user.id, chatId).catch(e => console.error('stat: failed to track session start:', e));
@@ -233,7 +230,7 @@ export class ClientAPI {
                         sw.lap('convert');
 
                         // emit cached
-                        socket.emit("state", { events: savedEventsToApiLight(events), users, chatSettings, userSettings, context });
+                        socket.emit("state", { events: savedEventsToApiLight(events), users, chatSettings, userSettings, context, key: getKey(chatId, threadId) });
                         sw.lap('emit');
                         sw.report()
 

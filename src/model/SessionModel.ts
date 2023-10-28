@@ -13,7 +13,7 @@ export class SessionModel {
     readonly tgWebApp: TgWebAppInitData;
     readonly eventsModule: EventsModule
     readonly users: UsersModule;
-    readonly chatId: number
+    readonly chatId: number | undefined
 
     readonly chatSettings = new VM<ChatSettings>({ allowPublicEdit: false, enableEventMessages: false })
     readonly userSettings = new VM<UserSettings>({ notifyBefore: null })
@@ -34,12 +34,10 @@ export class SessionModel {
     constructor(params: { initDataUnsafe: TgWebAppInitData, initData: string }) {
         this.eventsModule = new EventsModule(this);
 
-        const [chat_descriptor, token] = (params.initDataUnsafe.start_param ?? '').split('T') ?? [];
-        const [chatId, threadId] = chat_descriptor.split('_').map(Number) ?? [];
-        this.chatId = chatId;
+        this.chatId = params.initDataUnsafe.chat?.id;
 
-        Cookies.set("user_id", params.initDataUnsafe.user.id.toString(), { path: "/", sameSite: 'None', secure: true, expires: 7 });
-        Cookies.set("time_zone", Intl.DateTimeFormat().resolvedOptions().timeZone, { path: "/", sameSite: 'None', secure: true, expires: 7 });
+        Cookies.set("user_id", params.initDataUnsafe.user.id.toString(), { path: "/", sameSite: 'None', secure: true, expires: 365 });
+        Cookies.set("time_zone", Intl.DateTimeFormat().resolvedOptions().timeZone, { path: "/", sameSite: 'None', secure: true, expires: 365 });
 
         this.users = new UsersModule(params.initDataUnsafe.user.id);
 
@@ -61,7 +59,7 @@ export class SessionModel {
             console.log(e);
         });
 
-        this.socket.on("state", ({ events, users, chatSettings, userSettings, context }: { events: Event[], users: User[], chatSettings: ChatSettings, userSettings: UserSettings, context: ChatContext }) => {
+        this.socket.on("state", ({ events, users, chatSettings, userSettings, context, key }: { events: Event[], users: User[], chatSettings: ChatSettings, userSettings: UserSettings, context: ChatContext, key?: string }) => {
             console.log("on_State", { events, users })
             this.userSettings.next(userSettings)
             this.chatSettings.next(chatSettings)
@@ -73,6 +71,9 @@ export class SessionModel {
             events.map(this.addEvent)
             users.forEach(this.users.updateUser)
             this.ready.resolve()
+            if (key) {
+                Cookies.set("key", Intl.DateTimeFormat().resolvedOptions().timeZone, { path: "/", sameSite: 'None', secure: true, expires: 365 });
+            }
         });
 
         this.socket.on("user", (user: User) => {
@@ -194,10 +195,8 @@ export class SessionModel {
     splitAvailable = async () => {
         let splitAvailable = this.splitAvailableSync()
         if (!splitAvailable) {
-            const [chat_descriptor, token] = (this.tgWebApp.start_param as string).split('T') ?? [];
-            const [chatId, threadId] = chat_descriptor.split('_').map(Number) ?? [];
 
-            splitAvailable = (await (await fetch(`${SPLIT_DOMAIN}/enabledInChat/${chatId}`)).text()) === 'true';
+            splitAvailable = (await (await fetch(`${SPLIT_DOMAIN}/enabledInChat/${this.chatId}`)).text()) === 'true';
             if (splitAvailable) {
                 Cookies.set(`split_available_${this.chatId}`, 'true', { path: "/", sameSite: 'None', secure: true, expires: 7 })
             }

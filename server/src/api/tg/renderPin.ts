@@ -1,12 +1,11 @@
 import TB from "node-telegram-bot-api";
 import { SavedEvent } from "../../modules/eventsModule/eventStore";
 import { getChatToken } from "../Auth";
+import { getKey } from "./getKey";
 import { renderEvent } from "./renderEvent";
 
 export const renderPin = async (chatId: number, threadId: number | undefined, events: SavedEvent[]) => {
-  let key = [chatId, threadId].filter(Boolean).join('_');
-  const token = getChatToken(chatId);
-  key = [key, token].filter(Boolean).join('T');
+  const key = getKey(chatId, threadId);
 
   const timeZones = new Set<string>();
   events.forEach(e => timeZones.add(e.tz));
