@@ -6,7 +6,6 @@
 
 .switch_container input:checked~.swithc_apple {
     background: var(--tg-theme-button-color);
-    filter: brightness(1.4) hue-rotate(259deg);
 }
 
 .switch_container input:checked~.swithc_apple::after {
@@ -37,6 +36,7 @@
     background: var(--tg-theme-secondary-bg-color);
     -webkit-transition: background-color 0.2s ease;
     transition: background-color 0.2s ease;
+    filter: brightness(1.4) hue-rotate(259deg);
 }
 
 .swithc_apple::after {
