@@ -5,8 +5,7 @@
 }
 
 .switch_container input:checked~.swithc_apple {
-    background: var(--tg-theme-button-color);
-    filter: brightness(1.4) hue-rotate(259deg);
+    background: #77e189;
 }
 
 .switch_container input:checked~.swithc_apple::after {
