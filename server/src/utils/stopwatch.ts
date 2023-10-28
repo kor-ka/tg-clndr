@@ -14,7 +14,7 @@ export class SW {
   report = () => {
     this.stages["sum"] = Object.values(this.stages).reduce((sum, current) => {
       return sum + current;
-    });
+    }, 0);
     console.log(this.tag, this.stages);
   };
 }
