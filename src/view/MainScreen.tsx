@@ -27,7 +27,7 @@ const getMonthStart = (time: number) => {
 export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel }) => {
     const nav = useSSRReadyNavigate();
 
-    const forceBodyScrollForEvents = React.useMemo(() => isAndroid(), []);
+    const forceBodyScrollForEvents = React.useMemo(() => isAndroid() || (typeof window !== 'undefined' && window.innerHeight < 650), []);
 
     const [searchParams, setSearchParams] = useSearchParams()
 
@@ -80,7 +80,7 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
             const scrollIntoDate = new Date()
             setScrollInto({ date: getMonthStart(selectedDate) })
         } else {
-            // on android body scroll used for events in cal mode - jump back on return
+            // if body scroll used for events in cal mode - jump back to top on return
             if (forceBodyScrollForEvents) {
                 window.scrollTo(0, 0);
             }
