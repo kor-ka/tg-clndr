@@ -110,7 +110,7 @@ initMDB().then(() => {
 
     .get("/ics/:key/cal.ics", async (req, res) => {
       try {
-        const [chat_descriptor, token] = (req.params.key as string).split('T') ?? [];
+        const [chat_descriptor, token] = (req.params.key as string)?.split('T') ?? [];
         const [chatId, threadId] = chat_descriptor.split('_').map(Number) ?? [];
         checkChatToken(token, chatId);
 
@@ -146,7 +146,7 @@ initMDB().then(() => {
     sw.lap()
     try {
       const key = req.query.tgWebAppStartParam ?? req.cookies['key']
-      const [chat_descriptor, token] = (key as string).split('T') ?? [];
+      const [chat_descriptor, token] = (key as string)?.split('T') ?? [];
       const [chatId, threadId] = chat_descriptor.split('_').map(Number) ?? [];
       try {
         checkChatToken(token, chatId);

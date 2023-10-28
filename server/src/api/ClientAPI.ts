@@ -66,7 +66,7 @@ export class ClientAPI {
                     socket.disconnect();
                     return;
                 }
-                const [chat_descriptor, token] = (tgData.start_param as string).split('T') ?? [];
+                const [chat_descriptor, token] = (tgData.start_param as string)?.split('T') ?? [];
                 let [chatId, threadId] = chat_descriptor?.split('_').map(Number) ?? []
 
                 if (tgData.start_param) {
