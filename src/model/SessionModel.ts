@@ -72,7 +72,7 @@ export class SessionModel {
             users.forEach(this.users.updateUser)
             this.ready.resolve()
             if (key) {
-                Cookies.set("key", Intl.DateTimeFormat().resolvedOptions().timeZone, { path: "/", sameSite: 'None', secure: true, expires: 365 });
+                Cookies.set("key", key, { path: "/", sameSite: 'None', secure: true, expires: 365 });
             }
         });
 
