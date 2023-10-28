@@ -55,8 +55,8 @@ const getIndexStrCachedPromise = () => {
   if (!_indexFileStrPromise) {
     _indexFileStrPromise = getIndexStr()
       .then(s => {
-        _indexFileStr = s
-        return s
+        _indexFileStr = s;
+        return s;
       })
       .catch((e) => {
         _indexFileStrPromise = undefined;
@@ -67,7 +67,7 @@ const getIndexStrCachedPromise = () => {
 };
 
 // init early - would be needed anyway
-getIndexStrCachedPromise().catch(e => console.error(e))
+getIndexStrCachedPromise().catch(e => console.error(e));
 
 // TODO: ref mdb access to async (how to resolve async chains?)
 // MDB is accessed statically
@@ -114,13 +114,13 @@ initMDB().then(() => {
         const [chatId, threadId] = chat_descriptor?.split('_').map(Number) ?? [];
         checkChatToken(token, chatId);
 
-        const icsModule = container.resolve(ICSModule)
-        const data = await icsModule.getIcs(chatId, threadId)
+        const icsModule = container.resolve(ICSModule);
+        const data = await icsModule.getIcs(chatId, threadId);
 
         res.set('Content-disposition', 'attachment; filename=cal.ics');
         res.set('Content-Type', 'text/calendar; method="PUBLISH"');
 
-        res.send(data)
+        res.send(data);
       } catch (e) {
         console.error("Something went wrong:", e);
         if (e instanceof Error) {
@@ -138,14 +138,14 @@ initMDB().then(() => {
   app.get("/enabledInChat/:chatId", cors({ origin: SPLIT_DOMAIN }), async (req, res) => {
     const chatMetaModule = container.resolve(ChatMetaModule);
     const chatId = Number.parseInt(req.params.chatId as string);
-    res.send(!!await chatMetaModule.getChatMeta(chatId))
+    res.send(!!await chatMetaModule.getChatMeta(chatId));
   });
 
   app.use(compression()).get("/tg/", async (req, res) => {
-    const sw = new SW("get root page")
-    sw.lap()
+    const sw = new SW("get root page");
+    sw.lap();
     try {
-      const key = req.query.tgWebAppStartParam ?? req.cookies['key']
+      const key = req.query.tgWebAppStartParam ?? req.cookies['pm_key'];
       const [chat_descriptor, token] = (key as string)?.split('T') ?? [];
       const [chatId, threadId] = chat_descriptor?.split('_').map(Number) ?? [];
       try {
@@ -153,32 +153,32 @@ initMDB().then(() => {
       } catch (e) {
         return res.send(_indexFileStr ?? await getIndexStrCachedPromise());
       } finally {
-        sw.lap('auth')
+        sw.lap('auth');
       }
 
       const eventsModule = container.resolve(EventsModule);
 
       const userIdString = req.cookies.user_id;
-      const userId = userIdString ? Number.parseInt(userIdString, 10) : undefined
+      const userId = userIdString ? Number.parseInt(userIdString, 10) : undefined;
       if (userId !== undefined) {
-        res.cookie('ssr_user_id', userId, { sameSite: 'none', secure: true })
+        res.cookie('ssr_user_id', userId, { sameSite: 'none', secure: true });
       }
 
-      const timeZone = req.cookies.time_zone
+      const timeZone = req.cookies.time_zone;
       if (timeZone !== undefined) {
-        res.cookie('ssr_time_zone', timeZone, { sameSite: 'none', secure: true })
+        res.cookie('ssr_time_zone', timeZone, { sameSite: 'none', secure: true });
       }
-      sw.lap('check cookies')
+      sw.lap('check cookies');
 
-      const { events } = await eventsModule.getEventsCached(chatId, threadId)
+      const { events } = await eventsModule.getEventsCached(chatId, threadId);
 
-      const eventsMap = new Map<string, VM<Event>>()
-      savedEventsToApiLight(events).forEach(o => eventsMap.set(o.id, new VM(o)))
+      const eventsMap = new Map<string, VM<Event>>();
+      savedEventsToApiLight(events).forEach(o => eventsMap.set(o.id, new VM(o)));
 
-      const { users } = await container.resolve(UserModule).getUsersCached(chatId)
-      const usersProvider = new UsersClientModule(userId)
-      savedUsersToApi(users, chatId, threadId).forEach(usersProvider.updateUser)
-      sw.lap('get data')
+      const { users } = await container.resolve(UserModule).getUsersCached(chatId);
+      const usersProvider = new UsersClientModule(userId);
+      savedUsersToApi(users, chatId, threadId).forEach(usersProvider.updateUser);
+      sw.lap('get data');
 
 
       // const app = ''
@@ -195,16 +195,16 @@ initMDB().then(() => {
           </SplitAvailableContext.Provider>
         </TimezoneContext.Provider>
       );
-      sw.lap('render')
+      sw.lap('render');
 
       const data = _indexFileStr ?? await getIndexStrCachedPromise();
-      sw.lap('get index')
+      sw.lap('get index');
 
-      const result = data.replace('<div id="root"></div>', `<div id="root">${app}</div>`)
-      sw.lap('replace')
+      const result = data.replace('<div id="root"></div>', `<div id="root">${app}</div>`);
+      sw.lap('replace');
 
       res.send(result);
-      sw.lap('send')
+      sw.lap('send');
 
     } catch (e) {
       console.error("Something went wrong:", e);
@@ -214,7 +214,7 @@ initMDB().then(() => {
         return res.status(500).send("Oops 🤷‍♂️");
       }
     } finally {
-      sw.report()
+      sw.report();
     }
   });
   app
@@ -233,7 +233,7 @@ initMDB().then(() => {
   });
 
   new SocketApi(io).init();
-  container.resolve(TelegramBot).init()
+  container.resolve(TelegramBot).init();
   container.resolve(ICSModule).init();
 
   server.listen(PORT, () => console.log(`lll- on ${PORT}`));

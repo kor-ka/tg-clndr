@@ -71,8 +71,8 @@ export class SessionModel {
             events.map(this.addEvent)
             users.forEach(this.users.updateUser)
             this.ready.resolve()
-            if (key) {
-                Cookies.set("key", key, { path: "/", sameSite: 'None', secure: true, expires: 365 });
+            if (key && context.isPrivate) {
+                Cookies.set("pm_key", key, { path: "/", sameSite: 'None', secure: true, expires: 365 });
             }
         });
 
