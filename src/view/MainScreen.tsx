@@ -109,7 +109,7 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
 
     return <div style={{ display: 'flex', flexDirection: 'column', ...mode === 'month' && !forceBodyScrollForEvents ? { height: '100vh', minHeight: '100%' } : {} }}>
         <HomeLocSetup />
-        <BackgroundColorController color={'secondary_bg_color'} />
+        {/* <BackgroundColorController color={'secondary_bg_color'} /> */}
         <BackButtonController canGoBack={mode === 'month'} goBack={closeCal} />
 
         <SelectedDateContext.Provider value={{ selectDate, startDate, selectedDate, closeCal }}>
