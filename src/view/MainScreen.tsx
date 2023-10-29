@@ -16,6 +16,7 @@ import { EventsVM } from "../model/EventsModule";
 import { BackButtonController } from "./uikit/tg/BackButtonController";
 import { BackgroundColorController } from "./uikit/tg/BackgroundColorController";
 import { SelectedDateContext, calHeight, calTitleHeight } from "./monthcal/shared";
+import { HeaderColorController } from "./uikit/tg/HeaderColorController";
 
 const MonthCalendar = lazy(() => import('./monthcal/MonthCal'))
 
@@ -109,7 +110,7 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
 
     return <div style={{ display: 'flex', flexDirection: 'column', ...mode === 'month' && !forceBodyScrollForEvents ? { height: '100vh', minHeight: '100%' } : {} }}>
         <HomeLocSetup />
-        {/* <BackgroundColorController color={'secondary_bg_color'} /> */}
+        <HeaderColorController color={'secondary_bg_color'} />
         <BackButtonController canGoBack={mode === 'month'} goBack={closeCal} />
 
         <SelectedDateContext.Provider value={{ selectDate, startDate, selectedDate, closeCal }}>
