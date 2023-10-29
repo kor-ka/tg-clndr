@@ -213,7 +213,7 @@ export class ClientAPI {
                             }), 'updateUser'),
                             mesure(() => this.userModule.getUsersCached(chatId), 'getUsersCached'),
                             mesure(() => this.eventsModule.getEventsCached(chatId, threadId), 'getEventsCached'),
-                            mesure(() => this.chatMetaModule.getChatMeta(chatId), 'getChatMeta'),
+                            mesure(() => chatId >= 0 ? this.chatMetaModule.updateChat(chatId, tgData.user.username ?? '') : this.chatMetaModule.getChatMeta(chatId), 'getChatMeta'),
                             mesure(() => getIsAdmin(this.bot, chatId, tgData.user.id), 'isAdmin')
                         ])
                         sw.lap('promises');

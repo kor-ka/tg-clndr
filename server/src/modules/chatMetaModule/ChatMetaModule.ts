@@ -22,12 +22,15 @@ export class ChatMetaModule {
   };
 
   updateChat = async (chatId: number, name: string) => {
-    let res = await this.db.updateOne(
+    let res = (await this.db.findOneAndUpdate(
       { chatId },
       { $set: { chatId, name }, $setOnInsert: { "settings.allowPublicEdit": chatId <= 0, "settings.enableEventMessages": chatId <= 0 } },
-      { upsert: true }
-    );
+      { upsert: true, returnDocument: 'after' }
+    )).value;
     this.onMetaUpdated(chatId).catch(e => console.error(e));
+    if (!res) {
+      throw new Error(`updateChat: chat not found ${chatId}`)
+    }
     return res;
   };
 
