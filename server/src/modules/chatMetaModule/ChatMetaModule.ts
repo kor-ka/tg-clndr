@@ -24,7 +24,7 @@ export class ChatMetaModule {
   updateChat = async (chatId: number, name: string) => {
     let res = await this.db.updateOne(
       { chatId },
-      { $set: { chatId, name }, $setOnInsert: { "settings.allowPublicEdit": true, "settings.enableEventMessages": true } },
+      { $set: { chatId, name }, $setOnInsert: { "settings.allowPublicEdit": chatId <= 0, "settings.enableEventMessages": chatId <= 0 } },
       { upsert: true }
     );
     this.onMetaUpdated(chatId).catch(e => console.error(e));
