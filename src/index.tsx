@@ -15,6 +15,7 @@ const tryInit = () => {
 
   MainButtonPremountController.INSTANCE.init()
   wa.MainButton.setParams({ is_active: true, is_visible: true, text: "ADD EVENT" })
+  wa.setHeaderColor('secondary_bg_color')
 
   ready();
 
