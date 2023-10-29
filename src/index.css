@@ -28,13 +28,13 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --tg-color-scheme: dark;
-    --tg-theme-bg-color: #212121;
+    --tg-theme-bg-color: #0f0f0f;
     --tg-theme-text-color: #ffffff;
     --tg-theme-hint-color: #aaaaaa;
     --tg-theme-link-color: #8774e1;
     --tg-theme-button-color: #8774e1;
     --tg-theme-button-text-color: #ffffff;
-    --tg-theme-secondary-bg-color: #0f0f0f;
+    --tg-theme-secondary-bg-color: #212121;
     --tg-viewport-height: 576px;
     --tg-viewport-stable-height: 576px;
 
@@ -58,7 +58,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   color: var(--tg-theme-text-color);
   font-size: large;
-  background-color: var(--tg-theme-secondary-bg-color);
+  background-color: var(--tg-theme-bg-color);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -72,7 +72,7 @@ button {
 }
 
 .gost {
-  background-color: var(--tg-theme-secondary-bg-color);
+  background-color: var(--tg-theme-bg-color);
   color: var(--tg-theme-text-color);
 }
 
@@ -89,7 +89,7 @@ select,
 textarea {
   color: var(--tg-theme-text-color);
   font-size: 1.2em;
-  background-color: var(--tg-theme-secondary-bg-color);
+  background-color: var(--tg-theme-bg-color);
   border: none;
   outline: none;
 }

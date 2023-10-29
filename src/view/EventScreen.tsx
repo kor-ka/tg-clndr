@@ -169,22 +169,22 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
         <div style={{ display: 'flex', flexDirection: 'column', padding: '16px 0px' }}>
 
             <Card>
-                <input value={title} onChange={onTitleInputChange} autoFocus={!editEv} disabled={disable || !canEdit} style={{ flexGrow: 1, padding: '8px 8px', background: 'var(--tg-theme-bg-color)' }} placeholder="Title" />
+                <input value={title} onChange={onTitleInputChange} autoFocus={!editEv} disabled={disable || !canEdit} style={{ flexGrow: 1, padding: '8px 8px', background: 'var(--tg-theme-secondary-bg-color)' }} placeholder="Title" />
             </Card>
 
             <Card>
-                <input value={crazyDateFormat} onChange={onDateInputChange} disabled={disable || !canEdit} type="datetime-local" style={{ flexGrow: 1, background: 'var(--tg-theme-bg-color)', padding: '8px 8px', margin: '0px 0px' }} />
+                <input value={crazyDateFormat} onChange={onDateInputChange} disabled={disable || !canEdit} type="datetime-local" style={{ flexGrow: 1, background: 'var(--tg-theme-secondary-bg-color)', padding: '8px 8px', margin: '0px 0px' }} />
             </Card>
 
 
             <Card>
-                <textarea value={description} onChange={onDescriptionInputChange} disabled={disable || !canEdit} style={{ flexGrow: 1, padding: '8px 8px', background: 'var(--tg-theme-bg-color)', height: 128 }} placeholder="Description" />
+                <textarea value={description} onChange={onDescriptionInputChange} disabled={disable || !canEdit} style={{ flexGrow: 1, padding: '8px 8px', background: 'var(--tg-theme-secondary-bg-color)', height: 128 }} placeholder="Description" />
             </Card>
 
             {editEv && <Card style={{ flexDirection: 'row', padding: 0, alignSelf: 'center' }}>
-                <Button key={'yes'} onClick={onStatusChangeYes} disabled={disable} style={{ backgroundColor: status === 'yes' ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-bg-color)', margin: 0 }}><span style={{ color: status === 'yes' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} >Accept</span></Button>
-                <Button key={'maybe'} onClick={onStatusChangeMaybe} disabled={disable} style={{ backgroundColor: status === 'maybe' ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-bg-color)', margin: 0 }}><span style={{ color: status === 'maybe' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} >Maybe</span></Button>
-                <Button key={'no'} onClick={onStatusChangeNo} disabled={disable} style={{ backgroundColor: status === 'no' ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-bg-color)', margin: 0 }}><span style={{ color: status === 'no' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} >Decline</span></Button>
+                <Button key={'yes'} onClick={onStatusChangeYes} disabled={disable} style={{ backgroundColor: status === 'yes' ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-secondary-bg-color)', margin: 0 }}><span style={{ color: status === 'yes' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} >Accept</span></Button>
+                <Button key={'maybe'} onClick={onStatusChangeMaybe} disabled={disable} style={{ backgroundColor: status === 'maybe' ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-secondary-bg-color)', margin: 0 }}><span style={{ color: status === 'maybe' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} >Maybe</span></Button>
+                <Button key={'no'} onClick={onStatusChangeNo} disabled={disable} style={{ backgroundColor: status === 'no' ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-secondary-bg-color)', margin: 0 }}><span style={{ color: status === 'no' ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)', alignSelf: 'center' }} >Decline</span></Button>
             </Card>}
 
             {userSettings.enableNotifications && editEv && <NotificationComponent cahedEvent={editEv} />}

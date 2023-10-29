@@ -125,7 +125,7 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                         position: 'absolute', top: 0, width: '100%',
                         height: calHeight,
                         willChange: 'transform',
-                        background: mode === 'month' ? 'var(--tg-theme-secondary-bg-color)' : 'var(--tg-theme-bg-color)',
+                        background: mode === 'month' ? 'var(--tg-theme-bg-color)' : 'var(--tg-theme-secondary-bg-color)',
                     }} />
             </div>
 
@@ -167,7 +167,7 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                     zIndex: 1,
                     flexDirection: 'column',
                     willChange: 'transform',
-                    background: 'var(--tg-theme-secondary-bg-color)',
+                    background: 'var(--tg-theme-bg-color)',
                     minHeight: mode === 'upcoming' ? '100vh' : undefined,
 
                 }}>
@@ -181,7 +181,7 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                             minHeight: (mode === 'month' && !forceBodyScrollForEvents) ? `calc(var(--tg-viewport-stable-height) - ${calHeight}px)` : undefined,
 
                             overflowY: !forceBodyScrollForEvents ? 'scroll' : undefined,
-                            background: 'var(--tg-theme-secondary-bg-color)',
+                            background: 'var(--tg-theme-bg-color)',
                         }}>
                             <EventsView key={mode} mode={'month'} eventsVM={eventsVM} />
                             <div style={{ display: 'flex', flexShrink: 0, height: 96 }} />
@@ -405,7 +405,7 @@ const DateView = React.memo(({ text: date, time, isFirst, isHeader }: { text: st
         padding: `32px 16px 16px 16px`,
         margin: `0 16px`,
         marginTop: -16,
-        backgroundColor: isFirst ? 'var(--tg-theme-bg-color)' : undefined,
+        backgroundColor: isFirst ? 'var(--tg-theme-secondary-bg-color)' : undefined,
         transition: 'font-size 100ms ease-out',
         fontSize: isHeader && isFirst ? '1em' : '0.7em',
         pointerEvents: 'none'

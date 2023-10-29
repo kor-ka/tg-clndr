@@ -56,9 +56,9 @@ const Day = WithModel(React.memo(({ date, otherMonth, model }: { date: Date, oth
             textAlign: 'center',
             borderRadius: imageURL ? 8 : selectedCircleSize,
             border: `2px solid ${isSelected ? 'var(--tg-theme-button-color)' : isToday ? 'var(--tg-theme-text-color)' : 'transparent'}`,
-            color: (isToday && !imageURL) ? 'var(--tg-theme-secondary-bg-color)' : (isSelected || !!imageURL) ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)',
+            color: (isToday && !imageURL) ? 'var(--tg-theme-bg-color)' : (isSelected || !!imageURL) ? 'var(--tg-theme-button-text-color)' : 'var(--tg-theme-text-color)',
             background: imageURL ? `url(${imageURL}) center center / cover no-repeat border-box` : undefined,
-            backgroundColor: isToday ? 'var(--tg-theme-text-color)' : isSelected ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-bg-color)',
+            backgroundColor: isToday ? 'var(--tg-theme-text-color)' : isSelected ? 'var(--tg-theme-button-color)' : 'var(--tg-theme-secondary-bg-color)',
 
         }}>
             <div style={{ display: 'flex' }}>{date.getDate()}</div>
@@ -219,7 +219,7 @@ const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: { show:
                 overflowX: useHorisontal ? 'scroll' : undefined,
                 overflowY: useHorisontal ? undefined : 'scroll',
                 scrollSnapType: `${useHorisontal ? 'x' : 'y'} mandatory`,
-                backgroundColor: 'var(--tg-theme-bg-color)',
+                backgroundColor: 'var(--tg-theme-secondary-bg-color)',
             }}>
             {months.map((d, i) =>
                 <Month
