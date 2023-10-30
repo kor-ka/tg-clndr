@@ -95,7 +95,7 @@ export class TelegramBot {
     const buttons: TB.InlineKeyboardButton[][] = [
       [
         {
-          text: `${chatMeta?.name ?? ''} Calendar`.trim(),
+          text: `${id < 0 ? chatMeta?.name ?? '' : ''} Calendar`.trim(),
           url: `https://t.me/clndrrrbot/clndr?startapp=${key}&startApp=${key}`,
         },
       ]
