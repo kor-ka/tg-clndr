@@ -297,7 +297,7 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
     }, [id])
 
     const timeZone = React.useContext(TimezoneContext);
-    const time = React.useMemo(() => new Date(date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h24', timeZone }), [date]);
+    const time = React.useMemo(() => new Date(date).toLocaleTimeString('en-Gb', { hour: '2-digit', minute: '2-digit', hourCycle: 'h24', timeZone }), [date]);
 
     const bg = React.useContext(BackgroundContext)
     return <>
