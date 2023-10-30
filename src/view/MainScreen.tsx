@@ -429,18 +429,20 @@ const DateView = React.memo(({ text: date, time, isFirst, isHeader }: { text: st
     </div>
 });
 
-let _offset: number | undefined
+const _offsets = new Map<string, number>()
 const getOffset = (timeZone?: string) => {
     if (!timeZone) {
         return 0
     }
-    if (_offset === undefined) {
+    let offset = _offsets.get(timeZone)
+    if (offset === undefined) {
         const date = new Date()
         const currentTZDate = new Date(date.toLocaleString('en', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }));
         const tzDate = new Date(date.toLocaleString('en', { timeZone }));
-        _offset = (tzDate.getTime() - currentTZDate.getTime());
+        offset = (tzDate.getTime() - currentTZDate.getTime());
+        _offsets.set(timeZone, offset)
     }
-    return _offset
+    return offset
 }
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
