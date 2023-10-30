@@ -169,16 +169,16 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
         <div style={{ display: 'flex', flexDirection: 'column', padding: '16px 0px' }}>
 
             <Card>
-                <input value={title} onChange={onTitleInputChange} autoFocus={!editEv} disabled={disable || !canEdit} style={{ flexGrow: 1, padding: '8px 8px', background: 'var(--tg-theme-secondary-bg-color)' }} placeholder="Title" />
+                <input value={title} onChange={onTitleInputChange} autoFocus={!editEv} disabled={disable || !canEdit} style={{ flexGrow: 1, padding: '8px 0', background: 'var(--tg-theme-secondary-bg-color)' }} placeholder="Title" />
             </Card>
 
             <Card>
-                <input value={crazyDateFormat} onChange={onDateInputChange} disabled={disable || !canEdit} type="datetime-local" style={{ flexGrow: 1, background: 'var(--tg-theme-secondary-bg-color)', padding: '8px 8px', margin: '0px 0px' }} />
+                <input value={crazyDateFormat} onChange={onDateInputChange} disabled={disable || !canEdit} type="datetime-local" style={{ flexGrow: 1, background: 'var(--tg-theme-secondary-bg-color)', padding: '8px 0', margin: '0px 0px' }} />
             </Card>
 
 
             <Card>
-                <textarea value={description} onChange={onDescriptionInputChange} disabled={disable || !canEdit} style={{ flexGrow: 1, padding: '8px 8px', background: 'var(--tg-theme-secondary-bg-color)', height: 128 }} placeholder="Description" />
+                <textarea value={description} onChange={onDescriptionInputChange} disabled={disable || !canEdit} style={{ flexGrow: 1, padding: '8px 0', background: 'var(--tg-theme-secondary-bg-color)', height: 128 }} placeholder="Description" />
             </Card>
 
             {editEv && <Card style={{ flexDirection: 'row', padding: 0, alignSelf: 'center' }}>
