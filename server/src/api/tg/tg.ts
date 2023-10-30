@@ -261,6 +261,7 @@ ${pinned ? '' : "And don't forget to pin the message with the button, so you can
 
     this.onCommand('start', async (upd) => {
       try {
+        await this.chatMetaModule.updateChat(upd.chat.id, upd.chat.title ?? "");
         if (upd.chat.type === 'private') {
           await this.bot.sendMessage(
             upd.chat.id,
