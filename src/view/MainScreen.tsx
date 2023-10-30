@@ -457,7 +457,7 @@ const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, V
             const date = new Date(vm.val.date + getOffset(timeZone))
             const dateYear = date.getFullYear()
             const dateStr = `${date.getDate()} ${months[date.getMonth()]}${currentYear !== dateYear ? `, ${dateYear}` : ''}`;
-            events.push({ vm, date: dateStr, time: date.getTime() })
+            events.push({ vm, date: dateStr, time: vm.val.date })
         }
         return events
     }, [eventsMap]);
