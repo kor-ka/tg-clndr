@@ -214,7 +214,10 @@ ${pinned ? '' : "And don't forget to pin the message with the button, so you can
         let botAdded = upd.new_chat_member.status === 'administrator' || upd.new_chat_member.status === 'member' || upd.new_chat_member.status === 'restricted'
         if (botAdded) {
           await this.chatMetaModule.updateChat(upd.chat.id, upd.chat.title ?? "");
-          await this.createPin(upd.chat.id, undefined);
+          if (upd.chat.type !== 'private') {
+            // pivate chats are initialized with /srart
+            await this.createPin(upd.chat.id, undefined);
+          }
         }
       } catch (e) {
         console.error(e)
