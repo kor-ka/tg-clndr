@@ -429,6 +429,20 @@ const DateView = React.memo(({ text: date, time, isFirst, isHeader }: { text: st
     </div>
 });
 
+let _offset: number | undefined
+const getOffset = (timeZone?: string) => {
+    if (!timeZone) {
+        return 0
+    }
+    if (_offset === undefined) {
+        const date = new Date()
+        const currentTZDate = new Date(date.toLocaleString('en', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }));
+        const tzDate = new Date(date.toLocaleString('en', { timeZone }));
+        _offset = (tzDate.getTime() - currentTZDate.getTime());
+    }
+    return _offset
+}
+
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const currentYear = new Date().getFullYear()
 const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, VM<Event>>>, mode: 'upcoming' | 'month' }) => {
@@ -438,7 +452,7 @@ const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, V
     const events = React.useMemo(() => {
         const events: { vm: VM<Event>, date: string, time: number }[] = [];
         for (let vm of eventsMap.values()) {
-            const date = new Date(vm.val.date)
+            const date = new Date(vm.val.date + getOffset(timeZone))
             const dateYear = date.getFullYear()
             const dateStr = `${date.getDate()} ${months[date.getMonth()]}${currentYear !== dateYear ? `, ${dateYear}` : ''}`;
             events.push({ vm, date: dateStr, time: date.getTime() })
