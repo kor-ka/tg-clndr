@@ -15,6 +15,7 @@ import { ObjectId } from "mongodb";
 import { NOTIFICATIONS } from "../modules/notificationsModule/notificationsStore";
 import { StatsModule } from "../modules/statsModule/StatsModule";
 import { getKey } from "./tg/getKey";
+import { mesure } from "../utils/mesure";
 
 const processError = (e: any, ack: (message: { error: string }) => void) => {
     console.error(e)
@@ -259,15 +260,6 @@ export class ClientAPI {
 
         })
     }
-}
-
-const mesure = <T>(factory: () => Promise<T>, tag: string) => {
-    const time = Date.now()
-    const promise = factory()
-    promise.then(() => {
-        console.log(tag, Date.now() - time)
-    })
-    return promise
 }
 
 export const savedEventToApiLight = (saved: SavedEvent): Event => {

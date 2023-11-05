@@ -26,6 +26,7 @@ import { ICSModule } from "./modules/icsModule/ICSModule";
 import { checkChatToken } from "./api/Auth";
 import cors from "cors";
 import { SW } from "./utils/stopwatch";
+import { mesure } from "./utils/mesure";
 
 var path = require("path");
 const PORT = process.env.PORT || 5001;
@@ -170,12 +171,15 @@ initMDB().then(() => {
       }
       sw.lap('check cookies');
 
-      const { events } = await eventsModule.getEventsCached(chatId, threadId);
+      const [{ events }, { users }, member] = await Promise.all([
+        mesure(() => eventsModule.getEventsCached(chatId, threadId), 'getEventsCached'),
+        mesure(() => container.resolve(UserModule).getUsersCached(chatId), 'getUsersCached'),
+        mesure(() => userId ? container.resolve(TelegramBot).bot.getChatMember(chatId, userId) : Promise.resolve(undefined), 'getChatMember'),
+      ])
 
       const eventsMap = new Map<string, VM<Event>>();
       savedEventsToApiLight(events).forEach(o => eventsMap.set(o.id, new VM(o)));
 
-      const { users } = await container.resolve(UserModule).getUsersCached(chatId);
       const usersProvider = new UsersClientModule(userId);
       savedUsersToApi(users, chatId, threadId).forEach(usersProvider.updateUser);
       sw.lap('get data');
