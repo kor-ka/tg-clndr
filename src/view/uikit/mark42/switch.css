@@ -33,7 +33,7 @@
     width: 51px;
     height: 31px;
     border-radius: 25.5px;
-    background: var(--tg-theme-bg-color);
+    background: var(--tg-theme-hint-color);
     -webkit-transition: background-color 0.2s ease;
     transition: background-color 0.2s ease;
 }
@@ -45,7 +45,7 @@
     left: 2px;
     -webkit-box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
-    background: var(--tg-theme-secondary-bg-color);
+    background: white;
     -webkit-transition: -webkit-transform 0.2s ease;
     -webkit-transition: transform 0.2s ease;
     transition: -webkit-transform 0.2s ease;
