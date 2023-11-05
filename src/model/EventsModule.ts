@@ -1,4 +1,5 @@
 import { Event, User } from "../shared/entity";
+import { Deffered } from "../utils/deffered";
 import { VM } from "../utils/vm/VM";
 import { SessionModel } from "./SessionModel";
 
@@ -87,8 +88,36 @@ export class EventsModule {
     //  Getters
     // 
 
-    readonly getOperationOpt = <T = Event>(id: string): T | undefined => {
+    readonly getEventOpt = <T = Event>(id: string): T | undefined => {
         return this.allEvents.get(id)?.val as T
+    }
+
+    // TODO: extract generic data hook
+    private pendinEvents = new Map<string, Deffered<Event>>
+    readonly useEvent = (id: string) => {
+        const event = this.getEventOpt(id);
+        if (!event) {
+            let pendinEvent = this.pendinEvents.get(id);
+            if (!pendinEvent) {
+                pendinEvent = new Deffered();
+                this.model.getEvent(id)
+                    .then(pendinEvent.resolve)
+                    .catch(pendinEvent.reject);
+                this.pendinEvents.set(id, pendinEvent)
+            }
+
+            if (pendinEvent.result) {
+                if (pendinEvent.result.error) {
+                    throw pendinEvent.result.error
+                } else {
+                    return pendinEvent.result.val
+                }
+            } else {
+                throw pendinEvent.promise
+            }
+        } else {
+            return event
+        }
     }
 
     getEventVM = (id: string) => {

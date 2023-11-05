@@ -180,6 +180,19 @@ export class SessionModel {
         return d.promise
     }
 
+    getEvent = (id: string) => {
+        const d = new Deffered<Event>()
+        this.emit('get_event', { id }, ({ event, error }: { event: Event, error: never } | { error: string, event: never }) => {
+            if (!error) {
+                this.addEvent(event)
+                d.resolve(event)
+            } else {
+                d.reject(new Error(error))
+            }
+        })
+        return d.promise
+    }
+
     ssrTimeSone = () => {
         return Cookies.get('ssr_time_zone')
     }

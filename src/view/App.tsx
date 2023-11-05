@@ -4,6 +4,8 @@ import { SessionModel } from "../model/SessionModel";
 import { UsersModule } from "../model/UsersModule";
 import { MainScreen } from "./MainScreen";
 import { ModelContext } from "./ModelContext";
+import { Block, Card, Page } from "./uikit/kit";
+import { BackButtonController } from "./uikit/tg/BackButtonController";
 import { lazyPreload } from "./utils/lazyPreload";
 import { HomeLoc, homeLoc } from "./utils/navigation/useGoHome";
 import { useSSRReadyLocation } from "./utils/navigation/useSSRReadyLocation";
@@ -27,22 +29,29 @@ export const renderApp = (model: SessionModel) => {
         },
         {
             path: "/tg/addEvent",
-            element: <React.Suspense fallback={null}>
-                <EventScreen />
-            </React.Suspense>,
+            element:
+                <ErrorBoundry>
+                    <React.Suspense fallback={null}>
+                        <EventScreen />
+                    </React.Suspense>
+                </ErrorBoundry>,
         },
         {
             path: "/tg/editEvent",
-            element: <React.Suspense fallback={null}>
-                <EventScreen />
-            </React.Suspense>,
+            element: <ErrorBoundry>
+                <React.Suspense fallback={null}>
+                    <EventScreen />
+                </React.Suspense>
+            </ErrorBoundry>,
         },
         {
             path: "/tg/settings",
             element:
-                <React.Suspense fallback={null}>
-                    <SettingsScreen />
-                </React.Suspense>,
+                <ErrorBoundry>
+                    <React.Suspense fallback={null}>
+                        <SettingsScreen />
+                    </React.Suspense>
+                </ErrorBoundry>,
         },
     ]);
 
@@ -69,4 +78,19 @@ export const HomeLocSetup = () => {
         homeLoc.location = loc;
     }
     return null
+}
+
+class ErrorBoundry extends React.Component<{ children: React.ReactNode }, { error?: Error }> {
+    state: { error?: Error } = {}
+    componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+        this.setState({ error })
+    }
+
+    render(): React.ReactNode {
+        return this.state.error ? <ErrorReturn error={this.state.error} /> : this.props.children
+    }
+}
+
+const ErrorReturn = ({ error }: { error: Error }) => {
+    return <><BackButtonController /><Page><Card><Block>{error.message}</Block></Card></Page></>
 }

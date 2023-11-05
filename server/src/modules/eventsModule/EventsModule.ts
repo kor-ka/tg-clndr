@@ -214,6 +214,14 @@ export class EventsModule {
     return await this.events.find({ chatId, threadId: threadId ?? undefined, date: { $gte: from, $lt: to }, deleted: { $ne: true } }, { sort: { date: 1 } }).toArray();
   }
 
+  getEvent = async (id: string): Promise<SavedEvent> => {
+    const event = await this.events.findOne({ _id: new ObjectId(id) });
+    if (!event) {
+      throw new Error("Event not found");
+    }
+    return event;
+  }
+
   getEventsCached = async (chatId: number, threadId: number | undefined, limit = 200) => {
     const now = new Date().getTime();
     const freshEnough = now - 1000 * 60 * 60 * 4;

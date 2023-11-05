@@ -183,6 +183,15 @@ export class ClientAPI {
                     }
                 })
 
+                socket.on("get_event", async ({ id }: { id: string }, ack: (res: { event: Event, error?: never } | { error: string, event?: never }) => void) => {
+                    try {
+                        const event = await savedEventToApiFull(await this.eventsModule.getEvent(id), tgData.user.id);
+                        ack({ event });
+                    } catch (e) {
+                        processError(e, ack);
+                    }
+                })
+
                 sw.lap('subsciptions')
 
 

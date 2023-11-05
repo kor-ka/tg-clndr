@@ -58,7 +58,7 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
     let [searchParams] = useSearchParams();
 
     const editEvId = searchParams.get("editEvent");
-    const editEv: Event | undefined = editEvId ? model?.eventsModule.getOperationOpt(editEvId) : undefined;
+    const editEv: Event | undefined = editEvId ? model?.eventsModule.useEvent(editEvId) : undefined;
 
     let disable = !!editEv?.deleted;
 
