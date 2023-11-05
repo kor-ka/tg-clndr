@@ -169,7 +169,7 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
         <div style={{ display: 'flex', flexDirection: 'column', padding: '16px 0px' }}>
 
             <Card>
-                <input value={title} onChange={onTitleInputChange} autoFocus={!editEv} disabled={disable || !canEdit} style={{ flexGrow: 1, padding: '8px 0', background: 'var(--tg-theme-secondary-bg-color)' }} placeholder="Title" />
+                <input value={title} onChange={onTitleInputChange} disabled={disable || !canEdit} style={{ flexGrow: 1, padding: '8px 0', background: 'var(--tg-theme-secondary-bg-color)' }} placeholder="Title" />
             </Card>
 
             <Card>
