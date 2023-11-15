@@ -32,9 +32,12 @@ export class SessionModel {
     };
 
     constructor(params: { initDataUnsafe: TgWebAppInitData, initData: string }) {
-        this.eventsModule = new EventsModule(this);
+        const [chat_descriptor, token] = params.initDataUnsafe.start_param?.split('T') ?? [];
+        let [chatId, threadId] = chat_descriptor?.split('_').map(Number) ?? []
 
-        this.chatId = params.initDataUnsafe.chat?.id;
+        this.chatId = chatId
+
+        this.eventsModule = new EventsModule(this);
 
         Cookies.set("user_id", params.initDataUnsafe.user.id.toString(), { path: "/", sameSite: 'None', secure: true, expires: 365 });
         Cookies.set("time_zone", Intl.DateTimeFormat().resolvedOptions().timeZone, { path: "/", sameSite: 'None', secure: true, expires: 365 });
