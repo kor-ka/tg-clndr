@@ -167,15 +167,24 @@ export class UserModule {
     return res
   };
 
+  addUserToChatCache = (chatId: number, user: SavedUser) => {
+    let cache = this.getChatCache(chatId)
+    cache.set(user.id, user)
+  }
+
+  getChatCache = (chatId: number) => {
+    let cache = this.chatUsersCache.get(chatId)
+    if (!cache) {
+      cache = new Map()
+      this.chatUsersCache.set(chatId, cache)
+    }
+    return cache
+  }
+
   udpateChatUserCache = (user: SavedUser) => {
     if (user.chatIds) {
       for (let chatId of user.chatIds ?? []) {
-        let cache = this.chatUsersCache.get(chatId)
-        if (!cache) {
-          cache = new Map()
-          this.chatUsersCache.set(chatId, cache)
-        }
-        cache.set(user.id, user)
+        this.addUserToChatCache(chatId, user)
       }
     }
   }

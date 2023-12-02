@@ -5,7 +5,7 @@ import { ChatMetaModule } from "../modules/chatMetaModule/ChatMetaModule";
 import { EventsModule } from "../modules/eventsModule/EventsModule";
 import { SavedEvent } from "../modules/eventsModule/eventStore";
 import { UserModule } from "../modules/userModule/UserModule";
-import { SavedUser } from "../modules/userModule/userStore";
+import { SavedUser, USER } from "../modules/userModule/userStore";
 import { checkTgAuth } from "./tg/getTgAuth";
 import { checkChatToken } from "./Auth";
 import { TelegramBot } from "./tg/tg";
@@ -42,6 +42,10 @@ export class ClientAPI {
         this.io = server
     }
 
+    private updateUser = (chatId: number, user: User) => {
+        this.io.to('chatUsersClient_' + chatId).emit('user', user)
+    }
+
     readonly init = () => {
         this.eventsModule.upateSubject.subscribe(state => {
             const { chatId, threadId, event, type } = state
@@ -51,12 +55,14 @@ export class ClientAPI {
 
         this.userModule.userUpdated.subscribe(({ user, chatId }) => {
             const upd: User = savedUserToApi(user, chatId)
-            this.io.to('chatUsersClient_' + chatId).emit('user', upd)
+            this.updateUser(chatId, upd)
         })
 
         this.io.on('connection', (socket) => {
             const sw = new SW("init connection")
             sw.lap()
+
+            const resolvedUsers = new Set<number>()
 
             try {
                 const { initData, initDataUnsafe } = socket.handshake.query
@@ -115,8 +121,10 @@ export class ClientAPI {
 
                         const { type } = command;
                         if (type === 'create' || type === 'update') {
-                            const event = await this.eventsModule.commitOperation(chatId, threadId, tgData.user.id, command);
-                            ack({ patch: { event: await savedEventToApiFull(event, tgData.user.id), type } });
+                            const savedEvent = await this.eventsModule.commitOperation(chatId, threadId, tgData.user.id, command);
+                            const [event, users] = await resolveEvent(savedEvent, tgData.user.id, resolvedUsers)
+                            users.forEach(u => this.updateUser(chatId, u))
+                            ack({ patch: { event: event, type } });
                         } else if (type === 'delete') {
                             const event = await this.eventsModule.deleteEvent(command.id)
                             ack({ patch: { event: savedEventToApiLight(event), type } });
@@ -133,8 +141,10 @@ export class ClientAPI {
                     },
                     ack: (res: { updated: Event, error?: never } | { error: string, updated?: never }) => void) => {
                     try {
-                        const event = await this.eventsModule.updateAtendeeStatus(chatId, threadId, eventId, tgData.user.id, status);
-                        ack({ updated: await savedEventToApiFull(event, tgData.user.id) });
+                        const savedEvent = await this.eventsModule.updateAtendeeStatus(chatId, threadId, eventId, tgData.user.id, status);
+                        const [event, users] = await resolveEvent(savedEvent, tgData.user.id, resolvedUsers)
+                        users.forEach(u => this.updateUser(chatId, u))
+                        ack({ updated: event });
                     } catch (e) {
                         processError(e, ack);
                     }
@@ -177,7 +187,8 @@ export class ClientAPI {
 
                 socket.on("get_events_range", async ({ from, to }: { from: number, to: number }, ack: (res: { events: Event[], error?: never } | { error: string, events?: never }) => void) => {
                     try {
-                        const events = await savedEventsToApiFull(await this.eventsModule.getEventsDateRange(from, to, chatId, threadId), tgData.user.id);
+                        const [events, users] = await savedEventsToApiFull(await this.eventsModule.getEventsDateRange(from, to, chatId, threadId), tgData.user.id, resolvedUsers);
+                        users.forEach(u => this.updateUser(chatId, u))
                         ack({ events });
                     } catch (e) {
                         processError(e, ack);
@@ -186,7 +197,8 @@ export class ClientAPI {
 
                 socket.on("get_event", async ({ id }: { id: string }, ack: (res: { event: Event, error?: never } | { error: string, event?: never }) => void) => {
                     try {
-                        const event = await savedEventToApiFull(await this.eventsModule.getEvent(id), tgData.user.id);
+                        const [event, users] = await resolveEvent(await this.eventsModule.getEvent(id), tgData.user.id, resolvedUsers);
+                        users.forEach(u => this.updateUser(chatId, u))
                         ack({ event });
                     } catch (e) {
                         processError(e, ack);
@@ -209,7 +221,7 @@ export class ClientAPI {
 
                         const [
                             user,
-                            { users: usersSaved, usersPromise: usersSavedPromise },
+                            { users: usersSaved },
                             { events, eventsPromise },
                             meta,
                             isAdmin
@@ -245,9 +257,8 @@ export class ClientAPI {
                         sw.report()
 
                         { // emit updated
-                            const events = await savedEventsToApiFull(await eventsPromise, tgData.user.id);
-                            const users = await savedUsersToApi(await usersSavedPromise, chatId, threadId);
-                            socket.emit("state", { events, users, chatSettings, userSettings, context });
+                            const [events, users] = await savedEventsToApiFull(await eventsPromise, tgData.user.id, resolvedUsers);
+                            socket.emit("state", { events, users: [...users.values()], chatSettings, userSettings, context });
                         }
 
                     } catch (e) {
@@ -271,14 +282,40 @@ export const savedEventsToApiLight = (saved: SavedEvent[]): Event[] => {
     return saved.map(savedEventToApiLight)
 }
 
-export const savedEventToApiFull = async (saved: SavedEvent, userId: number): Promise<Event> => {
-    const event = savedEventToApiLight(saved)
-    event.notification = await NOTIFICATIONS().findOne({ eventId: saved._id, userId })
-    return event
+const saturateWithUser = async (resolvedUsers: Set<number>, saved: SavedEvent): Promise<User[]> => {
+    const users = [...saved.attendees.yes, ...saved.attendees.maybe, ...saved.attendees.no]
+        .filter(userId => !resolvedUsers.has(userId))
+        .map(userId => USER().findOne({ id: userId }).catch(e => console.error(e)))
+        .map(async resolveUser => {
+            const user = await resolveUser
+            if (user) {
+                resolvedUsers.add(user.id)
+                const apiUser: User = savedUserToApi(user, saved.chatId)
+                return apiUser
+            }
+        })
+    return (await Promise.all(users)).filter(Boolean) as User[]
 }
 
-export const savedEventsToApiFull = (saved: SavedEvent[], userId: number): Promise<Event[]> => {
-    return Promise.all(saved.map((e) => savedEventToApiFull(e, userId)))
+export const resolveEvent = async (saved: SavedEvent, userId: number, resolvedUsers: Set<number>): Promise<[Event, User[]]> => {
+    const event = savedEventToApiLight(saved)
+    const [notification, users] = await Promise.all([
+        NOTIFICATIONS().findOne({ eventId: saved._id, userId }).catch(e => console.error(e)),
+        saturateWithUser(resolvedUsers, saved)
+    ])
+    event.notification = notification ?? undefined
+    return [event, users]
+}
+
+export const savedEventsToApiFull = (saved: SavedEvent[], userId: number, resolvedUsers: Set<number>): Promise<[Event[], Map<number, User>]> => {
+    return Promise.all(saved.map((e) => resolveEvent(e, userId, resolvedUsers)))
+        .then(pairs => pairs.reduce((res, entry) => {
+            const [resEvents, resUsers] = res
+            const [event, users] = entry
+            resEvents.push(event)
+            users.forEach(user => resUsers.set(user.id, user))
+            return res
+        }, [[], new Map()] as [Event[], Map<number, User>]))
 }
 
 
