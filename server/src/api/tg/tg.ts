@@ -357,6 +357,17 @@ ${pinned ? '' : "And don't forget to pin the message with the button, so you can
             }
           }
           this.stats.onCallbackQuery(q.from.id, message.chat.id, data[0] ?? '').catch(e => console.error('stat: failed to track tg callback query:', e))
+
+          const from = message.from
+          if (from) {
+            await this.userModule.updateUser(message.chat.id, message.message_thread_id, {
+              id: from.id,
+              name: from.first_name,
+              lastname: from.last_name,
+              username: from.username,
+              disabled: false
+            })
+          }
         }
         await this.bot.answerCallbackQuery(q.id);
       } catch (e) {
