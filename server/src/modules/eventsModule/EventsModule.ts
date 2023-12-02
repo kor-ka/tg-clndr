@@ -105,7 +105,7 @@ export class EventsModule {
         if (url) {
           getMeta(url)
             // never wait 3d party APIs
-            .then((meta) => meta && this.events.updateOne({ _id }, { $set: { imageURL: meta.og.image || meta.images?.[0].src } }))
+            .then((meta) => meta && this.events.updateOne({ _id }, { $set: { imageURL: meta.og.image || meta.images?.[0]?.src } }))
             .catch(e => console.error(e));
         }
       }

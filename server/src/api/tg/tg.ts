@@ -348,16 +348,7 @@ ${pinned ? '' : "And don't forget to pin the message with the button, so you can
       try {
         const { data: dataString, from, message } = q;
         if (message && dataString) {
-          let data = dataString.split("/");
-          if (data[0] === 'atnd') {
-            const vote = data[1] as "yes" | "maybe" | "no"
-            const event = await EVENTS().findOne({ chatId: message.chat.id, threadId: message.message_thread_id, messages: message.message_id })
-            if (event) {
-              await this.eventsModule.updateAtendeeStatus(message.chat.id, message.message_thread_id, event._id.toHexString(), q.from.id, vote)
-            }
-          }
-          this.stats.onCallbackQuery(q.from.id, message.chat.id, data[0] ?? '').catch(e => console.error('stat: failed to track tg callback query:', e))
-
+          // save user before any actions
           const from = message.from
           if (from) {
             await this.userModule.updateUser(message.chat.id, message.message_thread_id, {
@@ -368,6 +359,16 @@ ${pinned ? '' : "And don't forget to pin the message with the button, so you can
               disabled: false
             })
           }
+
+          let data = dataString.split("/");
+          if (data[0] === 'atnd') {
+            const vote = data[1] as "yes" | "maybe" | "no"
+            const event = await EVENTS().findOne({ chatId: message.chat.id, threadId: message.message_thread_id, messages: message.message_id })
+            if (event) {
+              await this.eventsModule.updateAtendeeStatus(message.chat.id, message.message_thread_id, event._id.toHexString(), q.from.id, vote)
+            }
+          }
+          this.stats.onCallbackQuery(q.from.id, message.chat.id, data[0] ?? '').catch(e => console.error('stat: failed to track tg callback query:', e))
         }
         await this.bot.answerCallbackQuery(q.id);
       } catch (e) {
