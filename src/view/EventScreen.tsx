@@ -164,7 +164,7 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
         return (new Date(date.getTime() - tzoffset)).toISOString().slice(0, -8);
     }, [date]);
 
-    return <Page style={{ height: '100vh', minHeight: '100%', overflowY: 'scroll' }}>
+    return <Page>
         <BackButtonController />
         <div style={{ display: 'flex', flexDirection: 'column', padding: '16px 0px' }}>
 
