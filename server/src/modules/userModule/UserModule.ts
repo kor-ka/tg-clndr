@@ -22,7 +22,7 @@ export class UserModule {
 
 
   readonly userUpdated = new Subject<{ chatId: number, user: SavedUser }>();
-  private chatUsersCache = new Map<number, Map<number, SavedUser>>;
+  private usersCache = new Map<number, SavedUser>;
 
   updateUser = async (
     chatId: number,
@@ -157,8 +157,20 @@ export class UserModule {
     }
   }
 
+  udpateChatUserCache = (user: SavedUser) => {
+    this.usersCache.set(user.id, user)
+  }
+
+  getUserCached = (id: number) => {
+    return this.usersCache.get(id)
+  }
+
   getUser = async (uid: number): Promise<SavedUser | null> => {
-    return this.db.findOne({ id: uid })
+    const user = await this.db.findOne({ id: uid })
+    if (user) {
+      this.udpateChatUserCache(user)
+    }
+    return user
   };
 
   getUsers = async (chatId: number): Promise<SavedUser[]> => {
@@ -167,37 +179,4 @@ export class UserModule {
     return res
   };
 
-  addUserToChatCache = (chatId: number, user: SavedUser) => {
-    let cache = this.getChatCache(chatId)
-    cache.set(user.id, user)
-  }
-
-  getChatCache = (chatId: number) => {
-    let cache = this.chatUsersCache.get(chatId)
-    if (!cache) {
-      cache = new Map()
-      this.chatUsersCache.set(chatId, cache)
-    }
-    return cache
-  }
-
-  udpateChatUserCache = (user: SavedUser) => {
-    if (user.chatIds) {
-      for (let chatId of user.chatIds ?? []) {
-        this.addUserToChatCache(chatId, user)
-      }
-    }
-  }
-
-  getUsersCached = async (chatId: number): Promise<{ users: SavedUser[], usersPromise: Promise<SavedUser[]> }> => {
-    let users = [...this.chatUsersCache.get(chatId)?.values() ?? []]
-    const usersPromise = this.getUsers(chatId).catch(e => {
-      console.error(e)
-      return []
-    })
-    if (!users) {
-      users = await usersPromise
-    }
-    return { users, usersPromise }
-  };
 }

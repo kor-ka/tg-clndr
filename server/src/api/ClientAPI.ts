@@ -221,7 +221,6 @@ export class ClientAPI {
 
                         const [
                             user,
-                            { users: usersSaved },
                             { events, eventsPromise },
                             meta,
                             isAdmin
@@ -233,7 +232,6 @@ export class ClientAPI {
                                 username: tgData.user.username,
                                 disabled: false
                             }), 'updateUser'),
-                            mesure(() => this.userModule.getUsersCached(chatId), 'getUsersCached'),
                             mesure(() => this.eventsModule.getEventsCached(chatId, threadId), 'getEventsCached'),
                             mesure(() => chatId >= 0 ? this.chatMetaModule.updateChat(chatId, tgData.user.username ?? '') : this.chatMetaModule.getChatMeta(chatId), 'getChatMeta'),
                             mesure(() => getIsAdmin(this.bot, chatId, tgData.user.id), 'isAdmin')
@@ -244,7 +242,13 @@ export class ClientAPI {
                             throw new Error(`Chat not fround: ${chatId}`)
                         }
 
-                        const users = savedUsersToApi(usersSaved, chatId, threadId)
+                        const usersSaved = events.reduce((users, event) => {
+                            const attendees = [...event.attendees.yes, ...event.attendees.maybe, ...event.attendees.no]
+                            attendees.map(this.userModule.getUserCached).filter(Boolean).map(u => users.add(u as SavedUser))
+                            return users
+                        }, new Set<SavedUser>)
+
+                        const users = savedUsersToApi([...usersSaved], chatId, threadId)
                         const chatSettings = meta.settings;
                         const userSettings = user.settings
                         const context = { isAdmin, isPrivate: chatId === tgData.user.id };
@@ -285,7 +289,7 @@ export const savedEventsToApiLight = (saved: SavedEvent[]): Event[] => {
 const saturateWithUser = async (resolvedUsers: Set<number>, saved: SavedEvent): Promise<User[]> => {
     const users = [...saved.attendees.yes, ...saved.attendees.maybe, ...saved.attendees.no]
         .filter(userId => !resolvedUsers.has(userId))
-        .map(userId => USER().findOne({ id: userId }).catch(e => console.error(e)))
+        .map(userId => container.resolve(UserModule).getUser(userId).catch(e => console.error(e)))
         .map(async resolveUser => {
             const user = await resolveUser
             if (user) {

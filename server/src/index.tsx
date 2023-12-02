@@ -27,6 +27,7 @@ import { checkChatToken } from "./api/Auth";
 import cors from "cors";
 import { SW } from "./utils/stopwatch";
 import { mesure } from "./utils/mesure";
+import { SavedUser } from "./modules/userModule/userStore";
 
 var path = require("path");
 const PORT = process.env.PORT || 5001;
@@ -158,6 +159,7 @@ initMDB().then(() => {
       }
 
       const eventsModule = container.resolve(EventsModule);
+      const userModule = container.resolve(UserModule);
 
       const userIdString = req.cookies.user_id;
       const userId = userIdString ? Number.parseInt(userIdString, 10) : undefined;
@@ -171,17 +173,18 @@ initMDB().then(() => {
       }
       sw.lap('check cookies');
 
-      const [{ events }, { users }, member] = await Promise.all([
-        mesure(() => eventsModule.getEventsCached(chatId, threadId), 'getEventsCached'),
-        mesure(() => container.resolve(UserModule).getUsersCached(chatId), 'getUsersCached'),
-        mesure(() => userId ? container.resolve(TelegramBot).bot.getChatMember(chatId, userId) : Promise.resolve(undefined), 'getChatMember'),
-      ])
+      const { events } = await mesure(() => eventsModule.getEventsCached(chatId, threadId), 'getEventsCached')
+      const users = events.reduce((users, event) => {
+        const attendees = [...event.attendees.yes, ...event.attendees.maybe, ...event.attendees.no]
+        attendees.map(userModule.getUserCached).filter(Boolean).map(u => users.add(u as SavedUser))
+        return users
+      }, new Set<SavedUser>)
 
       const eventsMap = new Map<string, VM<Event>>();
       savedEventsToApiLight(events).forEach(o => eventsMap.set(o.id, new VM(o)));
 
       const usersProvider = new UsersClientModule(userId);
-      savedUsersToApi(users, chatId, threadId).forEach(usersProvider.updateUser);
+      savedUsersToApi([...users], chatId, threadId).forEach(usersProvider.updateUser);
       sw.lap('get data');
 
 
