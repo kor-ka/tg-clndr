@@ -165,8 +165,21 @@ export class UserModule {
     return this.usersCache.get(id)
   }
 
-  getUser = async (uid: number): Promise<SavedUser | null> => {
-    const user = await this.db.findOne({ id: uid })
+  getUser = async (uid: number, pullMemberFromChat?: number): Promise<SavedUser | null> => {
+    let user = await this.db.findOne({ id: uid })
+    if (!user && (pullMemberFromChat !== undefined)) {
+      const bot = container.resolve(TelegramBot).bot;
+      const member = await bot.getChatMember(pullMemberFromChat, uid)
+      if (member) {
+        user = await this.updateUser(pullMemberFromChat, undefined, {
+          id: member.user.id,
+          name: member.user.first_name,
+          lastname: member.user.last_name,
+          username: member.user.username,
+          disabled: false
+        })
+      }
+    }
     if (user) {
       this.udpateChatUserCache(user)
     }

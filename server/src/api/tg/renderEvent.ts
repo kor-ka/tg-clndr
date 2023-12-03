@@ -12,12 +12,12 @@ export function htmlEntities(str: string) {
 }
 
 const limit = 5;
-const usersListStr = async (uids: number[]) => {
+const usersListStr = async (uids: number[], chatId: number) => {
     const overflow = uids.length > limit ? (uids.length - limit + 1) : 0;
     const showLength = overflow ? uids.length - overflow : uids.length;
 
     const userModule = container.resolve(UserModule);
-    const users = (await Promise.all(uids.slice(0, showLength).map(uid => userModule.getUser(uid))))
+    const users = (await Promise.all(uids.slice(0, showLength).map(uid => userModule.getUser(uid, chatId))))
         .filter(Boolean)
         .map(u => ({ ...u as SavedUser, fullName: [u!.name, u!.lastname].filter(Boolean).join(' ') }));
     let text = users.sort((a, b) => [a.name, a.lastname].filter(Boolean).join(', ').localeCompare(b.fullName))
@@ -45,7 +45,7 @@ const renderAtChat = (atChat?: { name: string, id: number }) => {
     return ""
 }
 
-export const renderEvent = async ({ date, tz, title, description, attendees, deleted, geo }: SavedEvent, options?: { timeZones?: Set<string>, renderDate?: boolean, renderAttendees?: boolean, atChat?: { name: string, id: number } }) => {
+export const renderEvent = async ({ date, tz, title, description, attendees, deleted, geo, chatId }: SavedEvent, options?: { timeZones?: Set<string>, renderDate?: boolean, renderAttendees?: boolean, atChat?: { name: string, id: number } }) => {
     const { timeZones, renderDate, renderAttendees, atChat } = options ?? {}
     const dateStr = renderDate !== false ? `🗓️ ${new Date(date).toLocaleString('en', { month: 'short', day: 'numeric', timeZone: tz })} - ` : '';
     const timeStr = new Date(date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h24', timeZone: tz });
@@ -59,19 +59,19 @@ export const renderEvent = async ({ date, tz, title, description, attendees, del
     }
 
     if (renderAttendees !== false) {
-        let yesUsers = await usersListStr(attendees.yes);
+        let yesUsers = await usersListStr(attendees.yes, chatId);
         yesUsers = yesUsers ? '✅ ' + yesUsers : '';
         if (yesUsers) {
             lines.push(yesUsers)
         }
 
-        let maybeUsers = await usersListStr(attendees.maybe);
+        let maybeUsers = await usersListStr(attendees.maybe, chatId);
         maybeUsers = maybeUsers ? '🤔 ' + maybeUsers : '';
         if (maybeUsers) {
             lines.push(maybeUsers)
         }
 
-        let noUsers = await usersListStr(attendees.no);
+        let noUsers = await usersListStr(attendees.no, chatId);
         noUsers = noUsers ? '🙅 ' + noUsers : '';
         if (noUsers) {
             lines.push(noUsers)

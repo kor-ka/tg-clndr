@@ -289,7 +289,7 @@ export const savedEventsToApiLight = (saved: SavedEvent[]): Event[] => {
 const saturateWithUser = async (resolvedUsers: Set<number>, saved: SavedEvent): Promise<User[]> => {
     const users = [...saved.attendees.yes, ...saved.attendees.maybe, ...saved.attendees.no]
         .filter(userId => !resolvedUsers.has(userId))
-        .map(userId => container.resolve(UserModule).getUser(userId).catch(e => console.error(e)))
+        .map(userId => container.resolve(UserModule).getUser(userId, saved.chatId).catch(e => console.error(e)))
         .map(async resolveUser => {
             const user = await resolveUser
             if (user) {

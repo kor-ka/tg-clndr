@@ -8,10 +8,10 @@ import { ChatMetaModule } from "../chatMetaModule/ChatMetaModule";
 import { Attendee, GeoCoordinates, ParticipationStatus } from "ics";
 import { UserModule } from "../userModule/UserModule";
 
-const uidToAttendee = async (uid: number, status: ParticipationStatus): Promise<Attendee> => {
+const uidToAttendee = async (uid: number, status: ParticipationStatus, chatId: number): Promise<Attendee> => {
   const userModule = container.resolve(UserModule);
   try {
-    const user = await userModule.getUser(uid)
+    const user = await userModule.getUser(uid, chatId)
     if (user) {
       return {
         name: [user.name, user.lastname].filter(Boolean).join(' '),
@@ -39,9 +39,9 @@ export class ICSModule {
     for (let e of events) {
       const date = new Date(e.date);
       const attendees: Attendee[] = (await Promise.all([
-        e.attendees.yes.map(uid => uidToAttendee(uid, 'ACCEPTED')),
-        e.attendees.maybe.map(uid => uidToAttendee(uid, 'TENTATIVE')),
-        e.attendees.no.map(uid => uidToAttendee(uid, 'DECLINED'))
+        e.attendees.yes.map(uid => uidToAttendee(uid, 'ACCEPTED', chatId)),
+        e.attendees.maybe.map(uid => uidToAttendee(uid, 'TENTATIVE', chatId)),
+        e.attendees.no.map(uid => uidToAttendee(uid, 'DECLINED', chatId))
       ].flat()))
       let location: string | undefined = undefined
       let description = e.description
