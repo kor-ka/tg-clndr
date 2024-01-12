@@ -28,7 +28,7 @@ const getMonthStart = (time: number) => {
 export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel }) => {
     const nav = useSSRReadyNavigate();
 
-    const forceBodyScrollForEvents = React.useMemo(() => isAndroid() || (typeof window !== 'undefined' && window.innerHeight < 650), []);
+    const forceBodyScrollForEvents = true //React.useMemo(() => isAndroid() || (typeof window !== 'undefined' && window.innerHeight < 650), []);
 
     const [searchParams, setSearchParams] = useSearchParams()
 
