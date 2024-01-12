@@ -198,7 +198,7 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
 
         </div>
         {upsertAvailable && <ClosingConfirmationController />}
-        <MainButtonController isVisible={upsertAvailable} onClick={onClick} text={editEv ? "SAVE" : "ADD EVENT"} progress={loading} />
+        <MainButtonController isActive={upsertAvailable && !loading} onClick={onClick} text={editEv ? "SAVE" : "ADD EVENT"} progress={loading} />
     </Page>
 })
 
