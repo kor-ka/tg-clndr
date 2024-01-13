@@ -164,9 +164,9 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
         return (new Date(date.getTime() - tzoffset)).toISOString().slice(0, -8);
     }, [date]);
 
-    return <>
+    return <Page>
         <BackButtonController />
-        <div style={{ display: 'flex', flexDirection: 'column', padding: '16px 16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', padding: '16px 0px' }}>
 
             <Card>
                 <input value={title} onChange={onTitleInputChange} disabled={disable || !canEdit} style={{ flexGrow: 1, padding: '8px 0', background: 'var(--tg-theme-secondary-bg-color)' }} placeholder="Title" />
@@ -198,8 +198,8 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
 
         </div>
         {upsertAvailable && <ClosingConfirmationController />}
-        <MainButtonController isActive={upsertAvailable && !loading} onClick={onClick} text={editEv ? "SAVE" : "ADD EVENT"} progress={loading} />
-    </>
+        <MainButtonController isVisible={upsertAvailable} onClick={onClick} text={editEv ? "SAVE" : "ADD EVENT"} progress={loading} />
+    </Page>
 })
 
 export default EventScreen
