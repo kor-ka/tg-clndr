@@ -164,9 +164,15 @@ const MonthCalendar = WithModel(React.memo(({ show, model, scrollInto }: { show:
         model.eventsModule.acivateMonthOnce(new Date(date.getFullYear(), date.getMonth() + 1).getTime())
     }, [])
 
+    // load initial data
     React.useEffect(() => {
-        activateMonthsAround(monthStartDate.getTime())
-    }, [monthStartDate])
+        let loadAround = monthStartDate
+        if (selectedDate) {
+            loadAround = new Date(selectedDate)
+            loadAround.setDate(1)
+        }
+        activateMonthsAround(loadAround.getTime())
+    }, [])
 
     const onMonthSelected = React.useCallback((time: number) => {
         const date = new Date(time)
