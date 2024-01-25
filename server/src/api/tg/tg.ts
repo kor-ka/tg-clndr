@@ -315,6 +315,7 @@ ${pinned ? '' : "And don't forget to pin the message with the button, so you can
 
     this.bot.on("message", async (message) => {
       try {
+        console.log("unhandled message", message.text, message)
         if (message.from && (!message.from.is_bot || (message.chat.title?.endsWith("__DEV__")))) {
           await this.userModule.updateUser(message.chat.id, message.message_thread_id, {
             id: message.from.id,
