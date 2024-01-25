@@ -50,7 +50,7 @@ export class TelegramBot {
   });
 
   onCommand = (command: string, callback: (msg: TB.Message, match: RegExpExecArray | null) => void) => {
-    return this.bot.onText(new RegExp(`^\/(${command}|${command}@${nick})(\s.*|)$`), (msg, match) => {
+    return this.bot.onText(new RegExp(`^\/(${command}|${command}@${nick})(\\s.*|)$`), (msg, match) => {
       callback(msg, match)
       if (msg.from) {
         this.stats.onMessage(msg.from.id, msg.chat.id, command).catch(e => console.error('stat: failed to track tg message:', e))
