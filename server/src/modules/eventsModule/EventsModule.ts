@@ -84,18 +84,18 @@ export class EventsModule {
 
     // try get meta
     if (_id) {
-      // geo
-      if (command.event.description) {
-        this.geo.geocode(command.event.description)
-          // never wait 3d party APIs
-          .then(geo => this.events.updateOne({ _id }, { $set: { geo } }))
-          .catch(e => console.error(e));
-      } else {
-        syncActions.push(
-          this.events.updateOne({ _id }, { $set: { geo: undefined } })
-            .catch(e => console.error(e))
-        );
-      }
+      // geo - can return unexpected results, disable until the way of removing implemented
+      // if (command.event.description) {
+      //   this.geo.geocode(command.event.description)
+      //     // never wait 3d party APIs
+      //     .then(geo => this.events.updateOne({ _id }, { $set: { geo } }))
+      //     .catch(e => console.error(e));
+      // } else {
+      //   syncActions.push(
+      //     this.events.updateOne({ _id }, { $set: { geo: undefined } })
+      //       .catch(e => console.error(e))
+      //   );
+      // }
 
       // meta images
       let clearMeta = !command.event.description;
