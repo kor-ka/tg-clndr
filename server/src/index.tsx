@@ -1,3 +1,4 @@
+import "./instrument";
 // lig bug workaround
 import * as TB from "node-telegram-bot-api";
 import "dotenv/config"
