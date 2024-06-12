@@ -24,3 +24,6 @@ yarn-error.log*
 
 /server/dist
 /server/node_modules
+
+# Sentry Config File
+.sentryclirc

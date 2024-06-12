@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@sentry/cli": "^2.32.1",
     "@sentry/node": "^8.9.2",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^13.0.0",
@@ -29,12 +30,13 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build && yarn installServerDeps && yarn buildServer",
+    "build": "react-scripts build && yarn installServerDeps && yarn buildServer && yarn sentry:sourcemaps",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "installServerDeps": "cd server && yarn install && cd ..",
     "buildServer": "tsc --p server",
-    "startServer": "node server/dist/server/src/index.js"
+    "startServer": "node server/dist/server/src/index.js",
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org unaspace --project cal ./server/dist && sentry-cli sourcemaps upload --org unaspace --project cal ./server/dist"
   },
   "eslintConfig": {
     "extends": [
