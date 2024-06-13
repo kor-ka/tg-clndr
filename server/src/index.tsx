@@ -139,9 +139,13 @@ initMDB().then(() => {
     .use(cookieParser());
 
   app.get("/enabledInChat/:chatId", cors({ origin: SPLIT_DOMAIN }), async (req, res) => {
-    const chatMetaModule = container.resolve(ChatMetaModule);
-    const chatId = Number.parseInt(req.params.chatId as string);
-    res.send(!!await chatMetaModule.getChatMeta(chatId));
+    try {
+      const chatMetaModule = container.resolve(ChatMetaModule);
+      const chatId = Number.parseInt(req.params.chatId as string);
+      res.send(!!await chatMetaModule.getChatMeta(chatId));
+    } catch (e) {
+      return res.status(500).send("Oops 🤷‍♂️")
+    }
   });
 
   app.use(compression()).get("/tg/", async (req, res) => {
