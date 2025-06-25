@@ -216,7 +216,7 @@ initMDB()
               optNumber(threadId),
               Number(userId),
               // TODO: validate event
-              { type: id ? "create" : "create", event: req.body },
+              { type: id ? "update" : "create", event: req.body },
             );
 
             res.setHeader("Content-Type", "application/json");
