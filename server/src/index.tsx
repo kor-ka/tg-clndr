@@ -178,9 +178,7 @@ initMDB()
       })
 
       .use(express.json({ limit: "500kb" }))
-      .use(cookieParser());
-
-
+      .use(cookieParser())
       .get(
         "/api/v1/assistant/getConversationCalendar/chat/:chatId/thread/:threadId",
         async (req, res) => {
@@ -207,7 +205,6 @@ initMDB()
           }
         },
       )
-
       .post(
         "/api/v1/assistant/addConversationEvent/chat/:chatId/thread/:threadId",
         async (req, res) => {
@@ -233,7 +230,8 @@ initMDB()
             processThrow(e, res);
           }
         },
-      )
+      );
+      
     app.get(
       "/enabledInChat/:chatId",
       cors({ origin: SPLIT_DOMAIN }),
