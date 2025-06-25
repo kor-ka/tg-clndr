@@ -11,14 +11,16 @@ export const renderPin = async (chatId: number, threadId: number | undefined, ev
   events.forEach(e => timeZones.add(e.tz));
 
   let eventsText = (await Promise.all(events.map(e => renderEvent(e, { timeZones })))).join('\n\n').trim();
-  const lines = eventsText ? [eventsText] : ['🗓️ no upcoming events']
-
-  lines.push('');
+  
   const webcalUrl = `https://tg-clndr-4023e1d4419a.herokuapp.com/ics/${key}/cal.ics`;
-  lines.push(`<a href="${webcalUrl}">add to iOS calendar</a> (hold → open in Safari)`);
-  lines.push(`<a href="${getAndroidLink(webcalUrl)}">add to Android calendar</a>`);
-
-  const text = lines.join('\n').trim();
+  const footer = [
+    '',
+    `<a href="${webcalUrl}">add to iOS calendar</a> (hold → open in Safari)`,
+    `<a href="${getAndroidLink(webcalUrl)}">add to Android calendar</a>`
+  ].join('\n');
+    
+  const limit = 4096 - 1 - footer.length;
+  const text = [eventsText.slice(0, limit)].join('\n').trim();
 
   let buttonsRows: TB.InlineKeyboardButton[][] = [];
   buttonsRows.push([
