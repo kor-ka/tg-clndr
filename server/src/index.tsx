@@ -69,6 +69,9 @@ const checkAssistantToken = (reqToken?: string) => {
   }
 };
 
+const optNumber = (string: src) =>
+  string === "undefined" ? undefined : Number(src);
+
 const SPLIT_DOMAIN = "https://tg-split.herokuapp.com";
 
 export const appRoot = path.resolve(__dirname);
@@ -178,7 +181,6 @@ initMDB()
         "/api/v1/assistant/getConversationCalendar/chat/:chatId/thread/:threadId",
         async (req, res) => {
           try {
-            const data = "";
             const { chatId, threadId } = req.params;
             const { token, userId } = req.query;
 
@@ -189,7 +191,10 @@ initMDB()
 
             const [user, events] = await Promise.all([
               userModule.getUser(Number(userId)),
-              eventsModule.getEvents(Number(chatId), Number(threadId)),
+              eventsModule.getEvents(
+                Number(chatId),
+                optNumber(Number(threadId)),
+              ),
             ]);
             // TODO: extract events, user timeZone
             res.send(JSON.stringify({ user, events }));
@@ -204,22 +209,21 @@ initMDB()
         async (req, res) => {
           try {
             const { chatId, threadId } = req.params;
-            const { token, userId, event } = req.query;
+            const { token, userId } = req.query;
 
             checkAssistantToken(token?.toString());
 
             const eventsModule = container.resolve(EventsModule);
 
-            eventsModule.commitOperation(
+            const resEvent = await eventsModule.commitOperation(
               Number(chatId),
-              Number(threadId),
+              optNumber(Number(threadId)),
               Number(userId),
               // TODO: validate event
-              { type: "create", event: JSON.parse(String(event)) },
+              { type: "create", event: JSON.parse(String(req.body)) },
             );
 
-            // TODO: extract events, user timeZone
-            // res.send(JSON.stringify({ user, events }));
+            res.send(JSON.stringify(resEvent));
           } catch (e) {
             processThrow(e, res);
           }
