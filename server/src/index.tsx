@@ -177,6 +177,10 @@ initMDB()
         }
       })
 
+      .use(express.json({ limit: "500kb" }))
+      .use(cookieParser());
+
+
       .get(
         "/api/v1/assistant/getConversationCalendar/chat/:chatId/thread/:threadId",
         async (req, res) => {
@@ -220,19 +224,16 @@ initMDB()
               optNumber(threadId),
               Number(userId),
               // TODO: validate event
-              { type: "create", event: JSON.parse(String(req.body)) },
+              { type: "create", event: req.body },
             );
 
+            res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(resEvent));
           } catch (e) {
             processThrow(e, res);
           }
         },
       )
-
-      .use(express.json({ limit: "500kb" }))
-      .use(cookieParser());
-
     app.get(
       "/enabledInChat/:chatId",
       cors({ origin: SPLIT_DOMAIN }),
