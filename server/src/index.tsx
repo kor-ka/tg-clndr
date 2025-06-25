@@ -70,7 +70,7 @@ const checkAssistantToken = (reqToken?: string) => {
 };
 
 const optNumber = (src: string) =>
-  string === "undefined" ? undefined : Number(src);
+  src === "undefined" ? undefined : Number(src);
 
 const SPLIT_DOMAIN = "https://tg-split.herokuapp.com";
 
@@ -193,7 +193,7 @@ initMDB()
               userModule.getUser(Number(userId)),
               eventsModule.getEvents(
                 Number(chatId),
-                optNumber(Number(threadId)),
+                optNumber(threadId),
               ),
             ]);
             // TODO: extract events, user timeZone
@@ -217,7 +217,7 @@ initMDB()
 
             const resEvent = await eventsModule.commitOperation(
               Number(chatId),
-              optNumber(Number(threadId)),
+              optNumber(threadId),
               Number(userId),
               // TODO: validate event
               { type: "create", event: JSON.parse(String(req.body)) },
@@ -279,7 +279,7 @@ initMDB()
         }
 
         if (userId && timeZone) {
-          userModule.updateUserSettings(userId, timeZone).catch();
+          userModule.updateUserSettings(userId, {timeZone}).catch();
         }
         sw.lap("check cookies");
 
