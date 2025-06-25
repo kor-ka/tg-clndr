@@ -23,7 +23,11 @@ import {
 import { MainScreenView } from "../../src/view/MainScreen";
 import { Event } from "../../src/shared/entity";
 import { EventsModule } from "./modules/eventsModule/EventsModule";
-import { savedEventsToApiLight, savedUsersToApi } from "./api/ClientAPI";
+import {
+  checkAccess,
+  savedEventsToApiLight,
+  savedUsersToApi,
+} from "./api/ClientAPI";
 import { UsersModule as UsersClientModule } from "../../src/model/UsersModule";
 import { UserModule } from "./modules/userModule/UserModule";
 import { VM } from "../../src/utils/vm/VM";
@@ -34,19 +38,11 @@ import cors from "cors";
 import { SW } from "./utils/stopwatch";
 import { mesure } from "./utils/mesure";
 import { SavedUser } from "./modules/userModule/userStore";
+import { HttpError } from "./utils/httpError";
 
 var path = require("path");
 const PORT = process.env.PORT || 5001;
 const assistantToken = process.env.ASSISTANT_TOKEN;
-
-class HttpError extends Error {
-  constructor(
-    readonly status: number,
-    message: string,
-  ) {
-    super(message);
-  }
-}
 
 const processThrow = (e: unknown, res: Response) => {
   console.error("Something went wrong:", e);
@@ -193,10 +189,7 @@ initMDB()
 
             const [user, events] = await Promise.all([
               userModule.getUser(Number(userId)),
-              eventsModule.getEvents(
-                Number(chatId),
-                optNumber(threadId),
-              ),
+              eventsModule.getEvents(Number(chatId), optNumber(threadId)),
             ]);
             // TODO: extract events, user timeZone
             res.send(JSON.stringify({ user, events }));
@@ -206,13 +199,15 @@ initMDB()
         },
       )
       .post(
-        "/api/v1/assistant/addConversationEvent/chat/:chatId/thread/:threadId",
+        "/api/v1/assistant/addOrUpdateConversationEvent/chat/:chatId/thread/:threadId",
         async (req, res) => {
           try {
             const { chatId, threadId } = req.params;
-            const { token, userId } = req.query;
+            const { token, userId, id } = req.query;
 
             checkAssistantToken(token?.toString());
+
+            await checkAccess(Number(chatId), Number(userId));
 
             const eventsModule = container.resolve(EventsModule);
 
@@ -221,17 +216,38 @@ initMDB()
               optNumber(threadId),
               Number(userId),
               // TODO: validate event
-              { type: "create", event: req.body },
+              { type: id ? "create" : "create", event: req.body },
             );
 
-            res.setHeader('Content-Type', 'application/json');
+            res.setHeader("Content-Type", "application/json");
+            res.send(JSON.stringify(resEvent));
+          } catch (e) {
+            processThrow(e, res);
+          }
+        },
+      )
+      .delete(
+        "/api/v1/assistant/deleteConversationEvent/chat/:chatId",
+        async (req, res) => {
+          try {
+            const { chatId } = req.params;
+            const { token, userId, id } = req.query;
+
+            checkAssistantToken(token?.toString());
+            await checkAccess(Number(chatId), Number(userId));
+
+            const eventsModule = container.resolve(EventsModule);
+
+            const resEvent = await eventsModule.deleteEvent(String(id));
+
+            res.setHeader("Content-Type", "application/json");
             res.send(JSON.stringify(resEvent));
           } catch (e) {
             processThrow(e, res);
           }
         },
       );
-      
+
     app.get(
       "/enabledInChat/:chatId",
       cors({ origin: SPLIT_DOMAIN }),
@@ -278,7 +294,7 @@ initMDB()
         }
 
         if (userId && timeZone) {
-          userModule.updateUserSettings(userId, {timeZone}).catch();
+          userModule.updateUserSettings(userId, { timeZone }).catch();
         }
         sw.lap("check cookies");
 
