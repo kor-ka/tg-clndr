@@ -14,24 +14,23 @@ export const renderPin = async (chatId: number, threadId: number | undefined, ev
   
   const webcalUrl = `https://tg-clndr-4023e1d4419a.herokuapp.com/ics/${key}/cal.ics`;
   const footer = [
-    '',
     `<a href="${webcalUrl}">add to iOS calendar</a> (hold → open in Safari)`,
     `<a href="${getAndroidLink(webcalUrl)}">add to Android calendar</a>`
   ].join('\n');
 
-  budget -=  footer.length + 1;
+  budget -=  footer.length + 2;
   
   let eventsTexts = (await Promise.all(events.map(e => renderEvent(e, { timeZones }))));
   let body = "";
   for(let eventText of eventsTexts){
-    budget -= eventText.length + 1;
-    if(budget <=0 ) {
+    budget -= eventText.length + 2;
+    if(budget <= 0) {
       break;
     }
-    body = [body, eventText].join("\n");
+    body = [body, eventText].join("\n\n");
   }
   
-  const text = [body, footer].join('\n').trim();
+  const text = [body, footer].join('\n\n').trim();
 
   let buttonsRows: TB.InlineKeyboardButton[][] = [];
   buttonsRows.push([
