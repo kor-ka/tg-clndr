@@ -22,7 +22,7 @@ export const renderPin = async (chatId: number, threadId: number | undefined, ev
   budget -=  footer.length + 1;
   
   let eventsTexts = (await Promise.all(events.map(e => renderEvent(e, { timeZones }))));
-  const body = "";
+  let body = "";
   for(let eventText of eventsTexts){
     budget -= eventText.length + 1;
     if(budget <=0 ) {
