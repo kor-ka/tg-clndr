@@ -78,5 +78,7 @@ export const renderEvent = async ({ date, tz, title, description, attendees, del
         }
     }
 
-    return lines.join('\n').trim()
+    
+
+    return lines.join('\n').trim().slice(0, 4096)
 }
