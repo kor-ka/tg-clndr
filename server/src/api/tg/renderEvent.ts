@@ -50,9 +50,9 @@ export const renderEvent = async ({ date, tz, title, description, attendees, del
     const dateStr = renderDate !== false ? `🗓️ ${new Date(date).toLocaleString('en', { month: 'short', day: 'numeric', timeZone: tz })} - ` : '';
     const timeStr = new Date(date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h24', timeZone: tz });
 
-    const lines = [`${deleted ? "<s>" : ""}${dateStr}<b>${htmlEntities(title.trim()) + renderAtChat(atChat)}</b>, ${timeStr} ${(timeZones?.size ?? 0) > 1 ? `(${tz})` : ''}${deleted ? "</s>" : ""}`];
+    const lines = [`${deleted ? "<s>" : ""}${dateStr}<b>${htmlEntities(title.slice(0, 2048).trim()) + renderAtChat(atChat)}</b>, ${timeStr} ${(timeZones?.size ?? 0) > 1 ? `(${tz})` : ''}${deleted ? "</s>" : ""}`];
     if (description.trim()) {
-        lines.push(`✏️ ${htmlEntities(description.trim())}`);
+        lines.push(`✏️ ${htmlEntities(description.slice(0, 2048).trim())}`);
     }
     if (geo) {
         lines.push(`📍 <a href="https://maps.google.com/?q=${geo.location[0]},${geo.location[1]}">${htmlEntities(geo.address)}</a>`)
@@ -77,8 +77,5 @@ export const renderEvent = async ({ date, tz, title, description, attendees, del
             lines.push(noUsers)
         }
     }
-
-    
-
-    return lines.join('\n').trim().slice(0, 4096)
+    return lines.join('\n').trim()
 }
