@@ -378,7 +378,8 @@ ${pinned ? '' : "And don't forget to pin the message with the button, so you can
 
     this.eventsModule.upateSubject.subscribe(async (upd) => {
       try {
-        await this.udpatePin(upd.chatId, upd.threadId)
+        // do not depend on pin success - it may fail if content did not update
+        this.udpatePin(upd.chatId, upd.threadId).catch(e => console.error(e))
         if (upd.type === 'create') {
           if ((await this.chatMetaModule.getChatMeta(upd.chatId))?.settings.enableEventMessages) {
             await this.sendEventMessage(upd.event)
