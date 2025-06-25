@@ -69,7 +69,7 @@ const checkAssistantToken = (reqToken?: string) => {
   }
 };
 
-const optNumber = (string: src) =>
+const optNumber = (src: string) =>
   string === "undefined" ? undefined : Number(src);
 
 const SPLIT_DOMAIN = "https://tg-split.herokuapp.com";
