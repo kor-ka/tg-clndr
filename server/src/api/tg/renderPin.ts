@@ -10,7 +10,7 @@ export const renderPin = async (chatId: number, threadId: number | undefined, ev
   const timeZones = new Set<string>();
   events.forEach(e => timeZones.add(e.tz));
 
-  let eventsText = (await Promise.all(events.map(e => renderEvent(e, { timeZones })))).join('\n\n').trim();
+  let budget = 4096;
   
   const webcalUrl = `https://tg-clndr-4023e1d4419a.herokuapp.com/ics/${key}/cal.ics`;
   const footer = [
@@ -18,9 +18,20 @@ export const renderPin = async (chatId: number, threadId: number | undefined, ev
     `<a href="${webcalUrl}">add to iOS calendar</a> (hold → open in Safari)`,
     `<a href="${getAndroidLink(webcalUrl)}">add to Android calendar</a>`
   ].join('\n');
-    
-  const limit = 4096 - 1 - footer.length;
-  const text = [eventsText.slice(0, limit)].join('\n').trim();
+
+  budget -=  footer.length + 1;
+  
+  let eventsTexts = (await Promise.all(events.map(e => renderEvent(e, { timeZones }))));
+  const body = "";
+  for(let eventText of eventsTexts){
+    budget -= eventText.length + 1;
+    if(budget <=0 ) {
+      break;
+    }
+    body = [body, eventText].join("\n");
+  }
+  
+  const text = [body, footer].join('\n').trim();
 
   let buttonsRows: TB.InlineKeyboardButton[][] = [];
   buttonsRows.push([
