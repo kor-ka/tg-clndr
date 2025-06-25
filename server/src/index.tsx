@@ -226,7 +226,7 @@ initMDB()
           }
         },
       )
-      .delete(
+      .post(
         "/api/v1/assistant/deleteConversationEvent/chat/:chatId",
         async (req, res) => {
           try {
