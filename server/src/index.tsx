@@ -51,7 +51,7 @@ const processThrow = (e: unknown, res: Response) => {
     if (e instanceof HttpError) {
       status = e.status;
     }
-    return res.status(status).send(e.message);
+    return res.status(status).send(JSON.stringify({ error: e.message }));
   } else {
     return res.status(500).send("Oops 🤷‍♂️");
   }
