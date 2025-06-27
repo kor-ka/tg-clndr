@@ -39,6 +39,7 @@ import { SW } from "./utils/stopwatch";
 import { mesure } from "./utils/mesure";
 import { SavedUser } from "./modules/userModule/userStore";
 import { HttpError } from "./utils/httpError";
+import { getKey } from "./api/tg/getKey";
 
 var path = require("path");
 const PORT = process.env.PORT || 5001;
@@ -219,8 +220,11 @@ initMDB()
               { type: id ? "update" : "create", event: req.body },
             );
 
+            const key = getKey(chatId, threadId);
+            const buttonUrl = `https://t.me/clndrrrbot/clndr?startapp=${key}&startApp=${key}`;
+
             res.setHeader("Content-Type", "application/json");
-            res.send(JSON.stringify(resEvent));
+            res.send(JSON.stringify({result: resEvent, buttonUrl}));
           } catch (e) {
             processThrow(e, res);
           }
