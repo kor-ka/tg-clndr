@@ -220,7 +220,7 @@ initMDB()
               { type: id ? "update" : "create", event: req.body },
             );
 
-            const key = getKey(chatId, threadId);
+            const key = getKey(Number(chatId), optNumber(threadId));
             const buttonUrl = `https://t.me/clndrrrbot/clndr?startapp=${key}&startApp=${key}`;
             const button = {url: buttonUrl, text: "Calendar"}
 
