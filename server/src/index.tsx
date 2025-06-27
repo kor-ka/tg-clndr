@@ -222,9 +222,10 @@ initMDB()
 
             const key = getKey(chatId, threadId);
             const buttonUrl = `https://t.me/clndrrrbot/clndr?startapp=${key}&startApp=${key}`;
+            const button = {url: buttonUrl, text: "Calendar"}
 
             res.setHeader("Content-Type", "application/json");
-            res.send(JSON.stringify({result: resEvent, buttonUrl}));
+            res.send(JSON.stringify({result: resEvent, button}));
           } catch (e) {
             processThrow(e, res);
           }
