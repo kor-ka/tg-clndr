@@ -289,7 +289,7 @@ const MainScreenAddEventButton = WithModel(({ model }: { model: SessionModel }) 
 const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
     const event = useVMvalue(eventVM)
 
-    const { id, date, deleted, title, description, attendees, geo, imageURL } = event;
+    const { id, date, deleted, title, description, attendees, geo, imageURL, duration } = event;
 
     const nav = useSSRReadyNavigate()
     const onClick = React.useCallback(() => {
@@ -298,6 +298,7 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
 
     const timeZone = React.useContext(TimezoneContext);
     const time = React.useMemo(() => new Date(date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone }), [date]);
+    const durationDisplay = React.useMemo(() => duration ? ` (${duration})` : '', [duration]);
 
     const bg = React.useContext(BackgroundContext)
     return <>
@@ -338,7 +339,7 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
 
                 </div>
             }
-            right={<span style={{ fontSize: '1.2em' }}> {time} </span>}
+            right={<span style={{ fontSize: '1.2em' }}> {time}<span style={{ fontSize: '0.7em', opacity: 0.7 }}>{durationDisplay}</span> </span>}
         />
     </>
 })

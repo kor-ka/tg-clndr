@@ -29,6 +29,17 @@ export const NotifyBeforeOptions: DurationDscrpitor[] = [
   "1w",
 ];
 
+export const DurationOptions: DurationDscrpitor[] = [
+  "15m",
+  "30m",
+  "1h",
+  "2h",
+  "3h",
+  "1d",
+];
+
+export const DEFAULT_DURATION: DurationDscrpitor = "1h";
+
 export type UserSettings = {
   enableNotifications?: boolean;
   notifyBefore: null | DurationDscrpitor;
@@ -53,6 +64,7 @@ export type Event = {
   id: string;
   uid: number;
   date: number;
+  duration?: DurationDscrpitor;
   tz: string;
   title: string;
   description: string;

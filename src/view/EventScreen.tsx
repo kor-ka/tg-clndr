@@ -1,7 +1,7 @@
 import React from "react";
 import { useSearchParams } from "react-router-dom";
 import { SessionModel } from "../model/SessionModel";
-import { DurationDscrpitor, Event, NotifyBeforeOptions, Notification } from "../shared/entity";
+import { DurationDscrpitor, Event, NotifyBeforeOptions, Notification, DurationOptions, DEFAULT_DURATION } from "../shared/entity";
 import { useVMvalue } from "../utils/vm/useVM";
 import { UsersProviderContext, UserContext } from "./App";
 import { ListItem, UserPic, Card, Button, Page, CardLight, Block } from "./uikit/kit";
@@ -97,6 +97,12 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
         setEdited(true);
     }, []);
 
+    const [duration, setDuration] = React.useState<DurationDscrpitor>(editEv?.duration ?? DEFAULT_DURATION);
+    const onDurationChange = React.useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+        setDuration(e.target.value as DurationDscrpitor);
+        setEdited(true);
+    }, []);
+
     const goBack = useGoBack();
     const [handleOperation, loading] = useHandleOperation();
 
@@ -116,11 +122,12 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
                         title: title.trim(),
                         description: description.trim(),
                         date: date.getTime(),
+                        duration,
                     }
                 }), goBack)
         }
 
-    }, [date, title, description, model, editEv, handleOperation, goBack]);
+    }, [date, title, description, duration, model, editEv, handleOperation, goBack]);
 
     // 
     // STATUS
@@ -176,6 +183,15 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
                 <input value={crazyDateFormat} onChange={onDateInputChange} disabled={disable || !canEdit} type="datetime-local" style={{ flexGrow: 1, background: 'var(--tg-theme-secondary-bg-color)', padding: '8px 0', margin: '0px 0px' }} />
             </Card>
 
+            <Card>
+                <ListItem
+                    titile="Duration"
+                    right={
+                        <select disabled={disable || !canEdit} onChange={onDurationChange} value={duration}>
+                            {DurationOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                    } />
+            </Card>
 
             <Card>
                 <textarea value={description} onChange={onDescriptionInputChange} disabled={disable || !canEdit} style={{ flexGrow: 1, padding: '8px 0', background: 'var(--tg-theme-secondary-bg-color)', height: 128 }} placeholder="Description" />

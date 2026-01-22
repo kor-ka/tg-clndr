@@ -45,12 +45,13 @@ const renderAtChat = (atChat?: { name: string, id: number }) => {
     return ""
 }
 
-export const renderEvent = async ({ date, tz, title, description, attendees, deleted, geo, chatId }: SavedEvent, options?: { timeZones?: Set<string>, renderDate?: boolean, renderAttendees?: boolean, atChat?: { name: string, id: number } }) => {
+export const renderEvent = async ({ date, tz, title, description, attendees, deleted, geo, chatId, duration }: SavedEvent, options?: { timeZones?: Set<string>, renderDate?: boolean, renderAttendees?: boolean, atChat?: { name: string, id: number } }) => {
     const { timeZones, renderDate, renderAttendees, atChat } = options ?? {}
     const dateStr = renderDate !== false ? `🗓️ ${new Date(date).toLocaleString('en', { month: 'short', day: 'numeric', timeZone: tz })} - ` : '';
     const timeStr = new Date(date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h24', timeZone: tz });
+    const durationStr = duration ? ` (${duration})` : '';
 
-    const lines = [`${deleted ? "<s>" : ""}${dateStr}<b>${htmlEntities(title.slice(0, 2048).trim()) + renderAtChat(atChat)}</b>, ${timeStr} ${(timeZones?.size ?? 0) > 1 ? `(${tz})` : ''}${deleted ? "</s>" : ""}`];
+    const lines = [`${deleted ? "<s>" : ""}${dateStr}<b>${htmlEntities(title.slice(0, 2048).trim()) + renderAtChat(atChat)}</b>, ${timeStr}${durationStr} ${(timeZones?.size ?? 0) > 1 ? `(${tz})` : ''}${deleted ? "</s>" : ""}`];
     if (description.trim()) {
         lines.push(`✏️ ${htmlEntities(description.slice(0, 2048).trim())}`);
     }
