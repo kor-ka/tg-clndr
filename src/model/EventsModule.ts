@@ -35,7 +35,7 @@ export class EventsModule {
     private allEvents = new Map<string, VM<Event>>()
     readonly futureEvents: EventsVM = new VM(new Map<string, VM<Event>>())
 
-    private datesModels = new Map<number, DateModel>
+    private datesModels = new Map<number, DateModel>();
 
     private monthActivations = new Map<number, Promise<Event[]>>()
 
@@ -93,7 +93,7 @@ export class EventsModule {
     }
 
     // TODO: extract generic data hook
-    private pendinEvents = new Map<string, Deffered<Event>>
+    private pendinEvents = new Map<string, Deffered<Event>>();
     readonly useEvent = (id: string) => {
         const event = this.getEventOpt(id);
         if (!event) {

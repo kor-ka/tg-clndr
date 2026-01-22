@@ -41,6 +41,7 @@
   },
   "scripts": {
     "buildServer": "tsc",
-    "startServer": "node dist/server/src/index.js"
+    "startServer": "node dist/server/src/index.js",
+    "migrate:add-end-date": "tsc && node dist/server/src/migrations/add-end-date-to-events.js"
   }
 }

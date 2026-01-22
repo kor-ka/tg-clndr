@@ -53,6 +53,7 @@ export type Event = {
   id: string;
   uid: number;
   date: number;
+  endDate: number;
   tz: string;
   title: string;
   description: string;
@@ -69,7 +70,7 @@ export type Event = {
 
 type ClientApiEvent = Omit<
   Event,
-  "uid" | "deleted" | "seq" | "attendees" | "geo" | "notification"
+  "uid" | "deleted" | "seq" | "attendees" | "geo" | "notification" | "endDate"
 >;
 export type ClientApiEventCreateCommand = {
   type: "create";

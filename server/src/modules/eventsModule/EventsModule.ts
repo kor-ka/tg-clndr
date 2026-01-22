@@ -3,7 +3,7 @@ import { container, singleton } from "tsyringe";
 import { MDBClient } from "../../utils/MDB";
 import { ObjectId, WithId } from "mongodb";
 import { Subject } from "../../utils/subject";
-import { ClientApiEventUpsertCommand } from "../../../../src/shared/entity";
+import { ClientApiEventUpsertCommand, Duraion } from "../../../../src/shared/entity";
 import { GeoModule } from "../geoModule/GeoModule";
 import { NotificationsModule } from "../notificationsModule/NotificationsModule";
 import * as linkify from 'linkifyjs';
@@ -39,7 +39,7 @@ export class EventsModule {
         // Write op
         if (command.type === 'create') {
           const { id, ...event } = command.event
-          const eventData = { ...event, uid, chatId, threadId };
+          const eventData = { ...event, endDate: event.date + Duraion.h, uid, chatId, threadId };
           // create new event
           _id = (await this.events.insertOne({ ...eventData, seq: 0, idempotencyKey: `${uid}_${id}`, attendees: { yes: [uid], no: [], maybe: [] }, geo: null }, { session })).insertedId
           await container.resolve(NotificationsModule).updateNotificationOnAttend(_id, event.date, true, uid, session)
@@ -51,7 +51,8 @@ export class EventsModule {
           if (!savedEvent) {
             throw new Error("Operation not found")
           }
-          await this.events.updateOne({ _id, seq: savedEvent.seq }, { $set: event, $inc: { seq: 1 } }, { session })
+          const eventWithEndDate = { ...event, endDate: event.date + Duraion.h };
+          await this.events.updateOne({ _id, seq: savedEvent.seq }, { $set: eventWithEndDate, $inc: { seq: 1 } }, { session })
 
           // update notifications
           await container.resolve(NotificationsModule).onEventUpdated(_id, event.date, session)
