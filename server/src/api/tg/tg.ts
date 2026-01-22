@@ -17,7 +17,6 @@ import { getChatToken } from "../Auth";
 import { __DEV__ } from "../../utils/dev";
 import { StatsModule } from "../../modules/statsModule/StatsModule";
 import { getKey } from "./getKey";
-import { Duraion } from "../../../../src/shared/entity";
 
 const renderEventMessage = async (
   event: SavedEvent,
@@ -532,16 +531,20 @@ ${pinned ? "" : "And don't forget to pin the message with the button, so you can
       async () => {
         console.log("tg cron fire");
         try {
-          // trigger render for older events to clean up pin in case of no events
-          // Use max duration (1 week) as buffer to catch all potentially ongoing events
-          const freshEnough = Date.now() - Duraion.w;
+          // trigger render for chats with events that haven't ended yet
+          const now = Date.now();
 
           let i = 0;
           await LATEST_EVENTS()
             .find({
-              date: { $gte: freshEnough },
-              // udpate window: 10m
-              updated: { $not: { $gt: Date.now() - 1000 * 60 * 10 } },
+              // Query chats where the latest event hasn't ended yet
+              // Use endDate if available, fall back to date for backwards compatibility
+              $or: [
+                { endDate: { $gte: now } },
+                { endDate: { $exists: false }, date: { $gte: now } }
+              ],
+              // update window: 10m
+              updated: { $not: { $gt: now - 1000 * 60 * 10 } },
             })
             // TODO: not all chats with future events should be updated tho - only ones with outdated events in pin
             // ~30 messages/sec each minute -> given 10m window problems after 18000 active chats

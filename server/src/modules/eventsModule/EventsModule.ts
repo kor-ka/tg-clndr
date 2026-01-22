@@ -3,7 +3,7 @@ import { container, singleton } from "tsyringe";
 import { MDBClient } from "../../utils/MDB";
 import { ObjectId, WithId } from "mongodb";
 import { Subject } from "../../utils/subject";
-import { ClientApiEventUpsertCommand, parseDurationToMs, Duraion } from "../../../../src/shared/entity";
+import { ClientApiEventUpsertCommand, parseDurationToMs } from "../../../../src/shared/entity";
 import { GeoModule } from "../geoModule/GeoModule";
 import { NotificationsModule } from "../notificationsModule/NotificationsModule";
 import * as linkify from 'linkifyjs';
@@ -34,12 +34,14 @@ export class EventsModule {
     let _id: ObjectId | undefined
 
     let latestDateCandidate = event.date;
+    let latestEndDateCandidate = event.date + parseDurationToMs(event.duration);
     try {
       await session.withTransaction(async () => {
         // Write op
         if (command.type === 'create') {
           const { id, ...event } = command.event
-          const eventData = { ...event, uid, chatId, threadId };
+          const endDate = event.date + parseDurationToMs(event.duration);
+          const eventData = { ...event, uid, chatId, threadId, endDate };
           // create new event
           _id = (await this.events.insertOne({ ...eventData, seq: 0, idempotencyKey: `${uid}_${id}`, attendees: { yes: [uid], no: [], maybe: [] }, geo: null }, { session })).insertedId
           await container.resolve(NotificationsModule).updateNotificationOnAttend(_id, event.date, true, uid, session)
@@ -51,20 +53,22 @@ export class EventsModule {
           if (!savedEvent) {
             throw new Error("Operation not found")
           }
-          await this.events.updateOne({ _id, seq: savedEvent.seq }, { $set: event, $inc: { seq: 1 } }, { session })
+          const endDate = event.date + parseDurationToMs(event.duration);
+          await this.events.updateOne({ _id, seq: savedEvent.seq }, { $set: { ...event, endDate }, $inc: { seq: 1 } }, { session })
 
           // update notifications
           await container.resolve(NotificationsModule).onEventUpdated(_id, event.date, session)
 
           // keep latest date latest
-          const latest = (await this.events.find({ chatId, threadId }, { session }).sort({ date: -1 }).limit(1).toArray())[0];
-          latestDateCandidate = Math.max(latestDateCandidate, latest?.date)
+          const latest = (await this.events.find({ chatId, threadId }, { session }).sort({ endDate: -1 }).limit(1).toArray())[0];
+          latestDateCandidate = Math.max(latestDateCandidate, latest?.date ?? 0)
+          latestEndDateCandidate = Math.max(latestEndDateCandidate, latest?.endDate ?? 0)
         } else {
           throw new Error('Unknown operation modification type')
         }
 
-        // bump latest index
-        await this.eventsLatest.updateOne({ chatId, threadId }, { $max: { date: latestDateCandidate } }, { upsert: true, session });
+        // bump latest index (track both start and end dates)
+        await this.eventsLatest.updateOne({ chatId, threadId }, { $max: { date: latestDateCandidate, endDate: latestEndDateCandidate } }, { upsert: true, session });
 
       })
 
@@ -204,17 +208,20 @@ export class EventsModule {
   logCache = new Map<string, SavedEvent[]>();
   getEvents = async (chatId: number, threadId: number | undefined, limit = 200): Promise<SavedEvent[]> => {
     const now = Date.now();
-    // Query with max possible duration buffer (1 week) to catch all potentially ongoing events
-    const queryBuffer = now - Duraion.w;
-    const events = await this.events.find(
-      { chatId, threadId, date: { $gt: queryBuffer }, deleted: { $ne: true } },
-      { limit: limit * 2, sort: { date: 1 } } // fetch extra to account for filtering
+    // Query events that haven't ended yet (endDate > now)
+    // For backwards compatibility with events without endDate, also include events starting in future
+    const res = await this.events.find(
+      {
+        chatId,
+        threadId,
+        deleted: { $ne: true },
+        $or: [
+          { endDate: { $gt: now } },
+          { endDate: { $exists: false }, date: { $gt: now } } // fallback for old events without endDate
+        ]
+      },
+      { limit, sort: { date: 1 } }
     ).toArray();
-
-    // Filter to only include events that haven't ended yet (date + duration > now)
-    const res = events
-      .filter(e => e.date + parseDurationToMs(e.duration) > now)
-      .slice(0, limit);
 
     this.logCache.set(`${chatId}-${threadId ?? undefined}-${limit}`, res)
     return res
@@ -235,9 +242,9 @@ export class EventsModule {
   getEventsCached = async (chatId: number, threadId: number | undefined, limit = 200) => {
     const now = Date.now();
 
-    // Filter cached events by end time (date + duration > now)
+    // Filter cached events by end time (endDate > now)
     let events = this.logCache.get(`${chatId}-${threadId ?? undefined}-${limit}`)
-      ?.filter(e => e.date + parseDurationToMs(e.duration) > now);
+      ?.filter(e => (e.endDate ?? e.date) > now);
 
     const eventsPromise = this.getEvents(chatId, threadId, limit).catch(e => {
       console.error(e)
