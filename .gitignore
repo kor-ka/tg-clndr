@@ -5,6 +5,10 @@
 /.pnp
 .pnp.js
 
+# lock files - this project uses yarn
+package-lock.json
+server/package-lock.json
+
 # testing
 /coverage
 
