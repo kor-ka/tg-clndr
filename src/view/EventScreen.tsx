@@ -1,17 +1,36 @@
 import React from "react";
 import { useSearchParams } from "react-router-dom";
 import { SessionModel } from "../model/SessionModel";
-import { DurationDscrpitor, Event, NotifyBeforeOptions, Notification, DurationOptions, DEFAULT_DURATION } from "../shared/entity";
+import { DurationDscrpitor, Duraion, Event, NotifyBeforeOptions, Notification, DEFAULT_DURATION } from "../shared/entity";
 import { useVMvalue } from "../utils/vm/useVM";
 import { UsersProviderContext, UserContext } from "./App";
-import { ListItem, UserPic, Card, Button, Page, CardLight, Block } from "./uikit/kit";
+import { ListItem, UserPic, Card, Button, Page, Block } from "./uikit/kit";
 import { BackButtonController } from "./uikit/tg/BackButtonController";
 import { ClosingConfirmationController } from "./uikit/tg/ClosingConfirmationController";
 import { MainButtonController } from "./uikit/tg/MainButtonController";
 import { useHandleOperation } from "./useHandleOperation";
-import { useGoBack, useGoHome } from "./utils/navigation/useGoHome";
-import { showConfirm } from "./utils/webapp";
+import { useGoBack } from "./utils/navigation/useGoHome";
+import { showAlert, showConfirm } from "./utils/webapp";
 import { WithModel } from "./utils/withModelHOC";
+
+const DEFAULT_DURATION_MS = 60 * 60 * 1000; // 1 hour in milliseconds
+
+const parseDurationToMs = (duration: DurationDscrpitor | undefined): number => {
+    if (!duration) return DEFAULT_DURATION_MS;
+    const match = duration.match(/^(\d+)([mhdw])$/);
+    if (!match) return DEFAULT_DURATION_MS;
+    const value = parseInt(match[1], 10);
+    const unit = match[2] as keyof typeof Duraion;
+    return value * Duraion[unit];
+};
+
+const msToDuration = (ms: number): DurationDscrpitor => {
+    if (ms <= 0) return DEFAULT_DURATION;
+    if (ms % Duraion.w === 0) return `${ms / Duraion.w}w` as DurationDscrpitor;
+    if (ms % Duraion.d === 0) return `${ms / Duraion.d}d` as DurationDscrpitor;
+    if (ms % Duraion.h === 0) return `${ms / Duraion.h}h` as DurationDscrpitor;
+    return `${Math.round(ms / Duraion.m)}m` as DurationDscrpitor;
+};
 
 const Attendee = React.memo(({ uid, status }: { uid: number, status: 'yes' | 'no' | 'maybe' }) => {
     const usersModule = React.useContext(UsersProviderContext)
@@ -91,27 +110,39 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
     }, [editEv])
 
 
-    const [date, setDate] = React.useState(startDate);
-    const onDateInputChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        setDate(new Date(e.target.value));
+    const initialDurationMs = parseDurationToMs(editEv?.duration);
+    const [startTime, setStartTime] = React.useState(startDate);
+    const [endTime, setEndTime] = React.useState(new Date(startDate.getTime() + initialDurationMs));
+
+    const onStartTimeChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const newStart = new Date(e.target.value);
+        const currentDuration = endTime.getTime() - startTime.getTime();
+        setStartTime(newStart);
+        setEndTime(new Date(newStart.getTime() + currentDuration));
+        setEdited(true);
+    }, [startTime, endTime]);
+
+    const onEndTimeChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setEndTime(new Date(e.target.value));
         setEdited(true);
     }, []);
 
-    const [duration, setDuration] = React.useState<DurationDscrpitor>(editEv?.duration ?? DEFAULT_DURATION);
-    const onDurationChange = React.useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-        setDuration(e.target.value as DurationDscrpitor);
-        setEdited(true);
-    }, []);
+    const duration = React.useMemo(() => msToDuration(endTime.getTime() - startTime.getTime()), [startTime, endTime]);
+    const isValidTimeRange = endTime.getTime() > startTime.getTime();
 
     const goBack = useGoBack();
     const [handleOperation, loading] = useHandleOperation();
 
     disable = disable || loading;
 
-    // 
+    //
     // ADD/SAVE
-    // 
+    //
     const onClick = React.useCallback(() => {
+        if (!isValidTimeRange) {
+            showAlert("The start date must be before the end date.");
+            return;
+        }
         if (model) {
             handleOperation(
                 () => model.commitCommand({
@@ -121,13 +152,13 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
                         id: editEv?.id ?? model.nextId() + '',
                         title: title.trim(),
                         description: description.trim(),
-                        date: date.getTime(),
+                        date: startTime.getTime(),
                         duration,
                     }
                 }), goBack)
         }
 
-    }, [date, title, description, duration, model, editEv, handleOperation, goBack]);
+    }, [startTime, endTime, isValidTimeRange, title, description, duration, model, editEv, handleOperation, goBack]);
 
     // 
     // STATUS
@@ -166,10 +197,13 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
 
     const upsertAvailable = (!editEv || edited) && canEdit;
 
-    const crazyDateFormat = React.useMemo(() => {
-        var tzoffset = (new Date()).getTimezoneOffset() * 60000; //offset in milliseconds
-        return (new Date(date.getTime() - tzoffset)).toISOString().slice(0, -8);
-    }, [date]);
+    const tzoffset = (new Date()).getTimezoneOffset() * 60000;
+    const startTimeFormat = React.useMemo(() => {
+        return (new Date(startTime.getTime() - tzoffset)).toISOString().slice(0, -8);
+    }, [startTime]);
+    const endTimeFormat = React.useMemo(() => {
+        return (new Date(endTime.getTime() - tzoffset)).toISOString().slice(0, -8);
+    }, [endTime]);
 
     return <Page>
         <BackButtonController />
@@ -180,17 +214,34 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
             </Card>
 
             <Card>
-                <input value={crazyDateFormat} onChange={onDateInputChange} disabled={disable || !canEdit} type="datetime-local" style={{ flexGrow: 1, background: 'var(--tg-theme-secondary-bg-color)', padding: '8px 0', margin: '0px 0px' }} />
-            </Card>
-
-            <Card>
                 <ListItem
-                    titile="Duration"
+                    titile="Starts"
                     right={
-                        <select disabled={disable || !canEdit} onChange={onDurationChange} value={duration}>
-                            {DurationOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                        </select>
-                    } />
+                        <input
+                            value={startTimeFormat}
+                            onChange={onStartTimeChange}
+                            disabled={disable || !canEdit}
+                            type="datetime-local"
+                            style={{ background: 'transparent', textAlign: 'right' }}
+                        />
+                    }
+                />
+                <ListItem
+                    titile="Ends"
+                    right={
+                        <input
+                            value={endTimeFormat}
+                            onChange={onEndTimeChange}
+                            disabled={disable || !canEdit}
+                            type="datetime-local"
+                            style={{
+                                background: 'transparent',
+                                textAlign: 'right',
+                                color: isValidTimeRange ? undefined : 'var(--text-destructive-color)'
+                            }}
+                        />
+                    }
+                />
             </Card>
 
             <Card>
