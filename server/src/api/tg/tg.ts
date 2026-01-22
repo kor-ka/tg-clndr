@@ -538,8 +538,8 @@ ${pinned ? "" : "And don't forget to pin the message with the button, so you can
           let i = 0;
           await LATEST_EVENTS()
             .find({
-              // Chats with recent events that may have just ended (24h buffer for variable durations)
-              date: { $gte: now - 24 * 60 * 60 * 1000 },
+              // Chats where latest event ended recently or is still active
+              endDate: { $gte: now - 1000 * 60 * 10 },
               // update window: 10m
               updated: { $not: { $gt: now - 1000 * 60 * 10 } },
             })
