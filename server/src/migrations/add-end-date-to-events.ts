@@ -22,6 +22,10 @@ async function migrateEndDate() {
 
     const db = client.db(dbName);
     const eventsCollection = db.collection("events");
+    const latestEventsCollection = db.collection("latest_events");
+
+    // === Migrate events collection ===
+    console.log("\n=== Migrating events collection ===");
 
     // Find all events that don't have an endDate field
     const eventsWithoutEndDate = await eventsCollection.countDocuments({
@@ -30,55 +34,96 @@ async function migrateEndDate() {
 
     console.log(`Found ${eventsWithoutEndDate} events without endDate field`);
 
-    if (eventsWithoutEndDate === 0) {
-      console.log("No events to migrate");
-      return;
+    if (eventsWithoutEndDate > 0) {
+      // Update all events without endDate to set endDate = date + 1 hour
+      const result = await eventsCollection.updateMany(
+        { endDate: { $exists: false } },
+        [
+          {
+            $set: {
+              endDate: { $add: ["$date", HOUR_IN_MS] },
+            },
+          },
+        ]
+      );
+
+      console.log(`Events migration completed!`);
+      console.log(`- Matched: ${result.matchedCount} events`);
+      console.log(`- Modified: ${result.modifiedCount} events`);
+
+      // Verify the migration
+      const remainingWithoutEndDate = await eventsCollection.countDocuments({
+        endDate: { $exists: false },
+      });
+
+      if (remainingWithoutEndDate > 0) {
+        console.warn(
+          `WARNING: ${remainingWithoutEndDate} events still don't have endDate!`
+        );
+      } else {
+        console.log("✓ All events now have endDate field");
+      }
+
+      // Show a sample of migrated events
+      console.log("\nSample of migrated events:");
+      const samples = await eventsCollection
+        .find({ endDate: { $exists: true } })
+        .limit(3)
+        .toArray();
+
+      samples.forEach((event) => {
+        const dateStr = new Date(event.date).toISOString();
+        const endDateStr = new Date(event.endDate).toISOString();
+        const duration = (event.endDate - event.date) / HOUR_IN_MS;
+        console.log(
+          `  - Event "${event.title}": ${dateStr} -> ${endDateStr} (${duration}h)`
+        );
+      });
+    } else {
+      console.log("✓ No events to migrate");
     }
 
-    // Update all events without endDate to set endDate = date + 1 hour
-    const result = await eventsCollection.updateMany(
-      { endDate: { $exists: false } },
-      [
-        {
-          $set: {
-            endDate: { $add: ["$date", HOUR_IN_MS] },
-          },
-        },
-      ]
-    );
+    // === Migrate latest_events collection ===
+    console.log("\n=== Migrating latest_events collection ===");
 
-    console.log(`Migration completed!`);
-    console.log(`- Matched: ${result.matchedCount} events`);
-    console.log(`- Modified: ${result.modifiedCount} events`);
-
-    // Verify the migration
-    const remainingWithoutEndDate = await eventsCollection.countDocuments({
+    const latestEventsWithoutEndDate = await latestEventsCollection.countDocuments({
       endDate: { $exists: false },
     });
 
-    if (remainingWithoutEndDate > 0) {
-      console.warn(
-        `WARNING: ${remainingWithoutEndDate} events still don't have endDate!`
+    console.log(`Found ${latestEventsWithoutEndDate} latest_events without endDate field`);
+
+    if (latestEventsWithoutEndDate > 0) {
+      // Update all latest_events without endDate to set endDate = date + 1 hour
+      const latestResult = await latestEventsCollection.updateMany(
+        { endDate: { $exists: false } },
+        [
+          {
+            $set: {
+              endDate: { $add: ["$date", HOUR_IN_MS] },
+            },
+          },
+        ]
       );
+
+      console.log(`Latest events migration completed!`);
+      console.log(`- Matched: ${latestResult.matchedCount} latest_events`);
+      console.log(`- Modified: ${latestResult.modifiedCount} latest_events`);
+
+      // Verify the migration
+      const remainingLatestWithoutEndDate = await latestEventsCollection.countDocuments({
+        endDate: { $exists: false },
+      });
+
+      if (remainingLatestWithoutEndDate > 0) {
+        console.warn(
+          `WARNING: ${remainingLatestWithoutEndDate} latest_events still don't have endDate!`
+        );
+      } else {
+        console.log("✓ All latest_events now have endDate field");
+      }
     } else {
-      console.log("✓ All events now have endDate field");
+      console.log("✓ No latest_events to migrate");
     }
-
-    // Show a sample of migrated events
-    console.log("\nSample of migrated events:");
-    const samples = await eventsCollection
-      .find({ endDate: { $exists: true } })
-      .limit(3)
-      .toArray();
-
-    samples.forEach((event) => {
-      const dateStr = new Date(event.date).toISOString();
-      const endDateStr = new Date(event.endDate).toISOString();
-      const duration = (event.endDate - event.date) / HOUR_IN_MS;
-      console.log(
-        `  - Event "${event.title}": ${dateStr} -> ${endDateStr} (${duration}h)`
-      );
-    });
   } catch (error) {
     console.error("Migration failed:", error);
     throw error;

@@ -34,6 +34,7 @@ export class EventsModule {
     let _id: ObjectId | undefined
 
     let latestDateCandidate = event.date;
+    let latestEndDateCandidate = event.date + Duraion.h;
     try {
       await session.withTransaction(async () => {
         // Write op
@@ -59,13 +60,14 @@ export class EventsModule {
 
           // keep latest date latest
           const latest = (await this.events.find({ chatId, threadId }, { session }).sort({ date: -1 }).limit(1).toArray())[0];
-          latestDateCandidate = Math.max(latestDateCandidate, latest?.date)
+          latestDateCandidate = Math.max(latestDateCandidate, latest?.date);
+          latestEndDateCandidate = latest?.endDate ?? (latest?.date + Duraion.h);
         } else {
           throw new Error('Unknown operation modification type')
         }
 
         // bump latest index
-        await this.eventsLatest.updateOne({ chatId, threadId }, { $max: { date: latestDateCandidate } }, { upsert: true, session });
+        await this.eventsLatest.updateOne({ chatId, threadId }, { $max: { date: latestDateCandidate, endDate: latestEndDateCandidate } }, { upsert: true, session });
 
       })
 
