@@ -1,7 +1,7 @@
 import React from "react";
 import { useSearchParams } from "react-router-dom";
 import { SessionModel } from "../model/SessionModel";
-import { DurationDscrpitor, Duraion, Event, NotifyBeforeOptions, Notification, DEFAULT_DURATION, parseDurationToMs } from "../shared/entity";
+import { DurationDscrpitor, Event, NotifyBeforeOptions, Notification, DEFAULT_DURATION_MS } from "../shared/entity";
 import { useVMvalue } from "../utils/vm/useVM";
 import { UsersProviderContext, UserContext } from "./App";
 import { ListItem, UserPic, Card, Button, Page, Block } from "./uikit/kit";
@@ -12,14 +12,6 @@ import { useHandleOperation } from "./useHandleOperation";
 import { useGoBack } from "./utils/navigation/useGoHome";
 import { showAlert, showConfirm } from "./utils/webapp";
 import { WithModel } from "./utils/withModelHOC";
-
-const msToDuration = (ms: number): DurationDscrpitor => {
-    if (ms <= 0) return DEFAULT_DURATION;
-    if (ms % Duraion.w === 0) return `${ms / Duraion.w}w` as DurationDscrpitor;
-    if (ms % Duraion.d === 0) return `${ms / Duraion.d}d` as DurationDscrpitor;
-    if (ms % Duraion.h === 0) return `${ms / Duraion.h}h` as DurationDscrpitor;
-    return `${Math.round(ms / Duraion.m)}m` as DurationDscrpitor;
-};
 
 const Attendee = React.memo(({ uid, status }: { uid: number, status: 'yes' | 'no' | 'maybe' }) => {
     const usersModule = React.useContext(UsersProviderContext)
@@ -99,9 +91,10 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
     }, [editEv])
 
 
-    const initialDurationMs = parseDurationToMs(editEv?.duration);
     const [startTime, setStartTime] = React.useState(startDate);
-    const [endTime, setEndTime] = React.useState(new Date(startDate.getTime() + initialDurationMs));
+    const [endTime, setEndTime] = React.useState(
+        new Date(editEv?.endDate ?? startDate.getTime() + DEFAULT_DURATION_MS)
+    );
 
     const onStartTimeChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const newStart = new Date(e.target.value);
@@ -116,7 +109,6 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
         setEdited(true);
     }, []);
 
-    const duration = React.useMemo(() => msToDuration(endTime.getTime() - startTime.getTime()), [startTime, endTime]);
     const isValidTimeRange = endTime.getTime() > startTime.getTime();
 
     const goBack = useGoBack();
@@ -142,12 +134,12 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
                         title: title.trim(),
                         description: description.trim(),
                         date: startTime.getTime(),
-                        duration,
+                        endDate: endTime.getTime(),
                     }
                 }), goBack)
         }
 
-    }, [startTime, endTime, isValidTimeRange, title, description, duration, model, editEv, handleOperation, goBack]);
+    }, [startTime, endTime, isValidTimeRange, title, description, model, editEv, handleOperation, goBack]);
 
     // 
     // STATUS

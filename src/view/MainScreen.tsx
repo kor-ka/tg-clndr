@@ -1,5 +1,5 @@
 import React, { lazy, useRef } from "react";
-import { Event } from "../shared/entity"
+import { Event, formatDuration } from "../shared/entity"
 import { SessionModel } from "../model/SessionModel"
 import { useVMvalue } from "../utils/vm/useVM"
 import { VM } from "../utils/vm/VM";
@@ -289,7 +289,7 @@ const MainScreenAddEventButton = WithModel(({ model }: { model: SessionModel }) 
 const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
     const event = useVMvalue(eventVM)
 
-    const { id, date, deleted, title, description, attendees, geo, imageURL, duration } = event;
+    const { id, date, deleted, title, description, attendees, geo, imageURL, endDate } = event;
 
     const nav = useSSRReadyNavigate()
     const onClick = React.useCallback(() => {
@@ -298,7 +298,7 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
 
     const timeZone = React.useContext(TimezoneContext);
     const time = React.useMemo(() => new Date(date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone }), [date]);
-    const durationDisplay = React.useMemo(() => duration ? ` (${duration})` : '', [duration]);
+    const durationDisplay = React.useMemo(() => endDate ? ` (${formatDuration(endDate - date)})` : '', [date, endDate]);
 
     const bg = React.useContext(BackgroundContext)
     return <>

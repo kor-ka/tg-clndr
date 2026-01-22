@@ -531,18 +531,16 @@ ${pinned ? "" : "And don't forget to pin the message with the button, so you can
       async () => {
         console.log("tg cron fire");
         try {
-          // trigger render for chats with events that haven't ended yet
+          // trigger render for chats that might have events ending soon
+          // LATEST_EVENTS stores latest event start time, so use 24h buffer
+          // getEvents() filters by actual endDate
           const now = Date.now();
 
           let i = 0;
           await LATEST_EVENTS()
             .find({
-              // Query chats where the latest event hasn't ended yet
-              // Use endDate if available, fall back to date for backwards compatibility
-              $or: [
-                { endDate: { $gte: now } },
-                { endDate: { $exists: false }, date: { $gte: now } }
-              ],
+              // Chats with events that started within the last 24h might still have ongoing events
+              date: { $gte: now - 24 * 60 * 60 * 1000 },
               // update window: 10m
               updated: { $not: { $gt: now - 1000 * 60 * 10 } },
             })

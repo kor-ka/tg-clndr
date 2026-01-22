@@ -3,7 +3,7 @@ import { container, singleton } from "tsyringe";
 import { MDBClient } from "../../utils/MDB";
 import { ObjectId, WithId } from "mongodb";
 import { Subject } from "../../utils/subject";
-import { ClientApiEventUpsertCommand, parseDurationToMs } from "../../../../src/shared/entity";
+import { ClientApiEventUpsertCommand, DEFAULT_DURATION_MS } from "../../../../src/shared/entity";
 import { GeoModule } from "../geoModule/GeoModule";
 import { NotificationsModule } from "../notificationsModule/NotificationsModule";
 import * as linkify from 'linkifyjs';
@@ -34,14 +34,12 @@ export class EventsModule {
     let _id: ObjectId | undefined
 
     let latestDateCandidate = event.date;
-    let latestEndDateCandidate = event.date + parseDurationToMs(event.duration);
     try {
       await session.withTransaction(async () => {
         // Write op
         if (command.type === 'create') {
           const { id, ...event } = command.event
-          const endDate = event.date + parseDurationToMs(event.duration);
-          const eventData = { ...event, uid, chatId, threadId, endDate };
+          const eventData = { ...event, uid, chatId, threadId, endDate: event.endDate ?? event.date + DEFAULT_DURATION_MS };
           // create new event
           _id = (await this.events.insertOne({ ...eventData, seq: 0, idempotencyKey: `${uid}_${id}`, attendees: { yes: [uid], no: [], maybe: [] }, geo: null }, { session })).insertedId
           await container.resolve(NotificationsModule).updateNotificationOnAttend(_id, event.date, true, uid, session)
@@ -53,22 +51,20 @@ export class EventsModule {
           if (!savedEvent) {
             throw new Error("Operation not found")
           }
-          const endDate = event.date + parseDurationToMs(event.duration);
-          await this.events.updateOne({ _id, seq: savedEvent.seq }, { $set: { ...event, endDate }, $inc: { seq: 1 } }, { session })
+          await this.events.updateOne({ _id, seq: savedEvent.seq }, { $set: { ...event, endDate: event.endDate ?? event.date + DEFAULT_DURATION_MS }, $inc: { seq: 1 } }, { session })
 
           // update notifications
           await container.resolve(NotificationsModule).onEventUpdated(_id, event.date, session)
 
           // keep latest date latest
-          const latest = (await this.events.find({ chatId, threadId }, { session }).sort({ endDate: -1 }).limit(1).toArray())[0];
+          const latest = (await this.events.find({ chatId, threadId }, { session }).sort({ date: -1 }).limit(1).toArray())[0];
           latestDateCandidate = Math.max(latestDateCandidate, latest?.date ?? 0)
-          latestEndDateCandidate = Math.max(latestEndDateCandidate, latest?.endDate ?? 0)
         } else {
           throw new Error('Unknown operation modification type')
         }
 
-        // bump latest index (track both start and end dates)
-        await this.eventsLatest.updateOne({ chatId, threadId }, { $max: { date: latestDateCandidate, endDate: latestEndDateCandidate } }, { upsert: true, session });
+        // bump latest index
+        await this.eventsLatest.updateOne({ chatId, threadId }, { $max: { date: latestDateCandidate } }, { upsert: true, session });
 
       })
 

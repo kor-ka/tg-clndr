@@ -29,25 +29,14 @@ export const NotifyBeforeOptions: DurationDscrpitor[] = [
   "1w",
 ];
 
-export const DurationOptions: DurationDscrpitor[] = [
-  "15m",
-  "30m",
-  "1h",
-  "2h",
-  "3h",
-  "1d",
-];
-
-export const DEFAULT_DURATION: DurationDscrpitor = "1h";
 export const DEFAULT_DURATION_MS = Duraion.h; // 1 hour in milliseconds
 
-export const parseDurationToMs = (duration: DurationDscrpitor | undefined): number => {
-  if (!duration) return DEFAULT_DURATION_MS;
-  const match = duration.match(/^(\d+)([mhdw])$/);
-  if (!match) return DEFAULT_DURATION_MS;
-  const value = parseInt(match[1], 10);
-  const unit = match[2] as keyof typeof Duraion;
-  return value * Duraion[unit];
+export const formatDuration = (ms: number): string => {
+  if (ms <= 0) return "1h";
+  if (ms % Duraion.w === 0) return `${ms / Duraion.w}w`;
+  if (ms % Duraion.d === 0) return `${ms / Duraion.d}d`;
+  if (ms % Duraion.h === 0) return `${ms / Duraion.h}h`;
+  return `${Math.round(ms / Duraion.m)}m`;
 };
 
 export type UserSettings = {
@@ -74,7 +63,7 @@ export type Event = {
   id: string;
   uid: number;
   date: number;
-  duration?: DurationDscrpitor;
+  endDate?: number;
   tz: string;
   title: string;
   description: string;

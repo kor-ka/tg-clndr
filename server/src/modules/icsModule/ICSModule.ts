@@ -7,11 +7,7 @@ import * as ics from "ics"
 import { ChatMetaModule } from "../chatMetaModule/ChatMetaModule";
 import { Attendee, GeoCoordinates, ParticipationStatus } from "ics";
 import { UserModule } from "../userModule/UserModule";
-import { Duraion, parseDurationToMs } from "../../../../src/shared/entity";
-
-const parseDurationToMinutes = (duration: Parameters<typeof parseDurationToMs>[0]): number => {
-  return parseDurationToMs(duration) / (1000 * 60);
-};
+import { DEFAULT_DURATION_MS } from "../../../../src/shared/entity";
 
 const uidToAttendee = async (uid: number, status: ParticipationStatus, chatId: number): Promise<Attendee> => {
   const userModule = container.resolve(UserModule);
@@ -42,7 +38,8 @@ export class ICSModule {
 
     const evs: ics.EventAttributes[] = []
     for (let e of events) {
-      const date = new Date(e.date);
+      const startDate = new Date(e.date);
+      const endDate = new Date(e.endDate ?? e.date + DEFAULT_DURATION_MS);
       const attendees: Attendee[] = (await Promise.all([
         e.attendees.yes.map(uid => uidToAttendee(uid, 'ACCEPTED', chatId)),
         e.attendees.maybe.map(uid => uidToAttendee(uid, 'TENTATIVE', chatId)),
@@ -69,8 +66,8 @@ export class ICSModule {
           location,
           geo,
           description,
-          start: [date.getFullYear(), date.getMonth() + 1, date.getDate(), date.getHours(), date.getMinutes()],
-          duration: { minutes: parseDurationToMinutes(e.duration) },
+          start: [startDate.getFullYear(), startDate.getMonth() + 1, startDate.getDate(), startDate.getHours(), startDate.getMinutes()],
+          end: [endDate.getFullYear(), endDate.getMonth() + 1, endDate.getDate(), endDate.getHours(), endDate.getMinutes()],
           attendees
         }
       )
