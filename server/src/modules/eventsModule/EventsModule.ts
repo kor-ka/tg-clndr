@@ -3,7 +3,7 @@ import { container, singleton } from "tsyringe";
 import { MDBClient } from "../../utils/MDB";
 import { ObjectId, WithId } from "mongodb";
 import { Subject } from "../../utils/subject";
-import { ClientApiEventUpsertCommand } from "../../../../src/shared/entity";
+import { ClientApiEventUpsertCommand, parseDurationToMs, Duraion } from "../../../../src/shared/entity";
 import { GeoModule } from "../geoModule/GeoModule";
 import { NotificationsModule } from "../notificationsModule/NotificationsModule";
 import * as linkify from 'linkifyjs';
@@ -203,9 +203,19 @@ export class EventsModule {
 
   logCache = new Map<string, SavedEvent[]>();
   getEvents = async (chatId: number, threadId: number | undefined, limit = 200): Promise<SavedEvent[]> => {
-    const now = new Date().getTime();
-    const freshEnough = now - 1000 * 60 * 60 * 4;
-    let res = await this.events.find({ chatId, threadId, date: { $gt: freshEnough }, deleted: { $ne: true } }, { limit, sort: { date: 1 } }).toArray();
+    const now = Date.now();
+    // Query with max possible duration buffer (1 week) to catch all potentially ongoing events
+    const queryBuffer = now - Duraion.w;
+    const events = await this.events.find(
+      { chatId, threadId, date: { $gt: queryBuffer }, deleted: { $ne: true } },
+      { limit: limit * 2, sort: { date: 1 } } // fetch extra to account for filtering
+    ).toArray();
+
+    // Filter to only include events that haven't ended yet (date + duration > now)
+    const res = events
+      .filter(e => e.date + parseDurationToMs(e.duration) > now)
+      .slice(0, limit);
+
     this.logCache.set(`${chatId}-${threadId ?? undefined}-${limit}`, res)
     return res
   }
@@ -223,10 +233,12 @@ export class EventsModule {
   }
 
   getEventsCached = async (chatId: number, threadId: number | undefined, limit = 200) => {
-    const now = new Date().getTime();
-    const freshEnough = now - 1000 * 60 * 60 * 4;
+    const now = Date.now();
 
-    let events = this.logCache.get(`${chatId}-${threadId ?? undefined}-${limit}`)?.filter(e => e.date >= freshEnough)
+    // Filter cached events by end time (date + duration > now)
+    let events = this.logCache.get(`${chatId}-${threadId ?? undefined}-${limit}`)
+      ?.filter(e => e.date + parseDurationToMs(e.duration) > now);
+
     const eventsPromise = this.getEvents(chatId, threadId, limit).catch(e => {
       console.error(e)
       return []

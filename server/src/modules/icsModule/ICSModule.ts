@@ -7,15 +7,10 @@ import * as ics from "ics"
 import { ChatMetaModule } from "../chatMetaModule/ChatMetaModule";
 import { Attendee, GeoCoordinates, ParticipationStatus } from "ics";
 import { UserModule } from "../userModule/UserModule";
-import { Duraion, DurationDscrpitor, DEFAULT_DURATION } from "../../../../src/shared/entity";
+import { Duraion, parseDurationToMs } from "../../../../src/shared/entity";
 
-const parseDurationToMinutes = (duration: DurationDscrpitor | undefined): number => {
-  const d = duration ?? DEFAULT_DURATION;
-  const match = d.match(/^(\d+)([mhdw])$/);
-  if (!match) return 60;
-  const value = parseInt(match[1], 10);
-  const unit = match[2] as keyof typeof Duraion;
-  return (value * Duraion[unit]) / (1000 * 60);
+const parseDurationToMinutes = (duration: Parameters<typeof parseDurationToMs>[0]): number => {
+  return parseDurationToMs(duration) / (1000 * 60);
 };
 
 const uidToAttendee = async (uid: number, status: ParticipationStatus, chatId: number): Promise<Attendee> => {

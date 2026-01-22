@@ -1,7 +1,7 @@
 import React from "react";
 import { useSearchParams } from "react-router-dom";
 import { SessionModel } from "../model/SessionModel";
-import { DurationDscrpitor, Duraion, Event, NotifyBeforeOptions, Notification, DEFAULT_DURATION } from "../shared/entity";
+import { DurationDscrpitor, Duraion, Event, NotifyBeforeOptions, Notification, DEFAULT_DURATION, parseDurationToMs } from "../shared/entity";
 import { useVMvalue } from "../utils/vm/useVM";
 import { UsersProviderContext, UserContext } from "./App";
 import { ListItem, UserPic, Card, Button, Page, Block } from "./uikit/kit";
@@ -12,17 +12,6 @@ import { useHandleOperation } from "./useHandleOperation";
 import { useGoBack } from "./utils/navigation/useGoHome";
 import { showAlert, showConfirm } from "./utils/webapp";
 import { WithModel } from "./utils/withModelHOC";
-
-const DEFAULT_DURATION_MS = 60 * 60 * 1000; // 1 hour in milliseconds
-
-const parseDurationToMs = (duration: DurationDscrpitor | undefined): number => {
-    if (!duration) return DEFAULT_DURATION_MS;
-    const match = duration.match(/^(\d+)([mhdw])$/);
-    if (!match) return DEFAULT_DURATION_MS;
-    const value = parseInt(match[1], 10);
-    const unit = match[2] as keyof typeof Duraion;
-    return value * Duraion[unit];
-};
 
 const msToDuration = (ms: number): DurationDscrpitor => {
     if (ms <= 0) return DEFAULT_DURATION;

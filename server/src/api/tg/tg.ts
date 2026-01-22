@@ -17,6 +17,7 @@ import { getChatToken } from "../Auth";
 import { __DEV__ } from "../../utils/dev";
 import { StatsModule } from "../../modules/statsModule/StatsModule";
 import { getKey } from "./getKey";
+import { Duraion } from "../../../../src/shared/entity";
 
 const renderEventMessage = async (
   event: SavedEvent,
@@ -532,7 +533,8 @@ ${pinned ? "" : "And don't forget to pin the message with the button, so you can
         console.log("tg cron fire");
         try {
           // trigger render for older events to clean up pin in case of no events
-          const freshEnough = Date.now() - 1000 * 60 * 60 * 5;
+          // Use max duration (1 week) as buffer to catch all potentially ongoing events
+          const freshEnough = Date.now() - Duraion.w;
 
           let i = 0;
           await LATEST_EVENTS()

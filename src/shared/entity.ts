@@ -39,6 +39,16 @@ export const DurationOptions: DurationDscrpitor[] = [
 ];
 
 export const DEFAULT_DURATION: DurationDscrpitor = "1h";
+export const DEFAULT_DURATION_MS = Duraion.h; // 1 hour in milliseconds
+
+export const parseDurationToMs = (duration: DurationDscrpitor | undefined): number => {
+  if (!duration) return DEFAULT_DURATION_MS;
+  const match = duration.match(/^(\d+)([mhdw])$/);
+  if (!match) return DEFAULT_DURATION_MS;
+  const value = parseInt(match[1], 10);
+  const unit = match[2] as keyof typeof Duraion;
+  return value * Duraion[unit];
+};
 
 export type UserSettings = {
   enableNotifications?: boolean;
