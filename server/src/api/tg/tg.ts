@@ -539,7 +539,11 @@ ${pinned ? "" : "And don't forget to pin the message with the button, so you can
           await LATEST_EVENTS()
             .find({
               // Chats where latest event ended recently or is still active
-              endDate: { $gte: now - 1000 * 60 * 10 },
+              // Use endDate if available, fall back to date for old documents
+              $or: [
+                { endDate: { $gte: now - 1000 * 60 * 10 } },
+                { endDate: { $exists: false }, date: { $gte: now - 1000 * 60 * 60 * 24 } }
+              ],
               // update window: 10m
               updated: { $not: { $gt: now - 1000 * 60 * 10 } },
             })
