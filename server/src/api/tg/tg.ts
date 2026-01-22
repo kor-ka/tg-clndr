@@ -524,22 +524,21 @@ ${pinned ? "" : "And don't forget to pin the message with the button, so you can
       }
     });
 
-    // clean up older events from pin as time goes
+    // clean up passed events from pin as time goes
     // run every minute
     new CronJob(
       "* * * * *",
       async () => {
         console.log("tg cron fire");
         try {
-          // trigger render for chats that might have events ending soon
-          // LATEST_EVENTS stores latest event start time, so use 24h buffer
-          // getEvents() filters by actual endDate
+          // re-render pins to remove events that have ended
+          // getEvents() filters by endDate > now, so ended events get removed
           const now = Date.now();
 
           let i = 0;
           await LATEST_EVENTS()
             .find({
-              // Chats with events that started within the last 24h might still have ongoing events
+              // Chats with recent events that may have just ended (24h buffer for variable durations)
               date: { $gte: now - 24 * 60 * 60 * 1000 },
               // update window: 10m
               updated: { $not: { $gt: now - 1000 * 60 * 10 } },
