@@ -522,16 +522,21 @@ const EventsView = React.memo((({ eventsVM, selectedDate }: { eventsVM: VM<Map<s
             const now = Date.now();
             const dateToEvents = new Map<number, VM<Event>[]>();
 
+            // Calculate today's date boundary in the user's timezone
+            const todayInTZ = new Date(now + getOffset(timeZone));
+            const todayStartInTZ = new Date(todayInTZ.getFullYear(), todayInTZ.getMonth(), todayInTZ.getDate()).getTime();
+
             for (let vm of eventsArray) {
-                const eventStartDate = new Date(vm.val.date);
+                // Apply timezone offset to get correct day boundaries in user's timezone
+                const eventStartDate = new Date(vm.val.date + getOffset(timeZone));
                 const eventStartDay = new Date(eventStartDate.getFullYear(), eventStartDate.getMonth(), eventStartDate.getDate()).getTime();
 
-                const eventEndDate = new Date(vm.val.endDate);
+                const eventEndDate = new Date(vm.val.endDate + getOffset(timeZone));
                 const eventEndDay = new Date(eventEndDate.getFullYear(), eventEndDate.getMonth(), eventEndDate.getDate()).getTime();
 
                 // Add this event to each day it spans
                 for (let day = eventStartDay; day <= eventEndDay; day += 24 * 60 * 60 * 1000) {
-                    if (day >= new Date(new Date(now).setHours(0, 0, 0, 0)).getTime()) {
+                    if (day >= todayStartInTZ) {
                         if (!dateToEvents.has(day)) {
                             dateToEvents.set(day, []);
                         }
