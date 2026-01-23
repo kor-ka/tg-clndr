@@ -53,7 +53,12 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
         }
     }, [selectedDate])
 
-    const [eventsVM, setEventsVM] = React.useState<VM<Map<string, VM<Event>>>>()
+    const eventsVM = React.useMemo(() => {
+        if (selectedDate) {
+            return model.eventsModule.getDateModel(selectedDate).events
+        }
+        return undefined
+    }, [selectedDate, model])
 
     const openCal = React.useCallback(() => {
         setSelectedDate(startDate)
@@ -65,7 +70,6 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
 
     React.useEffect(() => {
         if (selectedDate) {
-            setEventsVM(model.eventsModule.getDateModel(selectedDate).events)
             setSearchParams(s => {
                 s.set('selectedDate', selectedDate.toString())
                 return s
