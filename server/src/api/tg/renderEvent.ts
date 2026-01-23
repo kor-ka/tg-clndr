@@ -45,12 +45,27 @@ const renderAtChat = (atChat?: { name: string, id: number }) => {
     return ""
 }
 
-export const renderEvent = async ({ date, tz, title, description, attendees, deleted, geo, chatId }: SavedEvent, options?: { timeZones?: Set<string>, renderDate?: boolean, renderAttendees?: boolean, atChat?: { name: string, id: number } }) => {
+export const renderEvent = async ({ date, endDate, tz, title, description, attendees, deleted, geo, chatId }: SavedEvent, options?: { timeZones?: Set<string>, renderDate?: boolean, renderAttendees?: boolean, atChat?: { name: string, id: number } }) => {
     const { timeZones, renderDate, renderAttendees, atChat } = options ?? {}
     const dateStr = renderDate !== false ? `🗓️ ${new Date(date).toLocaleString('en', { month: 'short', day: 'numeric', timeZone: tz })} - ` : '';
     const timeStr = new Date(date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h24', timeZone: tz });
 
-    const lines = [`${deleted ? "<s>" : ""}${dateStr}<b>${htmlEntities(title.slice(0, 2048).trim()) + renderAtChat(atChat)}</b>, ${timeStr} ${(timeZones?.size ?? 0) > 1 ? `(${tz})` : ''}${deleted ? "</s>" : ""}`];
+    // Format endDate if present
+    let endTimeStr = '';
+    if (endDate && endDate !== date) {
+        const startDateOnly = new Date(date).toLocaleDateString('en', { timeZone: tz });
+        const endDateOnly = new Date(endDate).toLocaleDateString('en', { timeZone: tz });
+
+        if (startDateOnly === endDateOnly) {
+            // Same day: show only time
+            endTimeStr = ' - ' + new Date(endDate).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h24', timeZone: tz });
+        } else {
+            // Different day: show full date and time
+            endTimeStr = ' - ' + new Date(endDate).toLocaleString('en', { month: 'short', day: 'numeric', timeZone: tz }) + ' ' + new Date(endDate).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h24', timeZone: tz });
+        }
+    }
+
+    const lines = [`${deleted ? "<s>" : ""}${dateStr}<b>${htmlEntities(title.slice(0, 2048).trim()) + renderAtChat(atChat)}</b>, ${timeStr}${endTimeStr} ${(timeZones?.size ?? 0) > 1 ? `(${tz})` : ''}${deleted ? "</s>" : ""}`];
     if (description.trim()) {
         lines.push(`✏️ ${htmlEntities(description.slice(0, 2048).trim())}`);
     }
