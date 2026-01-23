@@ -206,13 +206,17 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
             </Card>
 
             <Card>
-                <ListItem titile="Starts" />
-                <input value={crazyDateFormat} onChange={onDateInputChange} disabled={disable || !canEdit} type="datetime-local" style={{ flexGrow: 1, background: 'var(--tg-theme-secondary-bg-color)', padding: '8px 0', margin: '0px 0px' }} />
+                <ListItem
+                    titile="Starts"
+                    right={<input value={crazyDateFormat} onChange={onDateInputChange} disabled={disable || !canEdit} type="datetime-local" style={{ background: 'var(--tg-theme-secondary-bg-color)', padding: '8px 0', margin: '0px 0px' }} />}
+                />
             </Card>
 
             <Card>
-                <ListItem titile="Ends" />
-                <input value={crazyEndDateFormat} onChange={onEndDateInputChange} disabled={disable || !canEdit} type="datetime-local" style={{ flexGrow: 1, background: 'var(--tg-theme-secondary-bg-color)', padding: '8px 0', margin: '0px 0px' }} />
+                <ListItem
+                    titile="Ends"
+                    right={<input value={crazyEndDateFormat} onChange={onEndDateInputChange} disabled={disable || !canEdit} type="datetime-local" style={{ background: 'var(--tg-theme-secondary-bg-color)', padding: '8px 0', margin: '0px 0px' }} />}
+                />
             </Card>
 
             {validationError && <Card style={{ backgroundColor: 'var(--text-destructive-color)', color: 'white' }}>
