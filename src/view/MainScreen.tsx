@@ -184,7 +184,7 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                             overflowY: !forceBodyScrollForEvents ? 'scroll' : undefined,
                             background: 'var(--tg-theme-bg-color)',
                         }}>
-                            <EventsView key={mode} mode={'month'} eventsVM={eventsVM} />
+                            <EventsView key={mode} eventsVM={eventsVM} />
                             <div style={{ display: 'flex', flexShrink: 0, height: 96 }} />
                         </div>
                     </> :
@@ -212,7 +212,7 @@ export const MainScreenView = React.memo(({ eventsVM }: { eventsVM: EventsVM }) 
             flexDirection: 'column',
             paddingBottom: '96px',
         }}>
-            <EventsView key={'upcoming'} mode={'upcoming'} eventsVM={eventsVM} />
+            <EventsView key={'upcoming'} eventsVM={eventsVM} />
         </div>
         {/* render only in ssr since there is no willChange: transform which breaks position: fixed */}
         {typeof window === 'undefined' &&
@@ -286,7 +286,7 @@ const MainScreenAddEventButton = WithModel(({ model }: { model: SessionModel }) 
     return <MainButtonController onClick={onClick} text={"ADD EVENT"} />
 })
 
-const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
+const EventItem = React.memo(({ eventVM, displayDate }: { eventVM: VM<Event>, displayDate?: number }) => {
     const event = useVMvalue(eventVM)
 
     const { id, date, endDate, deleted, title, description, attendees, geo, imageURL } = event;
@@ -300,30 +300,41 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
     const timeDisplay = React.useMemo(() => {
         const startDate = new Date(date + getOffset(timeZone));
         const endDateObj = new Date(endDate + getOffset(timeZone));
-        const startTime = new Date(date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone });
 
-        // Check if start and end are on the same day
-        const isSameDay = startDate.getFullYear() === endDateObj.getFullYear() &&
-                          startDate.getMonth() === endDateObj.getMonth() &&
-                          startDate.getDate() === endDateObj.getDate();
+        // Normalize dates to day boundaries (ignore time)
+        const startDay = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()).getTime();
+        const endDay = new Date(endDateObj.getFullYear(), endDateObj.getMonth(), endDateObj.getDate()).getTime();
 
-        if (isSameDay) {
-            // Same day: show only end time
+        // If displayDate is provided (month view), use it; otherwise use event start date (upcoming view)
+        const currentDisplayDate = displayDate ? new Date(displayDate + getOffset(timeZone)) : startDate;
+        const currentDay = new Date(currentDisplayDate.getFullYear(), currentDisplayDate.getMonth(), currentDisplayDate.getDate()).getTime();
+
+        const startsOnDisplayDay = startDay === currentDay;
+        const endsOnDisplayDay = endDay === currentDay;
+        const isMultiDay = startDay !== endDay;
+
+        if (!isMultiDay) {
+            // Event starts and ends on the same day: show both start and end times
+            const startTime = new Date(date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone });
             const endTime = new Date(endDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone });
-            return `${startTime} - ${endTime}`;
-        } else {
-            // Different day: show full end date and time
-            const endDateTime = new Date(endDate).toLocaleString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                hourCycle: 'h23',
-                timeZone
-            });
-            return `${startTime} - ${endDateTime}`;
+            return [startTime, endTime];
         }
-    }, [date, endDate, timeZone]);
+
+        if (startsOnDisplayDay && !endsOnDisplayDay) {
+            // Event starts today and continues to another day: show only start time
+            const startTime = new Date(date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone });
+            return [startTime];
+        }
+
+        if (!startsOnDisplayDay && endsOnDisplayDay) {
+            // Event started earlier and ends today: show "Ends HH:MM"
+            const endTime = new Date(endDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone });
+            return ['Ends', endTime];
+        }
+
+        // Event is ongoing (started earlier and continues after this day): show "all-day"
+        return ['all-day'];
+    }, [date, endDate, timeZone, displayDate]);
 
     const bg = React.useContext(BackgroundContext)
     return <>
@@ -364,7 +375,9 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
 
                 </div>
             }
-            right={<span style={{ fontSize: '1.2em' }}> {timeDisplay} </span>}
+            right={<div style={{ fontSize: '1.2em', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                {timeDisplay.map((time, i) => <span key={i}>{time}</span>)}
+            </div>}
         />
     </>
 })
@@ -473,20 +486,76 @@ const getOffset = (timeZone?: string) => {
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const currentYear = new Date().getFullYear()
-const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, VM<Event>>>, mode: 'upcoming' | 'month' }) => {
-    const showDates = mode === 'upcoming';
+const EventsView = React.memo((({ eventsVM }: { eventsVM: VM<Map<string, VM<Event>>> }) => {
     const timeZone = React.useContext(TimezoneContext);
     const eventsMap = useVMvalue(eventsVM);
+    const { selectedDate } = React.useContext(SelectedDateContext);
+
+    // Detect view mode: if selectedDate exists, we're showing a single day (month view)
+    // Otherwise, we're showing multiple days (upcoming view)
+    const isMultiDayView = !selectedDate;
+    const showDates = isMultiDayView;
+
     const events = React.useMemo(() => {
-        const events: { vm: VM<Event>, date: string, time: number }[] = [];
-        for (let vm of eventsMap.values()) {
-            const date = new Date(vm.val.date + getOffset(timeZone))
-            const dateYear = date.getFullYear()
-            const dateStr = `${date.getDate()} ${months[date.getMonth()]}${currentYear !== dateYear ? `, ${dateYear}` : ''}`;
-            events.push({ vm, date: dateStr, time: vm.val.date })
+        const events: { vm: VM<Event>, date: string, time: number, displayDate: number }[] = [];
+
+        if (!isMultiDayView) {
+            // Single day view: show events for the selected date
+            for (let vm of eventsMap.values()) {
+                const date = new Date(vm.val.date + getOffset(timeZone))
+                const dateYear = date.getFullYear()
+                const dateStr = `${date.getDate()} ${months[date.getMonth()]}${currentYear !== dateYear ? `, ${dateYear}` : ''}`;
+                const displayDate = selectedDate;
+                events.push({ vm, date: dateStr, time: vm.val.date, displayDate })
+            }
+        } else {
+            // Multi-day view: show each event on every day it spans through
+            const eventsArray = Array.from(eventsMap.values());
+
+            if (eventsArray.length === 0) {
+                return events;
+            }
+
+            const now = Date.now();
+            const dateToEvents = new Map<number, VM<Event>[]>();
+
+            for (let vm of eventsArray) {
+                const eventStartDate = new Date(vm.val.date);
+                const eventStartDay = new Date(eventStartDate.getFullYear(), eventStartDate.getMonth(), eventStartDate.getDate()).getTime();
+
+                const eventEndDate = new Date(vm.val.endDate);
+                const eventEndDay = new Date(eventEndDate.getFullYear(), eventEndDate.getMonth(), eventEndDate.getDate()).getTime();
+
+                // Add this event to each day it spans
+                for (let day = eventStartDay; day <= eventEndDay; day += 24 * 60 * 60 * 1000) {
+                    if (day >= new Date(new Date(now).setHours(0, 0, 0, 0)).getTime()) {
+                        if (!dateToEvents.has(day)) {
+                            dateToEvents.set(day, []);
+                        }
+                        dateToEvents.get(day)!.push(vm);
+                    }
+                }
+            }
+
+            // Convert to sorted array and create event entries
+            const sortedDates = Array.from(dateToEvents.keys()).sort((a, b) => a - b);
+
+            for (let day of sortedDates) {
+                const dayEvents = dateToEvents.get(day)!;
+                // Sort events within each day by their start time
+                dayEvents.sort((a, b) => a.val.date - b.val.date);
+
+                for (let vm of dayEvents) {
+                    const displayDateObj = new Date(day + getOffset(timeZone));
+                    const dateYear = displayDateObj.getFullYear();
+                    const dateStr = `${displayDateObj.getDate()} ${months[displayDateObj.getMonth()]}${currentYear !== dateYear ? `, ${dateYear}` : ''}`;
+                    events.push({ vm, date: dateStr, time: day, displayDate: day });
+                }
+            }
         }
+
         return events
-    }, [eventsMap]);
+    }, [eventsMap, selectedDate, timeZone, isMultiDayView]);
 
     const { selectDate, startDate } = React.useContext(SelectedDateContext);
     const onClick = React.useCallback(() => {
@@ -496,8 +565,8 @@ const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, V
     if (eventsMap.size === 0) {
         return <CardLight onClick={onClick}>
             <DateView
-                text={`🗓️ no ${mode === 'upcoming' ? 'upcoming events' : 'events at this date'}`}
-                isFirst={mode === 'upcoming'}
+                text={`🗓️ no ${isMultiDayView ? 'upcoming events' : 'events at this date'}`}
+                isFirst={isMultiDayView}
                 time={startDate}
                 isHeader={false}
             />
@@ -507,19 +576,19 @@ const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, V
     let prevDate: string | undefined = undefined;
     return <>
 
-        <Page >{events.map(({ vm, date, time }, i) => {
+        <Page >{events.map(({ vm, date, time, displayDate }, i) => {
             const show = timeZone && (date !== prevDate);
             prevDate = date;
             return <React.Fragment key={vm.val.id}>
 
                 {(showDates && show && date) ?
-                    <DateView text={date} time={time} isFirst={i === 0} isHeader={mode === 'upcoming'} /> :
+                    <DateView text={date} time={time} isFirst={i === 0} isHeader={isMultiDayView} /> :
                     i !== 0 ?
                         <div style={{ width: '100%', borderBottom: '1px solid rgba(127, 127, 127, .1)' }} /> :
                         null}
 
                 <div style={{ paddingTop: i === 0 ? 16 : 0 }}>
-                    <EventItem key={vm.val.id} eventVM={vm} />
+                    <EventItem key={vm.val.id} eventVM={vm} displayDate={displayDate} />
                 </div>
             </React.Fragment>
         })}</Page>
