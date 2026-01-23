@@ -14,7 +14,6 @@ import { SocketApi } from "./api/socket";
 import { container } from "tsyringe";
 import * as fs from "fs";
 import { initMDB } from "./utils/MDB";
-import { runMigrations } from "./migrations/runMigrations";
 import {
   SplitAvailableContext,
   TimezoneContext,
@@ -112,7 +111,6 @@ getIndexStrCachedPromise().catch((e) => console.error(e));
 // TODO: ref mdb access to async (how to resolve async chains?)
 // MDB is accessed statically
 initMDB()
-  .then(() => runMigrations())
   .then(() => {
     let app = express();
     app
