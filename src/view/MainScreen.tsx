@@ -493,16 +493,68 @@ const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, V
     const { selectedDate } = React.useContext(SelectedDateContext);
     const events = React.useMemo(() => {
         const events: { vm: VM<Event>, date: string, time: number, displayDate: number }[] = [];
-        for (let vm of eventsMap.values()) {
-            const date = new Date(vm.val.date + getOffset(timeZone))
-            const dateYear = date.getFullYear()
-            const dateStr = `${date.getDate()} ${months[date.getMonth()]}${currentYear !== dateYear ? `, ${dateYear}` : ''}`;
-            // In month mode, use selectedDate as display date; in upcoming mode, use event start date
-            const displayDate = mode === 'month' && selectedDate ? selectedDate : vm.val.date;
-            events.push({ vm, date: dateStr, time: vm.val.date, displayDate })
+
+        if (mode === 'month') {
+            // Month mode: show events for the selected date
+            for (let vm of eventsMap.values()) {
+                const date = new Date(vm.val.date + getOffset(timeZone))
+                const dateYear = date.getFullYear()
+                const dateStr = `${date.getDate()} ${months[date.getMonth()]}${currentYear !== dateYear ? `, ${dateYear}` : ''}`;
+                const displayDate = selectedDate || vm.val.date;
+                events.push({ vm, date: dateStr, time: vm.val.date, displayDate })
+            }
+        } else {
+            // Upcoming mode: show each event on every day it spans through
+            const eventsArray = Array.from(eventsMap.values());
+
+            // Find the range of dates we need to display
+            if (eventsArray.length === 0) {
+                return events;
+            }
+
+            const now = Date.now();
+            const maxEndDate = Math.max(...eventsArray.map(vm => vm.val.endDate));
+
+            // Create a map of dates to events that occur on that date
+            const dateToEvents = new Map<number, VM<Event>[]>();
+
+            for (let vm of eventsArray) {
+                const eventStartDate = new Date(vm.val.date);
+                const eventStartDay = new Date(eventStartDate.getFullYear(), eventStartDate.getMonth(), eventStartDate.getDate()).getTime();
+
+                const eventEndDate = new Date(vm.val.endDate);
+                const eventEndDay = new Date(eventEndDate.getFullYear(), eventEndDate.getMonth(), eventEndDate.getDate()).getTime();
+
+                // Add this event to each day it spans
+                for (let day = eventStartDay; day <= eventEndDay; day += 24 * 60 * 60 * 1000) {
+                    if (day >= new Date(new Date(now).setHours(0, 0, 0, 0)).getTime()) {
+                        if (!dateToEvents.has(day)) {
+                            dateToEvents.set(day, []);
+                        }
+                        dateToEvents.get(day)!.push(vm);
+                    }
+                }
+            }
+
+            // Convert to sorted array and create event entries
+            const sortedDates = Array.from(dateToEvents.keys()).sort((a, b) => a - b);
+
+            for (let day of sortedDates) {
+                const dayEvents = dateToEvents.get(day)!;
+                // Sort events within each day by their start time
+                dayEvents.sort((a, b) => a.val.date - b.val.date);
+
+                for (let vm of dayEvents) {
+                    const displayDateObj = new Date(day + getOffset(timeZone));
+                    const dateYear = displayDateObj.getFullYear();
+                    const dateStr = `${displayDateObj.getDate()} ${months[displayDateObj.getMonth()]}${currentYear !== dateYear ? `, ${dateYear}` : ''}`;
+                    events.push({ vm, date: dateStr, time: day, displayDate: day });
+                }
+            }
         }
+
         return events
-    }, [eventsMap, mode, selectedDate]);
+    }, [eventsMap, mode, selectedDate, timeZone]);
 
     const { selectDate, startDate } = React.useContext(SelectedDateContext);
     const onClick = React.useCallback(() => {
