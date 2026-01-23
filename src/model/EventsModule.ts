@@ -16,11 +16,18 @@ class DateModel {
     onUpdated = (vm: VM<Event>) => {
         const nextMapEntries = [...this.events.val.entries(), [vm.val.id, vm] as const].sort((a, b) => a[1].val.date - b[1].val.date)
         const nextMap = new Map(nextMapEntries)
-        // TODO: check span
-        const eventDate = new Date(vm.val.date)
-        if ((this.date.getFullYear() !== eventDate.getFullYear()) ||
-            (this.date.getMonth() !== eventDate.getMonth()) ||
-            (this.date.getDate() !== eventDate.getDate())) {
+
+        // Check if this calendar date falls within the event's date range (multi-day support)
+        const calendarDay = new Date(this.date.getFullYear(), this.date.getMonth(), this.date.getDate()).getTime()
+
+        const eventStartDate = new Date(vm.val.date)
+        const eventStartDay = new Date(eventStartDate.getFullYear(), eventStartDate.getMonth(), eventStartDate.getDate()).getTime()
+
+        const eventEndDate = new Date(vm.val.endDate)
+        const eventEndDay = new Date(eventEndDate.getFullYear(), eventEndDate.getMonth(), eventEndDate.getDate()).getTime()
+
+        // Event should appear on this calendar date if the date is within the event's span
+        if (calendarDay < eventStartDay || calendarDay > eventEndDay) {
             nextMap.delete(vm.val.id)
             console.log('date model delete', this.date, vm)
         }
@@ -49,6 +56,7 @@ export class EventsModule {
             return vm
         }
         const prevDate = vm.val.date
+        const prevEndDate = vm.val.endDate
         // merge light and full version
         vm.next({ ...vm.val, ...event });
 
@@ -59,10 +67,16 @@ export class EventsModule {
         }
         this.futureEvents.next(nextFutureMap)
 
-        if (prevDate !== vm.val.date) {
-            this.getDateModel(prevDate).onUpdated(vm)
+        // Update all date models affected by the event (all days in old or new date range)
+        const minDate = Math.min(prevDate, vm.val.date)
+        const maxDate = Math.max(prevEndDate, vm.val.endDate)
+
+        const minDay = new Date(new Date(minDate).setHours(0, 0, 0, 0)).getTime()
+        const maxDay = new Date(new Date(maxDate).setHours(0, 0, 0, 0)).getTime()
+
+        for (let day = minDay; day <= maxDay; day += 24 * 60 * 60 * 1000) {
+            this.getDateModel(day).onUpdated(vm)
         }
-        this.getDateModel(vm.val.date).onUpdated(vm)
 
 
         return vm
