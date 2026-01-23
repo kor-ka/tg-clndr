@@ -531,15 +531,16 @@ ${pinned ? "" : "And don't forget to pin the message with the button, so you can
       async () => {
         console.log("tg cron fire");
         try {
-          // trigger render for older events to clean up pin in case of no events
-          const freshEnough = Date.now() - 1000 * 60 * 60 * 5;
+          // trigger render for events that have recently ended or are still ongoing
+          const now = Date.now();
+          const recentlyEnded = now - 1000 * 60 * 10; // 10 minutes ago
 
           let i = 0;
           await LATEST_EVENTS()
             .find({
-              date: { $gte: freshEnough },
+              endDate: { $gte: recentlyEnded },
               // udpate window: 10m
-              updated: { $not: { $gt: Date.now() - 1000 * 60 * 10 } },
+              updated: { $not: { $gt: now - 1000 * 60 * 10 } },
             })
             // TODO: not all chats with future events should be updated tho - only ones with outdated events in pin
             // ~30 messages/sec each minute -> given 10m window problems after 18000 active chats
