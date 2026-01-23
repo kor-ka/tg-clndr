@@ -103,6 +103,15 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
     const [endDate, setEndDate] = React.useState(initialEndDate);
     const [validationError, setValidationError] = React.useState<string | null>(null);
 
+    // Reactive validation: check dates whenever they change
+    React.useEffect(() => {
+        if (endDate.getTime() < date.getTime()) {
+            setValidationError("The start date must be before the end date.");
+        } else {
+            setValidationError(null);
+        }
+    }, [date, endDate]);
+
     const onDateInputChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const newStartDate = new Date(e.target.value);
         const duration = endDate.getTime() - date.getTime();
@@ -126,12 +135,10 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
     // ADD/SAVE
     //
     const onClick = React.useCallback(() => {
-        // Validate: endDate must be >= startDate
-        if (endDate.getTime() < date.getTime()) {
-            setValidationError("The start date must be before the end date.");
+        // Check if there's a validation error
+        if (validationError) {
             return;
         }
-        setValidationError(null);
 
         if (model) {
             handleOperation(
@@ -148,7 +155,7 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
                 }), goBack)
         }
 
-    }, [date, endDate, title, description, model, editEv, handleOperation, goBack]);
+    }, [validationError, date, endDate, title, description, model, editEv, handleOperation, goBack]);
 
     // 
     // STATUS
