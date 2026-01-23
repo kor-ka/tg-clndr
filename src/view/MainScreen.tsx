@@ -289,7 +289,7 @@ const MainScreenAddEventButton = WithModel(({ model }: { model: SessionModel }) 
 const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
     const event = useVMvalue(eventVM)
 
-    const { id, date, deleted, title, description, attendees, geo, imageURL } = event;
+    const { id, date, endDate, deleted, title, description, attendees, geo, imageURL } = event;
 
     const nav = useSSRReadyNavigate()
     const onClick = React.useCallback(() => {
@@ -297,7 +297,33 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
     }, [id])
 
     const timeZone = React.useContext(TimezoneContext);
-    const time = React.useMemo(() => new Date(date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone }), [date]);
+    const timeDisplay = React.useMemo(() => {
+        const startDate = new Date(date + getOffset(timeZone));
+        const endDateObj = new Date(endDate + getOffset(timeZone));
+        const startTime = new Date(date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone });
+
+        // Check if start and end are on the same day
+        const isSameDay = startDate.getFullYear() === endDateObj.getFullYear() &&
+                          startDate.getMonth() === endDateObj.getMonth() &&
+                          startDate.getDate() === endDateObj.getDate();
+
+        if (isSameDay) {
+            // Same day: show only end time
+            const endTime = new Date(endDate).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone });
+            return `${startTime} - ${endTime}`;
+        } else {
+            // Different day: show full end date and time
+            const endDateTime = new Date(endDate).toLocaleString('en', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hourCycle: 'h23',
+                timeZone
+            });
+            return `${startTime} - ${endDateTime}`;
+        }
+    }, [date, endDate, timeZone]);
 
     const bg = React.useContext(BackgroundContext)
     return <>
@@ -338,7 +364,7 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
 
                 </div>
             }
-            right={<span style={{ fontSize: '1.2em' }}> {time} </span>}
+            right={<span style={{ fontSize: '1.2em' }}> {timeDisplay} </span>}
         />
     </>
 })

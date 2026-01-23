@@ -90,10 +90,30 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
 
     }, [editEv])
 
+    const initialEndDate = React.useMemo(() => {
+        if (editEv?.endDate) {
+            return new Date(editEv.endDate);
+        } else {
+            // Default: startDate + 1 hour
+            return new Date(startDate.getTime() + 60 * 60 * 1000);
+        }
+    }, [editEv, startDate]);
 
     const [date, setDate] = React.useState(startDate);
+    const [endDate, setEndDate] = React.useState(initialEndDate);
+    const [validationError, setValidationError] = React.useState<string | null>(null);
+
     const onDateInputChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        setDate(new Date(e.target.value));
+        const newStartDate = new Date(e.target.value);
+        const duration = endDate.getTime() - date.getTime();
+        setDate(newStartDate);
+        // Preserve duration when start date changes
+        setEndDate(new Date(newStartDate.getTime() + duration));
+        setEdited(true);
+    }, [date, endDate]);
+
+    const onEndDateInputChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setEndDate(new Date(e.target.value));
         setEdited(true);
     }, []);
 
@@ -102,10 +122,17 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
 
     disable = disable || loading;
 
-    // 
+    //
     // ADD/SAVE
-    // 
+    //
     const onClick = React.useCallback(() => {
+        // Validate: endDate must be >= startDate
+        if (endDate.getTime() < date.getTime()) {
+            setValidationError("The start date must be before the end date.");
+            return;
+        }
+        setValidationError(null);
+
         if (model) {
             handleOperation(
                 () => model.commitCommand({
@@ -116,11 +143,12 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
                         title: title.trim(),
                         description: description.trim(),
                         date: date.getTime(),
+                        endDate: endDate.getTime(),
                     }
                 }), goBack)
         }
 
-    }, [date, title, description, model, editEv, handleOperation, goBack]);
+    }, [date, endDate, title, description, model, editEv, handleOperation, goBack]);
 
     // 
     // STATUS
@@ -164,6 +192,11 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
         return (new Date(date.getTime() - tzoffset)).toISOString().slice(0, -8);
     }, [date]);
 
+    const crazyEndDateFormat = React.useMemo(() => {
+        var tzoffset = (new Date()).getTimezoneOffset() * 60000; //offset in milliseconds
+        return (new Date(endDate.getTime() - tzoffset)).toISOString().slice(0, -8);
+    }, [endDate]);
+
     return <Page>
         <BackButtonController />
         <div style={{ display: 'flex', flexDirection: 'column', padding: '16px 0px' }}>
@@ -173,9 +206,18 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
             </Card>
 
             <Card>
+                <ListItem titile="Starts" />
                 <input value={crazyDateFormat} onChange={onDateInputChange} disabled={disable || !canEdit} type="datetime-local" style={{ flexGrow: 1, background: 'var(--tg-theme-secondary-bg-color)', padding: '8px 0', margin: '0px 0px' }} />
             </Card>
 
+            <Card>
+                <ListItem titile="Ends" />
+                <input value={crazyEndDateFormat} onChange={onEndDateInputChange} disabled={disable || !canEdit} type="datetime-local" style={{ flexGrow: 1, background: 'var(--tg-theme-secondary-bg-color)', padding: '8px 0', margin: '0px 0px' }} />
+            </Card>
+
+            {validationError && <Card style={{ backgroundColor: 'var(--text-destructive-color)', color: 'white' }}>
+                <ListItem titile={validationError} />
+            </Card>}
 
             <Card>
                 <textarea value={description} onChange={onDescriptionInputChange} disabled={disable || !canEdit} style={{ flexGrow: 1, padding: '8px 0', background: 'var(--tg-theme-secondary-bg-color)', height: 128 }} placeholder="Description" />

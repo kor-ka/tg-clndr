@@ -70,7 +70,7 @@ export type Event = {
 
 type ClientApiEvent = Omit<
   Event,
-  "uid" | "deleted" | "seq" | "attendees" | "geo" | "notification" | "endDate"
+  "uid" | "deleted" | "seq" | "attendees" | "geo" | "notification"
 >;
 export type ClientApiEventCreateCommand = {
   type: "create";
