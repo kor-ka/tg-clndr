@@ -34,13 +34,13 @@ export class EventsModule {
     let _id: ObjectId | undefined
 
     let latestDateCandidate = event.date;
-    let latestEndDateCandidate = event.date + Duraion.h;
+    let latestEndDateCandidate = event.endDate ?? event.date + Duraion.h;
     try {
       await session.withTransaction(async () => {
         // Write op
         if (command.type === 'create') {
           const { id, ...event } = command.event
-          const eventData = { ...event, endDate: event.date + Duraion.h, uid, chatId, threadId };
+          const eventData = { ...event, endDate: event.endDate ?? event.date + Duraion.h, uid, chatId, threadId };
           // create new event
           _id = (await this.events.insertOne({ ...eventData, seq: 0, idempotencyKey: `${uid}_${id}`, attendees: { yes: [uid], no: [], maybe: [] }, geo: null }, { session })).insertedId
           await container.resolve(NotificationsModule).updateNotificationOnAttend(_id, event.date, true, uid, session)
@@ -52,7 +52,7 @@ export class EventsModule {
           if (!savedEvent) {
             throw new Error("Operation not found")
           }
-          const eventWithEndDate = { ...event, endDate: event.date + Duraion.h };
+          const eventWithEndDate = { ...event, endDate: event.endDate ?? event.date + Duraion.h };
           await this.events.updateOne({ _id, seq: savedEvent.seq }, { $set: eventWithEndDate, $inc: { seq: 1 } }, { session })
 
           // update notifications
