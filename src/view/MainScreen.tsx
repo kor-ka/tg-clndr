@@ -184,7 +184,7 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                             overflowY: !forceBodyScrollForEvents ? 'scroll' : undefined,
                             background: 'var(--tg-theme-bg-color)',
                         }}>
-                            <EventsView key={mode} mode={'month'} eventsVM={eventsVM} />
+                            <EventsView key={mode} eventsVM={eventsVM} />
                             <div style={{ display: 'flex', flexShrink: 0, height: 96 }} />
                         </div>
                     </> :
@@ -212,7 +212,7 @@ export const MainScreenView = React.memo(({ eventsVM }: { eventsVM: EventsVM }) 
             flexDirection: 'column',
             paddingBottom: '96px',
         }}>
-            <EventsView key={'upcoming'} mode={'upcoming'} eventsVM={eventsVM} />
+            <EventsView key={'upcoming'} eventsVM={eventsVM} />
         </div>
         {/* render only in ssr since there is no willChange: transform which breaks position: fixed */}
         {typeof window === 'undefined' &&
@@ -486,36 +486,37 @@ const getOffset = (timeZone?: string) => {
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const currentYear = new Date().getFullYear()
-const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, VM<Event>>>, mode: 'upcoming' | 'month' }) => {
-    const showDates = mode === 'upcoming';
+const EventsView = React.memo((({ eventsVM }: { eventsVM: VM<Map<string, VM<Event>>> }) => {
     const timeZone = React.useContext(TimezoneContext);
     const eventsMap = useVMvalue(eventsVM);
     const { selectedDate } = React.useContext(SelectedDateContext);
+
+    // Detect view mode: if selectedDate exists, we're showing a single day (month view)
+    // Otherwise, we're showing multiple days (upcoming view)
+    const isMultiDayView = !selectedDate;
+    const showDates = isMultiDayView;
+
     const events = React.useMemo(() => {
         const events: { vm: VM<Event>, date: string, time: number, displayDate: number }[] = [];
 
-        if (mode === 'month') {
-            // Month mode: show events for the selected date
+        if (!isMultiDayView) {
+            // Single day view: show events for the selected date
             for (let vm of eventsMap.values()) {
                 const date = new Date(vm.val.date + getOffset(timeZone))
                 const dateYear = date.getFullYear()
                 const dateStr = `${date.getDate()} ${months[date.getMonth()]}${currentYear !== dateYear ? `, ${dateYear}` : ''}`;
-                const displayDate = selectedDate || vm.val.date;
+                const displayDate = selectedDate;
                 events.push({ vm, date: dateStr, time: vm.val.date, displayDate })
             }
         } else {
-            // Upcoming mode: show each event on every day it spans through
+            // Multi-day view: show each event on every day it spans through
             const eventsArray = Array.from(eventsMap.values());
 
-            // Find the range of dates we need to display
             if (eventsArray.length === 0) {
                 return events;
             }
 
             const now = Date.now();
-            const maxEndDate = Math.max(...eventsArray.map(vm => vm.val.endDate));
-
-            // Create a map of dates to events that occur on that date
             const dateToEvents = new Map<number, VM<Event>[]>();
 
             for (let vm of eventsArray) {
@@ -554,7 +555,7 @@ const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, V
         }
 
         return events
-    }, [eventsMap, mode, selectedDate, timeZone]);
+    }, [eventsMap, selectedDate, timeZone, isMultiDayView]);
 
     const { selectDate, startDate } = React.useContext(SelectedDateContext);
     const onClick = React.useCallback(() => {
@@ -564,8 +565,8 @@ const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, V
     if (eventsMap.size === 0) {
         return <CardLight onClick={onClick}>
             <DateView
-                text={`🗓️ no ${mode === 'upcoming' ? 'upcoming events' : 'events at this date'}`}
-                isFirst={mode === 'upcoming'}
+                text={`🗓️ no ${isMultiDayView ? 'upcoming events' : 'events at this date'}`}
+                isFirst={isMultiDayView}
                 time={startDate}
                 isHeader={false}
             />
@@ -581,7 +582,7 @@ const EventsView = React.memo((({ eventsVM, mode }: { eventsVM: VM<Map<string, V
             return <React.Fragment key={vm.val.id}>
 
                 {(showDates && show && date) ?
-                    <DateView text={date} time={time} isFirst={i === 0} isHeader={mode === 'upcoming'} /> :
+                    <DateView text={date} time={time} isFirst={i === 0} isHeader={isMultiDayView} /> :
                     i !== 0 ?
                         <div style={{ width: '100%', borderBottom: '1px solid rgba(127, 127, 127, .1)' }} /> :
                         null}
