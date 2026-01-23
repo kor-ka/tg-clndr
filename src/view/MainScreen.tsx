@@ -184,7 +184,7 @@ export const MainScreen = WithModel(React.memo(({ model }: { model: SessionModel
                             overflowY: !forceBodyScrollForEvents ? 'scroll' : undefined,
                             background: 'var(--tg-theme-bg-color)',
                         }}>
-                            <EventsView key={mode} eventsVM={eventsVM} />
+                            <EventsView key={mode} eventsVM={eventsVM} selectedDate={selectedDate} />
                             <div style={{ display: 'flex', flexShrink: 0, height: 96 }} />
                         </div>
                     </> :
@@ -212,7 +212,7 @@ export const MainScreenView = React.memo(({ eventsVM }: { eventsVM: EventsVM }) 
             flexDirection: 'column',
             paddingBottom: '96px',
         }}>
-            <EventsView key={'upcoming'} eventsVM={eventsVM} />
+            <EventsView key={'upcoming'} eventsVM={eventsVM} selectedDate={undefined} />
         </div>
         {/* render only in ssr since there is no willChange: transform which breaks position: fixed */}
         {typeof window === 'undefined' &&
@@ -486,10 +486,9 @@ const getOffset = (timeZone?: string) => {
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const currentYear = new Date().getFullYear()
-const EventsView = React.memo((({ eventsVM }: { eventsVM: VM<Map<string, VM<Event>>> }) => {
+const EventsView = React.memo((({ eventsVM, selectedDate }: { eventsVM: VM<Map<string, VM<Event>>>, selectedDate?: number }) => {
     const timeZone = React.useContext(TimezoneContext);
     const eventsMap = useVMvalue(eventsVM);
-    const { selectedDate } = React.useContext(SelectedDateContext);
 
     // Detect view mode: if selectedDate exists, we're showing a single day (month view)
     // Otherwise, we're showing multiple days (upcoming view)
