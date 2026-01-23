@@ -38,7 +38,6 @@ class DateModel {
 export class EventsModule {
     constructor(private model: SessionModel) { }
 
-    private frehsEnough = Date.now() - 1000 * 60 * 60 * 4;
     private allEvents = new Map<string, VM<Event>>()
     readonly futureEvents: EventsVM = new VM(new Map<string, VM<Event>>())
 
@@ -62,7 +61,8 @@ export class EventsModule {
 
         const nextFutureMapEntries = [...this.futureEvents.val.entries(), [event.id, vm] as const].sort((a, b) => a[1].val.date - b[1].val.date)
         const nextFutureMap = new Map(nextFutureMapEntries)
-        if (vm.val.date <= this.frehsEnough) {
+        // Only show events that haven't ended yet (ongoing or future events)
+        if (vm.val.endDate < Date.now()) {
             nextFutureMap.delete(vm.val.id)
         }
         this.futureEvents.next(nextFutureMap)
