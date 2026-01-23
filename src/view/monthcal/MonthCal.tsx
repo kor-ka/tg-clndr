@@ -125,7 +125,7 @@ const Month = React.memo(({ startDate, scrollInto, intersectionObserver }: { sta
             scrollSnapAlign: 'start',
             scrollSnapStop: 'always',
         }}>
-        <div ref={titleRef} style={{ display: 'flex', alignSelf: 'flex-end', height: calTitleHeight, alignItems: 'center', paddingRight: 20, fontWeight: 600 }}>{startDate.toLocaleDateString('en', { month: 'long', year: 'numeric' })}</div>
+        <div ref={titleRef} style={{ display: 'flex', alignSelf: 'flex-end', height: calTitleHeight, alignItems: 'center', paddingRight: 20, fontWeight: 600 }}>{startDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</div>
         <div style={{ display: 'flex', flexDirection: 'column', alignSelf: 'stretch' }}>
             {weeks.map(d => <Week days={d} monthStart={startDate} />)}
         </div>

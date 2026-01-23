@@ -86,7 +86,7 @@ export class EventsModule {
         let activation = this.monthActivations.get(monthStart)
 
         if (!activation) {
-            console.log('acivateMonthOnce', new Date(monthStart).toLocaleDateString('en', { year: '2-digit', month: 'long' }))
+            console.log('acivateMonthOnce', new Date(monthStart).toLocaleDateString('en-US', { year: '2-digit', month: 'long' }))
             const date = new Date(monthStart)
             const nextMonthStart = new Date(date.getFullYear(), date.getMonth() + 1, 0).getTime()
             activation = this.model.getEventsRange(monthStart, nextMonthStart)

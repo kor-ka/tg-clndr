@@ -300,7 +300,7 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
     const timeDisplay = React.useMemo(() => {
         const startDate = new Date(date + getOffset(timeZone));
         const endDateObj = new Date(endDate + getOffset(timeZone));
-        const startTime = new Date(date).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone });
+        const startTime = new Date(date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone });
 
         // Check if start and end are on the same day
         const isSameDay = startDate.getFullYear() === endDateObj.getFullYear() &&
@@ -309,11 +309,11 @@ const EventItem = React.memo(({ eventVM }: { eventVM: VM<Event> }) => {
 
         if (isSameDay) {
             // Same day: show only end time
-            const endTime = new Date(endDate).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone });
+            const endTime = new Date(endDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone });
             return `${startTime} - ${endTime}`;
         } else {
             // Different day: show full end date and time
-            const endDateTime = new Date(endDate).toLocaleString('en', {
+            const endDateTime = new Date(endDate).toLocaleString('en-US', {
                 month: 'short',
                 day: 'numeric',
                 hour: '2-digit',
@@ -463,8 +463,8 @@ const getOffset = (timeZone?: string) => {
     let offset = _offsets.get(timeZone)
     if (offset === undefined) {
         const date = new Date()
-        const currentTZDate = new Date(date.toLocaleString('en', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }));
-        const tzDate = new Date(date.toLocaleString('en', { timeZone }));
+        const currentTZDate = new Date(date.toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }));
+        const tzDate = new Date(date.toLocaleString('en-US', { timeZone }));
         offset = (tzDate.getTime() - currentTZDate.getTime());
         _offsets.set(timeZone, offset)
     }
