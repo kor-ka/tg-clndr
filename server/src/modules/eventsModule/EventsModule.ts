@@ -3,7 +3,7 @@ import { container, singleton } from "tsyringe";
 import { MDBClient } from "../../utils/MDB";
 import { ObjectId, WithId } from "mongodb";
 import { Subject } from "../../utils/subject";
-import { ClientApiEventUpsertCommand } from "../../../../src/shared/entity";
+import { ClientApiEventUpsertCommand, Duraion } from "../../../../src/shared/entity";
 import { GeoModule } from "../geoModule/GeoModule";
 import { NotificationsModule } from "../notificationsModule/NotificationsModule";
 import * as linkify from 'linkifyjs';
@@ -34,12 +34,13 @@ export class EventsModule {
     let _id: ObjectId | undefined
 
     let latestDateCandidate = event.date;
+    let latestEndDateCandidate = event.date + Duraion.h;
     try {
       await session.withTransaction(async () => {
         // Write op
         if (command.type === 'create') {
           const { id, ...event } = command.event
-          const eventData = { ...event, uid, chatId, threadId };
+          const eventData = { ...event, endDate: event.date + Duraion.h, uid, chatId, threadId };
           // create new event
           _id = (await this.events.insertOne({ ...eventData, seq: 0, idempotencyKey: `${uid}_${id}`, attendees: { yes: [uid], no: [], maybe: [] }, geo: null }, { session })).insertedId
           await container.resolve(NotificationsModule).updateNotificationOnAttend(_id, event.date, true, uid, session)
@@ -51,20 +52,22 @@ export class EventsModule {
           if (!savedEvent) {
             throw new Error("Operation not found")
           }
-          await this.events.updateOne({ _id, seq: savedEvent.seq }, { $set: event, $inc: { seq: 1 } }, { session })
+          const eventWithEndDate = { ...event, endDate: event.date + Duraion.h };
+          await this.events.updateOne({ _id, seq: savedEvent.seq }, { $set: eventWithEndDate, $inc: { seq: 1 } }, { session })
 
           // update notifications
           await container.resolve(NotificationsModule).onEventUpdated(_id, event.date, session)
 
           // keep latest date latest
           const latest = (await this.events.find({ chatId, threadId }, { session }).sort({ date: -1 }).limit(1).toArray())[0];
-          latestDateCandidate = Math.max(latestDateCandidate, latest?.date)
+          latestDateCandidate = Math.max(latestDateCandidate, latest?.date);
+          latestEndDateCandidate = latest?.endDate ?? (latest?.date + Duraion.h);
         } else {
           throw new Error('Unknown operation modification type')
         }
 
         // bump latest index
-        await this.eventsLatest.updateOne({ chatId, threadId }, { $max: { date: latestDateCandidate } }, { upsert: true, session });
+        await this.eventsLatest.updateOne({ chatId, threadId }, { $max: { date: latestDateCandidate, endDate: latestEndDateCandidate } }, { upsert: true, session });
 
       })
 

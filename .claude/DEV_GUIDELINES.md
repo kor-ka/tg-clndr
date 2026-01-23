@@ -586,6 +586,10 @@ import { PollComponent } from "./poll/PollComponent";
 
 ## Dependency Management
 
+**IMPORTANT**: This project uses **Yarn only**. Never use `npm install` or `npm` commands.
+- Lock files: `yarn.lock` (committed), `package-lock.json` (ignored)
+- Using npm will generate unnecessary lock files and bloat commits
+
 ### Adding Frontend Dependencies
 ```bash
 # Install as production dependency
