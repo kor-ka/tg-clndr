@@ -207,8 +207,7 @@ export class EventsModule {
   logCache = new Map<string, SavedEvent[]>();
   getEvents = async (chatId: number, threadId: number | undefined, limit = 200): Promise<SavedEvent[]> => {
     const now = new Date().getTime();
-    const freshEnough = now - 1000 * 60 * 60 * 4;
-    let res = await this.events.find({ chatId, threadId, date: { $gt: freshEnough }, deleted: { $ne: true } }, { limit, sort: { date: 1 } }).toArray();
+    let res = await this.events.find({ chatId, threadId, endDate: { $gte: now }, deleted: { $ne: true } }, { limit, sort: { date: 1 } }).toArray();
     this.logCache.set(`${chatId}-${threadId ?? undefined}-${limit}`, res)
     return res
   }
@@ -227,9 +226,8 @@ export class EventsModule {
 
   getEventsCached = async (chatId: number, threadId: number | undefined, limit = 200) => {
     const now = new Date().getTime();
-    const freshEnough = now - 1000 * 60 * 60 * 4;
 
-    let events = this.logCache.get(`${chatId}-${threadId ?? undefined}-${limit}`)?.filter(e => e.date >= freshEnough)
+    let events = this.logCache.get(`${chatId}-${threadId ?? undefined}-${limit}`)?.filter(e => e.endDate >= now)
     const eventsPromise = this.getEvents(chatId, threadId, limit).catch(e => {
       console.error(e)
       return []

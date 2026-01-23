@@ -38,6 +38,7 @@ export class ICSModule {
     const evs: ics.EventAttributes[] = []
     for (let e of events) {
       const date = new Date(e.date);
+      const endDate = new Date(e.endDate);
       const attendees: Attendee[] = (await Promise.all([
         e.attendees.yes.map(uid => uidToAttendee(uid, 'ACCEPTED', chatId)),
         e.attendees.maybe.map(uid => uidToAttendee(uid, 'TENTATIVE', chatId)),
@@ -65,7 +66,7 @@ export class ICSModule {
           geo,
           description,
           start: [date.getFullYear(), date.getMonth() + 1, date.getDate(), date.getHours(), date.getMinutes()],
-          duration: { minutes: 60 },
+          end: [endDate.getFullYear(), endDate.getMonth() + 1, endDate.getDate(), endDate.getHours(), endDate.getMinutes()],
           attendees
         }
       )
