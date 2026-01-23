@@ -21,6 +21,7 @@ import {
   UsersProviderContext,
 } from "../../src/view/App";
 import { MainScreenView } from "../../src/view/MainScreen";
+import { SelectedDateContext } from "../../src/view/monthcal/shared";
 import { Event } from "../../src/shared/entity";
 import { EventsModule } from "./modules/eventsModule/EventsModule";
 import {
@@ -332,6 +333,9 @@ initMDB()
         sw.lap("get data");
 
         // const app = ''
+        const startDate = new Date();
+        const startDateTimestamp = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()).getTime();
+
         const app = ReactDOMServer.renderToString(
           <TimezoneContext.Provider value={timeZone}>
             <SplitAvailableContext.Provider
@@ -339,7 +343,14 @@ initMDB()
             >
               <UserContext.Provider value={userId}>
                 <UsersProviderContext.Provider value={usersProvider}>
-                  <MainScreenView eventsVM={new VM(eventsMap)} />
+                  <SelectedDateContext.Provider value={{
+                    selectedDate: undefined,
+                    startDate: startDateTimestamp,
+                    selectDate: () => {},
+                    closeCal: () => {}
+                  }}>
+                    <MainScreenView eventsVM={new VM(eventsMap)} />
+                  </SelectedDateContext.Provider>
                 </UsersProviderContext.Provider>
               </UserContext.Provider>
             </SplitAvailableContext.Provider>
