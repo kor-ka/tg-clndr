@@ -81,6 +81,13 @@ export class ClientAPI {
         .emit("updates", upd);
     });
 
+    this.eventsModule.deleteBatchSubject.subscribe((state) => {
+      const { chatId, threadId, eventIds } = state;
+      this.io
+        .to("chatClient_" + [chatId, threadId].filter(Boolean).join("_"))
+        .emit("deletes", eventIds.map(id => id.toHexString()));
+    });
+
     this.userModule.userUpdated.subscribe(({ user, chatId }) => {
       const upd: User = savedUserToApi(user, chatId);
       this.updateUser(chatId, upd);

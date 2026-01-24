@@ -132,6 +132,30 @@ export class EventsModule {
         }
     }
 
+    readonly deleteEventsVM = (eventIds: string[]) => {
+        if (eventIds.length === 0) return
+
+        // Remove from futureEvents in one update
+        const nextFutureMap = new Map(this.futureEvents.val)
+        for (const id of eventIds) {
+            nextFutureMap.delete(id)
+
+            // Update the VM to mark as deleted
+            const vm = this.allEvents.get(id)
+            if (vm) {
+                vm.next({ ...vm.val, deleted: true })
+
+                // Update date models
+                const minDay = new Date(new Date(vm.val.date).setHours(0, 0, 0, 0)).getTime()
+                const maxDay = new Date(new Date(vm.val.endDate).setHours(0, 0, 0, 0)).getTime()
+                for (let day = minDay; day <= maxDay; day += 24 * 60 * 60 * 1000) {
+                    this.getDateModel(day).onUpdated(vm)
+                }
+            }
+        }
+        this.futureEvents.next(nextFutureMap)
+    }
+
     acivateMonthOnce = (monthStart: number) => {
         let activation = this.monthActivations.get(monthStart)
 
