@@ -89,6 +89,9 @@ export class UserModule {
           ...(settings.timeZone !== undefined
             ? { "settings.timeZone": settings.timeZone }
             : {}),
+          ...(settings.experimentalFeatures !== undefined
+            ? { "settings.experimentalFeatures": settings.experimentalFeatures }
+            : {}),
         },
       },
     );
