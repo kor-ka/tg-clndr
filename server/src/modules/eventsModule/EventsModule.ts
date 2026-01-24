@@ -162,6 +162,7 @@ export class EventsModule {
     const { type, event } = command;
     const session = MDBClient.startSession()
     let _id: ObjectId | undefined
+    let materializedFutureEvents: SavedEvent[] = []
 
     let latestDateCandidate = event.date;
     let latestEndDateCandidate = event.endDate ?? event.date + Duraion.h;
@@ -213,6 +214,8 @@ export class EventsModule {
               for (const futureEvent of futureEvents) {
                 await notificationsModule.updateNotificationOnAttend(futureEvent._id, futureEvent.date, true, uid, session)
               }
+              // Track future events to emit after transaction
+              materializedFutureEvents = futureEvents
             }
           }
         } else if (type === 'update') {
@@ -279,6 +282,8 @@ export class EventsModule {
                 for (const futureEvent of futureEvents) {
                   await notificationsModule.updateNotificationOnAttend(futureEvent._id, futureEvent.date, true, savedEvent.uid, session)
                 }
+                // Track re-materialized events to emit after transaction
+                materializedFutureEvents = futureEvents
               }
             }
           }
@@ -360,6 +365,11 @@ export class EventsModule {
     }
     // notify all
     this.upateSubject.next({ chatId, threadId, event: updatedEvent, type });
+
+    // Emit all materialized future events for recurring events
+    for (const futureEvent of materializedFutureEvents) {
+      this.upateSubject.next({ chatId, threadId, event: futureEvent, type: 'create' });
+    }
 
     return updatedEvent;
   };
