@@ -188,13 +188,14 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
         // Check if we're adding recurrence to a non-recurring event
         const isAddingRecurrence = !isRecurringEvent && !!recurrence;
 
-        // For recurring events being edited, or when adding recurrence, ask about future events
-        if (editEv && (isRecurringEvent || isAddingRecurrence)) {
+        // For recurring events being edited, ask about future events
+        if (editEv && isRecurringEvent) {
             showConfirm("Apply changes to all future events in this series?", (updateFuture) => {
                 doSave(updateFuture);
             });
         } else {
-            doSave(false);
+            // When adding recurrence, automatically create future events
+            doSave(isAddingRecurrence);
         }
 
     }, [validationError, model, editEv, isRecurringEvent, recurrence, doSave]);
