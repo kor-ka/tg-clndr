@@ -1,7 +1,7 @@
 import React from "react";
 import { useSearchParams } from "react-router-dom";
 import { SessionModel } from "../model/SessionModel";
-import { DurationDscrpitor, Event, NotifyBeforeOptions, Notification } from "../shared/entity";
+import { DurationDscrpitor, Event, NotifyBeforeOptions, Notification, RecurrenceOptions, recurrenceToLabel } from "../shared/entity";
 import { useVMvalue } from "../utils/vm/useVM";
 import { UsersProviderContext, UserContext } from "./App";
 import { ListItem, UserPic, Card, Button, Page, CardLight, Block } from "./uikit/kit";
@@ -103,6 +103,23 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
     const [endDate, setEndDate] = React.useState(initialEndDate);
     const [validationError, setValidationError] = React.useState<string | null>(null);
 
+    // Recurrence state
+    const [recurrence, setRecurrence] = React.useState<string>(editEv?.recurrent ?? '');
+    const [updateFutureEvents, setUpdateFutureEvents] = React.useState(false);
+
+    const onRecurrenceChange = React.useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+        const value = e.target.value;
+        setRecurrence(value);
+        setEdited(true);
+    }, []);
+
+    const onUpdateFutureEventsChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setUpdateFutureEvents(e.target.checked);
+    }, []);
+
+    // Check if this is a recurring event
+    const isRecurringEvent = !!editEv?.recurrent;
+
     // Reactive validation: check dates whenever they change
     React.useEffect(() => {
         if (endDate.getTime() < date.getTime()) {
@@ -141,21 +158,35 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
         }
 
         if (model) {
-            handleOperation(
-                () => model.commitCommand({
-                    type: editEv ? 'update' : 'create',
-                    event: {
-                        tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                        id: editEv?.id ?? model.nextId() + '',
-                        title: title.trim(),
-                        description: description.trim(),
-                        date: date.getTime(),
-                        endDate: endDate.getTime(),
-                    }
-                }), goBack)
+            const eventData = {
+                tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                id: editEv?.id ?? model.nextId() + '',
+                title: title.trim(),
+                description: description.trim(),
+                date: date.getTime(),
+                endDate: endDate.getTime(),
+                recurrent: recurrence || undefined,
+            };
+
+            if (editEv) {
+                handleOperation(
+                    () => model.commitCommand({
+                        type: 'update',
+                        event: {
+                            ...eventData,
+                            udpateFutureRecurringEvents: updateFutureEvents,
+                        }
+                    }), goBack)
+            } else {
+                handleOperation(
+                    () => model.commitCommand({
+                        type: 'create',
+                        event: eventData
+                    }), goBack)
+            }
         }
 
-    }, [validationError, date, endDate, title, description, model, editEv, handleOperation, goBack]);
+    }, [validationError, date, endDate, title, description, model, editEv, handleOperation, goBack, recurrence, updateFutureEvents]);
 
     // 
     // STATUS
@@ -177,20 +208,31 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
     const onStatusChangeMaybe = React.useCallback(() => onStatusChange('maybe'), [onStatusChange]);
 
 
-    // 
+    //
     // DELETE
-    // 
+    //
+    const [deleteFutureEvents, setDeleteFutureEvents] = React.useState(false);
+
+    const onDeleteFutureEventsChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setDeleteFutureEvents(e.target.checked);
+    }, []);
+
     const onDeleteClick = React.useCallback(() => {
-        showConfirm("Delete event? This can not be undone.", (confirmed) => {
+        const message = isRecurringEvent && deleteFutureEvents
+            ? "Delete this and all future events? This can not be undone."
+            : "Delete event? This can not be undone.";
+
+        showConfirm(message, (confirmed) => {
             if (confirmed && model && editEvId) {
                 handleOperation(() =>
                     model.commitCommand({
                         type: 'delete',
-                        id: editEvId
+                        id: editEvId,
+                        deleteFutureRecurringEvents: isRecurringEvent ? deleteFutureEvents : undefined
                     }), goBack)
             }
         })
-    }, [model, editEvId, handleOperation, goBack]);
+    }, [model, editEvId, handleOperation, goBack, isRecurringEvent, deleteFutureEvents]);
 
     const upsertAvailable = (!editEv || edited) && canEdit;
 
@@ -231,6 +273,43 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
             </Card>}
 
             <Card>
+                <ListItem
+                    titile="Repeat"
+                    right={
+                        <select
+                            value={recurrence}
+                            onChange={onRecurrenceChange}
+                            disabled={disable || !canEdit}
+                            style={{ background: 'var(--tg-theme-secondary-bg-color)', padding: '8px 0' }}
+                        >
+                            <option value="">Never</option>
+                            <option value={RecurrenceOptions.daily}>Daily</option>
+                            <option value={RecurrenceOptions.weekly}>Weekly</option>
+                            <option value={RecurrenceOptions.biweekly}>Every 2 weeks</option>
+                            <option value={RecurrenceOptions.monthly}>Monthly</option>
+                            <option value={RecurrenceOptions.yearly}>Yearly</option>
+                        </select>
+                    }
+                />
+            </Card>
+
+            {editEv && isRecurringEvent && canEdit && (
+                <Card>
+                    <ListItem
+                        titile="Update future events"
+                        right={
+                            <input
+                                type="checkbox"
+                                checked={updateFutureEvents}
+                                onChange={onUpdateFutureEventsChange}
+                                disabled={disable}
+                            />
+                        }
+                    />
+                </Card>
+            )}
+
+            <Card>
                 <textarea value={description} onChange={onDescriptionInputChange} disabled={disable || !canEdit} style={{ flexGrow: 1, padding: '8px 0', background: 'var(--tg-theme-secondary-bg-color)', height: 128 }} placeholder="Description" />
             </Card>
 
@@ -246,6 +325,21 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
             {((editEv?.attendees.maybe.length ?? 0) > 0) && <Card key={'maybe'}>{editEv?.attendees.maybe.map(uid => <Attendee key={uid} uid={uid} status="maybe" />)}</Card>}
             {((editEv?.attendees.no.length ?? 0) > 0) && <Card key={'no'}>{editEv?.attendees.no.map(uid => <Attendee key={uid} uid={uid} status="no" />)}</Card>}
             <Block>
+                {editEv && canEdit && isRecurringEvent && (
+                    <Card>
+                        <ListItem
+                            titile="Also delete future events"
+                            right={
+                                <input
+                                    type="checkbox"
+                                    checked={deleteFutureEvents}
+                                    onChange={onDeleteFutureEventsChange}
+                                    disabled={disable}
+                                />
+                            }
+                        />
+                    </Card>
+                )}
                 {editEv && canEdit && <Button disabled={disable} onClick={onDeleteClick} ><span style={{ color: "var(--text-destructive-color)", alignSelf: 'center' }}>DELETE EVENT</span></Button>}
             </Block>
 

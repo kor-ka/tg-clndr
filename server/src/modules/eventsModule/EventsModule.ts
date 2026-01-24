@@ -71,12 +71,21 @@ export class EventsModule {
             toDate.setFullYear(fromDate.getFullYear() + 1)
 
             const duration = eventData.endDate - eventData.date
-            const futureEvents = rule.between(fromDate, toDate).map(dateStr => {
-              const date = new Date(dateStr).getTime()
-              return { ...eventData, idempotencyKey: `${eventData.idempotencyKey}_${date}`, date, endDate: date + duration }
+            const futureOccurrences = rule.between(fromDate, toDate, false) // false = exclude start date
+            const futureEvents = futureOccurrences.slice(1).map(dateObj => { // Skip first occurrence (it's the main event)
+              const date = new Date(dateObj).getTime()
+              const eventId = new ObjectId()
+              return { _id: eventId, ...eventData, idempotencyKey: `${eventData.idempotencyKey}_${date}`, date, endDate: date + duration }
             })
-            await this.events.insertMany(futureEvents, { session })
-            // TODO: update notification module for all created
+
+            if (futureEvents.length > 0) {
+              await this.events.insertMany(futureEvents, { session })
+              // Create notifications for all materialized events
+              const notificationsModule = container.resolve(NotificationsModule)
+              for (const futureEvent of futureEvents) {
+                await notificationsModule.updateNotificationOnAttend(futureEvent._id, futureEvent.date, true, uid, session)
+              }
+            }
           }
         } else if (type === 'update') {
           const { id, recurrent, udpateFutureRecurringEvents, ...event } = command.event
@@ -87,16 +96,64 @@ export class EventsModule {
             throw new Error("Event not found")
           }
 
-          const recurringRuleUpdated = recurrent && ((savedEvent.date !== event.date) || (savedEvent.endDate !== event.endDate) || (savedEvent.recurrent?.descriptor !== recurrent))
+          const groupId = savedEvent.recurrent?.groupId
 
-          const eventData = {
+          // Prepare the update data
+          const eventData: Partial<ServerEvent> = {
             ...event,
-            // clean recurrent 
-            recurrent: !udpateFutureRecurringEvents ? null : {}
+            // If not updating future events, remove recurrence from this single event
+            // If updating future events, keep/update the recurrence
+            recurrent: udpateFutureRecurringEvents && recurrent ? {
+              groupId: groupId ?? new ObjectId(),
+              descriptor: recurrent
+            } : (udpateFutureRecurringEvents ? savedEvent.recurrent : undefined)
           }
-          await this.events.updateOne({ _id, seq: savedEvent.seq }, { $set: event, $inc: { seq: 1 } }, { session })
 
-          // TODO: if udpate future events, delete future events and re-materialize
+          await this.events.updateOne({ _id, seq: savedEvent.seq }, { $set: eventData, $inc: { seq: 1 } }, { session })
+
+          // If updating future recurring events and there's a group
+          if (udpateFutureRecurringEvents && groupId) {
+            // Delete all future events in this recurrence group (after this event's original date)
+            await this.events.deleteMany({
+              'recurrent.groupId': groupId,
+              date: { $gt: savedEvent.date },
+              _id: { $ne: _id }
+            }, { session })
+
+            // Re-materialize future events if we have a recurrence rule
+            const finalRecurrent = eventData.recurrent
+            if (finalRecurrent) {
+              const rule = RRule.fromString(finalRecurrent.descriptor)
+              const fromDate = new Date(event.date)
+              const toDate = new Date(event.date)
+              toDate.setFullYear(fromDate.getFullYear() + 1)
+
+              const duration = event.endDate - event.date
+              const futureOccurrences = rule.between(fromDate, toDate, false) // false = exclude start date
+              const futureEvents = futureOccurrences.slice(1).map(dateObj => { // Skip first occurrence (it's the edited event)
+                const date = new Date(dateObj).getTime()
+                const eventId = new ObjectId()
+                return {
+                  _id: eventId,
+                  ...savedEvent,
+                  ...event,
+                  recurrent: finalRecurrent,
+                  idempotencyKey: `${savedEvent.idempotencyKey.split('_').slice(0, 2).join('_')}_${date}`,
+                  date,
+                  endDate: date + duration,
+                  seq: 0
+                }
+              })
+              if (futureEvents.length > 0) {
+                await this.events.insertMany(futureEvents, { session })
+                // Create notifications for all re-materialized events
+                const notificationsModule = container.resolve(NotificationsModule)
+                for (const futureEvent of futureEvents) {
+                  await notificationsModule.updateNotificationOnAttend(futureEvent._id, futureEvent.date, true, savedEvent.uid, session)
+                }
+              }
+            }
+          }
 
           // update notifications
           await container.resolve(NotificationsModule).onEventUpdated(_id, event.date, session)
@@ -180,23 +237,47 @@ export class EventsModule {
   };
 
   // TODO: merge with commit? - two signatures for this function?
-  deleteEvent = async (id: string) => {
+  deleteEvent = async (id: string, deleteFutureRecurringEvents?: boolean) => {
     const _id = new ObjectId(id);
     let event = await this.events.findOne({ _id });
     if (!event) {
-      throw new Error("Operation not found")
+      throw new Error("Event not found")
     }
     const { chatId, threadId } = event;
     if (event?.deleted) {
-      // already deleted - just return 
+      // already deleted - just return
       return event;
     } else {
       const session = MDBClient.startSession()
+      const deletedFutureEvents: SavedEvent[] = []
       try {
         await session.withTransaction(async () => {
+          // Delete the main event
           await this.events.updateOne({ _id }, { $set: { deleted: true }, $inc: { seq: 1 } }, { session });
-          // update notifications
+          // update notifications for main event
           await container.resolve(NotificationsModule).onEventDeleted(_id, session)
+
+          // If deleting future recurring events
+          if (deleteFutureRecurringEvents && event!.recurrent?.groupId) {
+            const groupId = event!.recurrent.groupId
+            // Find all future events in this group
+            const futureEvents = await this.events.find({
+              'recurrent.groupId': groupId,
+              date: { $gt: event!.date },
+              deleted: { $ne: true }
+            }, { session }).toArray()
+
+            // Mark them as deleted
+            for (const futureEvent of futureEvents) {
+              await this.events.updateOne(
+                { _id: futureEvent._id },
+                { $set: { deleted: true }, $inc: { seq: 1 } },
+                { session }
+              )
+              await container.resolve(NotificationsModule).onEventDeleted(futureEvent._id, session)
+              deletedFutureEvents.push({ ...futureEvent, deleted: true, seq: futureEvent.seq + 1 })
+            }
+          }
         })
       } finally {
         await session.endSession();
@@ -209,8 +290,13 @@ export class EventsModule {
       // non-blocking cache update
       this.getEvents(chatId, threadId).catch((e) => console.error(e));
 
-      // notify all
+      // notify all about main event deletion
       this.upateSubject.next({ chatId, threadId, event, type: 'delete' });
+
+      // notify about all future deleted events
+      for (const deletedEvent of deletedFutureEvents) {
+        this.upateSubject.next({ chatId, threadId, event: deletedEvent, type: 'delete' });
+      }
 
       return event;
     }

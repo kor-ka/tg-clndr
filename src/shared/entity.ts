@@ -29,6 +29,28 @@ export const NotifyBeforeOptions: DurationDscrpitor[] = [
   "1w",
 ];
 
+// Recurrence patterns using RRule format
+export const RecurrenceOptions = {
+  none: '',
+  daily: 'FREQ=DAILY',
+  weekly: 'FREQ=WEEKLY',
+  biweekly: 'FREQ=WEEKLY;INTERVAL=2',
+  monthly: 'FREQ=MONTHLY',
+  yearly: 'FREQ=YEARLY',
+} as const;
+
+export type RecurrenceType = keyof typeof RecurrenceOptions;
+
+export const recurrenceToLabel = (recurrence: string | undefined): string => {
+  if (!recurrence) return 'Never';
+  if (recurrence.includes('FREQ=DAILY')) return 'Daily';
+  if (recurrence.includes('INTERVAL=2') && recurrence.includes('FREQ=WEEKLY')) return 'Every 2 weeks';
+  if (recurrence.includes('FREQ=WEEKLY')) return 'Weekly';
+  if (recurrence.includes('FREQ=MONTHLY')) return 'Monthly';
+  if (recurrence.includes('FREQ=YEARLY')) return 'Yearly';
+  return 'Custom';
+};
+
 export type UserSettings = {
   enableNotifications?: boolean;
   notifyBefore: null | DurationDscrpitor;

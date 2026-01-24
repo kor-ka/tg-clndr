@@ -1,5 +1,5 @@
 import React, { lazy, useRef } from "react";
-import { Event } from "../shared/entity"
+import { Event, recurrenceToLabel } from "../shared/entity"
 import { SessionModel } from "../model/SessionModel"
 import { useVMvalue } from "../utils/vm/useVM"
 import { VM } from "../utils/vm/VM";
@@ -293,7 +293,7 @@ const MainScreenAddEventButton = WithModel(({ model }: { model: SessionModel }) 
 const EventItem = React.memo(({ eventVM, displayDate }: { eventVM: VM<Event>, displayDate?: number }) => {
     const event = useVMvalue(eventVM)
 
-    const { id, date, endDate, deleted, title, description, attendees, geo, imageURL } = event;
+    const { id, date, endDate, deleted, title, description, attendees, geo, imageURL, recurrent } = event;
 
     const nav = useSSRReadyNavigate()
     const onClick = React.useCallback(() => {
@@ -381,6 +381,7 @@ const EventItem = React.memo(({ eventVM, displayDate }: { eventVM: VM<Event>, di
             }
             right={<div style={{ fontSize: '1.2em', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
                 {timeDisplay.map((time, i) => <span key={i}>{time}</span>)}
+                {recurrent && <span style={{ fontSize: '0.6em', color: 'var(--tg-theme-hint-color)' }}>🔄 {recurrenceToLabel(recurrent)}</span>}
             </div>}
         />
     </>
