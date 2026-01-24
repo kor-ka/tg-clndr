@@ -1,7 +1,7 @@
 import React from "react";
 import { useSearchParams } from "react-router-dom";
 import { SessionModel } from "../model/SessionModel";
-import { DurationDscrpitor, Event, NotifyBeforeOptions, Notification } from "../shared/entity";
+import { DurationDscrpitor, Event, NotifyBeforeOptions, Notification, RecurrenceOptions } from "../shared/entity";
 import { useVMvalue } from "../utils/vm/useVM";
 import { UsersProviderContext, UserContext } from "./App";
 import { ListItem, UserPic, Card, Button, Page, CardLight, Block } from "./uikit/kit";
@@ -103,6 +103,18 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
     const [endDate, setEndDate] = React.useState(initialEndDate);
     const [validationError, setValidationError] = React.useState<string | null>(null);
 
+    // Recurrence state
+    const [recurrence, setRecurrence] = React.useState<string>(editEv?.recurrent ?? '');
+
+    const onRecurrenceChange = React.useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+        const value = e.target.value;
+        setRecurrence(value);
+        setEdited(true);
+    }, []);
+
+    // Check if this is a recurring event
+    const isRecurringEvent = !!editEv?.recurrent;
+
     // Reactive validation: check dates whenever they change
     React.useEffect(() => {
         if (endDate.getTime() < date.getTime()) {
@@ -134,28 +146,55 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
     //
     // ADD/SAVE
     //
+    const doSave = React.useCallback((updateFutureEvents: boolean) => {
+        const eventData = {
+            tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            id: editEv?.id ?? model!.nextId() + '',
+            title: title.trim(),
+            description: description.trim(),
+            date: date.getTime(),
+            endDate: endDate.getTime(),
+            recurrent: recurrence || undefined,
+        };
+
+        if (editEv) {
+            handleOperation(
+                () => model!.commitCommand({
+                    type: 'update',
+                    event: {
+                        ...eventData,
+                        udpateFutureRecurringEvents: updateFutureEvents,
+                    }
+                }), goBack)
+        } else {
+            handleOperation(
+                () => model!.commitCommand({
+                    type: 'create',
+                    event: eventData
+                }), goBack)
+        }
+    }, [date, endDate, title, description, model, editEv, handleOperation, goBack, recurrence]);
+
     const onClick = React.useCallback(() => {
         // Check if there's a validation error
         if (validationError) {
             return;
         }
 
-        if (model) {
-            handleOperation(
-                () => model.commitCommand({
-                    type: editEv ? 'update' : 'create',
-                    event: {
-                        tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                        id: editEv?.id ?? model.nextId() + '',
-                        title: title.trim(),
-                        description: description.trim(),
-                        date: date.getTime(),
-                        endDate: endDate.getTime(),
-                    }
-                }), goBack)
+        if (!model) {
+            return;
         }
 
-    }, [validationError, date, endDate, title, description, model, editEv, handleOperation, goBack]);
+        // For recurring events being edited, ask about future events
+        if (editEv && isRecurringEvent) {
+            showConfirm("Apply changes to all future events in this series?", (updateFuture) => {
+                doSave(updateFuture);
+            });
+        } else {
+            doSave(false);
+        }
+
+    }, [validationError, model, editEv, isRecurringEvent, doSave]);
 
     // 
     // STATUS
@@ -177,20 +216,41 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
     const onStatusChangeMaybe = React.useCallback(() => onStatusChange('maybe'), [onStatusChange]);
 
 
-    // 
+    //
     // DELETE
-    // 
-    const onDeleteClick = React.useCallback(() => {
-        showConfirm("Delete event? This can not be undone.", (confirmed) => {
-            if (confirmed && model && editEvId) {
-                handleOperation(() =>
-                    model.commitCommand({
-                        type: 'delete',
-                        id: editEvId
-                    }), goBack)
-            }
-        })
+    //
+    const doDelete = React.useCallback((deleteFutureEvents: boolean) => {
+        if (model && editEvId) {
+            handleOperation(() =>
+                model.commitCommand({
+                    type: 'delete',
+                    id: editEvId,
+                    deleteFutureRecurringEvents: deleteFutureEvents || undefined
+                }), goBack)
+        }
     }, [model, editEvId, handleOperation, goBack]);
+
+    const onDeleteClick = React.useCallback(() => {
+        if (isRecurringEvent) {
+            // For recurring events, first ask about future events
+            showConfirm("Also delete all future events in this series?", (deleteFuture) => {
+                const message = deleteFuture
+                    ? "Delete this and all future events? This cannot be undone."
+                    : "Delete this event? This cannot be undone.";
+                showConfirm(message, (confirmed) => {
+                    if (confirmed) {
+                        doDelete(deleteFuture);
+                    }
+                });
+            });
+        } else {
+            showConfirm("Delete event? This cannot be undone.", (confirmed) => {
+                if (confirmed) {
+                    doDelete(false);
+                }
+            });
+        }
+    }, [isRecurringEvent, doDelete]);
 
     const upsertAvailable = (!editEv || edited) && canEdit;
 
@@ -228,6 +288,27 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
 
             {validationError && <Card style={{ backgroundColor: 'var(--text-destructive-color)', color: 'white' }}>
                 <ListItem titile={validationError} />
+            </Card>}
+
+            {(userSettings.experimentalFeatures || isRecurringEvent) && <Card>
+                <ListItem
+                    titile="Repeat"
+                    right={
+                        <select
+                            value={recurrence}
+                            onChange={onRecurrenceChange}
+                            disabled={disable || !canEdit}
+                            style={{ background: 'var(--tg-theme-secondary-bg-color)', padding: '8px 0' }}
+                        >
+                            <option value="">Never</option>
+                            <option value={RecurrenceOptions.daily}>Daily</option>
+                            <option value={RecurrenceOptions.weekly}>Weekly</option>
+                            <option value={RecurrenceOptions.biweekly}>Every 2 weeks</option>
+                            <option value={RecurrenceOptions.monthly}>Monthly</option>
+                            <option value={RecurrenceOptions.yearly}>Yearly</option>
+                        </select>
+                    }
+                />
             </Card>}
 
             <Card>

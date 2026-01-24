@@ -185,7 +185,7 @@ export class ClientAPI {
                 users.forEach((u) => this.updateUser(chatId, u));
                 ack({ patch: { event: event, type } });
               } else if (type === "delete") {
-                const event = await this.eventsModule.deleteEvent(command.id);
+                const event = await this.eventsModule.deleteEvent(command.id, command.deleteFutureRecurringEvents);
                 ack({ patch: { event: savedEventToApiLight(event), type } });
               }
             } catch (e) {
@@ -461,8 +461,12 @@ export class ClientAPI {
 }
 
 export const savedEventToApiLight = (saved: SavedEvent): Event => {
-  const { _id, ...event } = saved;
-  return { ...event, id: _id.toHexString() };
+  const { _id, recurrent, chatId, threadId, idempotencyKey, messages, ...event } = saved;
+  return {
+    ...event,
+    id: _id.toHexString(),
+    recurrent: recurrent?.descriptor
+  };
 };
 
 export const savedEventsToApiLight = (saved: SavedEvent[]): Event[] => {

@@ -33,6 +33,7 @@
     "node-telegram-bot-api": "^0.61.0",
     "react-dom": "^18.2.0",
     "reflect-metadata": "^0.1.13",
+    "rrule": "^2.8.1",
     "socket.io": "^4.5.1",
     "tinyduration": "^3.2.2",
     "tsyringe": "^4.7.0",

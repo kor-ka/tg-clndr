@@ -42,7 +42,12 @@ export const UserSettings = WithModel(React.memo((({ model }: { model: SessionMo
         settingsProxy.next({ ...settingsProxy.val, enableNotifications: val })
         await handleOperation(() => model.updateUserSettings({ enableNotifications: val })).catch(revert)
     }, [settings, revert])
-    console.log(settings.enableNotifications)
+
+    const switchExperimentalFeatures = React.useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.checked;
+        settingsProxy.next({ ...settingsProxy.val, experimentalFeatures: val })
+        await handleOperation(() => model.updateUserSettings({ experimentalFeatures: val })).catch(revert)
+    }, [settings, revert])
 
     return <>
         <CardLight><ListItem subtitle="Global settings" /></CardLight>
@@ -63,6 +68,13 @@ export const UserSettings = WithModel(React.memo((({ model }: { model: SessionMo
                         {NotifyBeforeOptions.map(o => <option>{o}</option>)}
                     </select>
                 } />}
+        </Card>
+        <Card>
+            <ListItem
+                titile="Experimental features"
+                subtitle="Enable to try new features that are still in development"
+                right={<Switch onChange={switchExperimentalFeatures} checked={settings.experimentalFeatures} type="checkbox" disabled={loading} />}
+            />
         </Card>
     </>
 })))

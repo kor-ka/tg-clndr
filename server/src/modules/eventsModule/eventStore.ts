@@ -1,13 +1,17 @@
-import { WithId } from "mongodb";
+import { ObjectId, WithId } from "mongodb";
 import { Event } from "../../../../src/shared/entity";
 import { MDB } from "../../utils/MDB";
 
 
-export type ServerEvent = Omit<Event, 'id' | 'notification'> & {
+export type ServerEvent = Omit<Event, 'id' | 'notification' | 'recurrent'> & {
     chatId: number,
     threadId: number | undefined,
     idempotencyKey: string,
     messages?: number[]
+    recurrent?: {
+        groupId: ObjectId,
+        descriptor: string
+    }
 }
 export type SavedEvent = WithId<ServerEvent>
 export const EVENTS = () => MDB.collection<ServerEvent>("events");

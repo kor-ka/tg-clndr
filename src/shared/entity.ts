@@ -29,10 +29,33 @@ export const NotifyBeforeOptions: DurationDscrpitor[] = [
   "1w",
 ];
 
+// Recurrence patterns using RRule format
+export const RecurrenceOptions = {
+  none: '',
+  daily: 'FREQ=DAILY',
+  weekly: 'FREQ=WEEKLY',
+  biweekly: 'FREQ=WEEKLY;INTERVAL=2',
+  monthly: 'FREQ=MONTHLY',
+  yearly: 'FREQ=YEARLY',
+} as const;
+
+export type RecurrenceType = keyof typeof RecurrenceOptions;
+
+export const recurrenceToLabel = (recurrence: string | undefined): string => {
+  if (!recurrence) return 'Never';
+  if (recurrence.includes('FREQ=DAILY')) return 'Daily';
+  if (recurrence.includes('INTERVAL=2') && recurrence.includes('FREQ=WEEKLY')) return 'Every 2 weeks';
+  if (recurrence.includes('FREQ=WEEKLY')) return 'Weekly';
+  if (recurrence.includes('FREQ=MONTHLY')) return 'Monthly';
+  if (recurrence.includes('FREQ=YEARLY')) return 'Yearly';
+  return 'Custom';
+};
+
 export type UserSettings = {
   enableNotifications?: boolean;
   notifyBefore: null | DurationDscrpitor;
   timeZone?: string;
+  experimentalFeatures?: boolean;
 };
 
 export type Notification = {
@@ -66,6 +89,7 @@ export type Event = {
   } | null;
   imageURL?: string;
   notification?: Notification | null;
+  recurrent?: string
 };
 
 type ClientApiEvent = Omit<
@@ -79,12 +103,13 @@ export type ClientApiEventCreateCommand = {
 
 export type ClientApiEventUpdateCommand = {
   type: "update";
-  event: ClientApiEvent;
+  event: ClientApiEvent & { udpateFutureRecurringEvents?: boolean };
 };
 
 export type ClientApiEventDeleteCommand = {
   type: "delete";
   id: string;
+  deleteFutureRecurringEvents?: boolean
 };
 
 export type ClientApiEventUpsertCommand =
