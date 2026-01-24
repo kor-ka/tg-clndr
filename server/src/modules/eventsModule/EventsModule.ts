@@ -24,6 +24,7 @@ export class EventsModule {
   private eventsLatest = LATEST_EVENTS();
 
   readonly upateSubject = new Subject<{ chatId: number, threadId: number | undefined, event: SavedEvent, type: 'create' | 'update' | 'delete' }>;
+  readonly updateBatchSubject = new Subject<{ chatId: number, threadId: number | undefined, events: SavedEvent[], type: 'create' | 'update' | 'delete' }>();
 
   constructor() {
     // Cron job to materialize recurring events - runs daily at 3 AM
@@ -366,9 +367,9 @@ export class EventsModule {
     // notify all
     this.upateSubject.next({ chatId, threadId, event: updatedEvent, type });
 
-    // Emit all materialized future events for recurring events
-    for (const futureEvent of materializedFutureEvents) {
-      this.upateSubject.next({ chatId, threadId, event: futureEvent, type: 'create' });
+    // Emit all materialized future events for recurring events as a batch
+    if (materializedFutureEvents.length > 0) {
+      this.updateBatchSubject.next({ chatId, threadId, events: materializedFutureEvents, type: 'create' });
     }
 
     return updatedEvent;

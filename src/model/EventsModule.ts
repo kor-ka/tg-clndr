@@ -82,6 +82,56 @@ export class EventsModule {
         return vm
     }
 
+    readonly updateEventsVM = (events: Event[]) => {
+        if (events.length === 0) return
+
+        const vms: VM<Event>[] = []
+
+        // Process all events without triggering futureEvents.next()
+        for (const event of events) {
+            let vm = this.allEvents.get(event.id)
+            if (!vm) {
+                vm = new VM(event);
+                this.allEvents.set(event.id, vm);
+            } else if (vm.val.seq > event.seq) {
+                // skip outdated seq update
+                continue
+            } else {
+                // merge light and full version
+                vm.next({ ...vm.val, ...event });
+            }
+            vms.push(vm)
+        }
+
+        // Build new future map with all events at once
+        const nextFutureMapEntries: [string, VM<Event>][] = [...this.futureEvents.val.entries()]
+        for (const vm of vms) {
+            nextFutureMapEntries.push([vm.val.id, vm])
+        }
+        nextFutureMapEntries.sort((a, b) => a[1].val.date - b[1].val.date)
+        const nextFutureMap = new Map(nextFutureMapEntries)
+
+        // Remove events that have ended
+        for (const vm of vms) {
+            if (vm.val.endDate < Date.now()) {
+                nextFutureMap.delete(vm.val.id)
+            }
+        }
+
+        // Trigger single update for futureEvents
+        this.futureEvents.next(nextFutureMap)
+
+        // Update date models for all affected events
+        for (const vm of vms) {
+            const minDay = new Date(new Date(vm.val.date).setHours(0, 0, 0, 0)).getTime()
+            const maxDay = new Date(new Date(vm.val.endDate).setHours(0, 0, 0, 0)).getTime()
+
+            for (let day = minDay; day <= maxDay; day += 24 * 60 * 60 * 1000) {
+                this.getDateModel(day).onUpdated(vm)
+            }
+        }
+    }
+
     acivateMonthOnce = (monthStart: number) => {
         let activation = this.monthActivations.get(monthStart)
 

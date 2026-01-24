@@ -73,6 +73,14 @@ export class ClientAPI {
         .emit("update", upd);
     });
 
+    this.eventsModule.updateBatchSubject.subscribe((state) => {
+      const { chatId, threadId, events, type } = state;
+      const upd = { events: savedEventsToApiLight(events), type };
+      this.io
+        .to("chatClient_" + [chatId, threadId].filter(Boolean).join("_"))
+        .emit("updates", upd);
+    });
+
     this.userModule.userUpdated.subscribe(({ user, chatId }) => {
       const upd: User = savedUserToApi(user, chatId);
       this.updateUser(chatId, upd);
