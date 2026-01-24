@@ -239,10 +239,7 @@ export class EventsModule {
             throw new Error("Event not found")
           }
 
-          const existingGroupId = savedEvent.recurrent?.groupId
-
-          // Determine the new groupId: reuse existing, or create new if adding recurrence
-          const newGroupId = recurrent ? (existingGroupId ?? new ObjectId()) : undefined
+          const groupId = savedEvent.recurrent?.groupId
 
           // Prepare the update data
           const eventData: Partial<ServerEvent> = {
@@ -251,7 +248,7 @@ export class EventsModule {
             // If updating future events with recurrent set, update/keep the recurrence
             // If updating future events with recurrent unset (never), remove recurrence
             recurrent: udpateFutureRecurringEvents && recurrent ? {
-              groupId: newGroupId!,
+              groupId: groupId ?? new ObjectId(),
               descriptor: recurrent
             } : undefined
           }
@@ -260,9 +257,9 @@ export class EventsModule {
 
           // If updating future recurring events and there's an existing group, delete future events
           // This handles both: changing recurrence pattern AND setting to "never"
-          if (udpateFutureRecurringEvents && existingGroupId) {
+          if (udpateFutureRecurringEvents && groupId) {
             const filter = {
-              'recurrent.groupId': existingGroupId,
+              'recurrent.groupId': groupId,
               date: { $gt: savedEvent.date },
               _id: { $ne: _id },
               deleted: { $ne: true }
