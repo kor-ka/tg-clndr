@@ -262,9 +262,9 @@ export class EventsModule {
                 const date = new Date(dateObj).getTime()
                 const eventId = new ObjectId()
                 return {
-                  _id: eventId,
                   ...savedEvent,
                   ...event,
+                  _id: eventId,
                   recurrent: finalRecurrent,
                   idempotencyKey: `${savedEvent.idempotencyKey.split('_').slice(0, 2).join('_')}_${date}`,
                   date,
