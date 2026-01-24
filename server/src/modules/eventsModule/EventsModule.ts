@@ -246,7 +246,7 @@ export class EventsModule {
 
           // If updating future recurring events and there's a group
           if (udpateFutureRecurringEvents && groupId) {
-            // Find and soft-delete all future events in this recurrence group (after this event's original date)
+            // Find all future events in this recurrence group (after this event's original date)
             const oldFutureEvents = await this.events.find({
               'recurrent.groupId': groupId,
               date: { $gt: savedEvent.date },
@@ -254,16 +254,21 @@ export class EventsModule {
               deleted: { $ne: true }
             }, { session }).toArray()
 
-            // Soft delete each event
-            const notificationsModule = container.resolve(NotificationsModule)
-            for (const oldEvent of oldFutureEvents) {
-              await this.events.updateOne(
-                { _id: oldEvent._id },
+            if (oldFutureEvents.length > 0) {
+              const oldEventIds = oldFutureEvents.map(e => e._id)
+
+              // Batch soft-delete all events at once
+              await this.events.updateMany(
+                { _id: { $in: oldEventIds } },
                 { $set: { deleted: true }, $inc: { seq: 1 } },
                 { session }
               )
-              await notificationsModule.onEventDeleted(oldEvent._id, session)
-              deletedFutureEvents.push({ ...oldEvent, deleted: true, seq: oldEvent.seq + 1 })
+
+              // Batch delete all notifications at once
+              await container.resolve(NotificationsModule).onEventsDeleted(oldEventIds, session)
+
+              // Track deleted events for client notification
+              deletedFutureEvents = oldFutureEvents.map(e => ({ ...e, deleted: true, seq: e.seq + 1 }))
             }
 
             // Re-materialize future events if we have a recurrence rule
@@ -425,15 +430,23 @@ export class EventsModule {
               deleted: { $ne: true }
             }, { session }).toArray()
 
-            // Mark them as deleted
-            for (const futureEvent of futureEvents) {
-              await this.events.updateOne(
-                { _id: futureEvent._id },
+            if (futureEvents.length > 0) {
+              const futureEventIds = futureEvents.map(e => e._id)
+
+              // Batch soft-delete all events at once
+              await this.events.updateMany(
+                { _id: { $in: futureEventIds } },
                 { $set: { deleted: true }, $inc: { seq: 1 } },
                 { session }
               )
-              await container.resolve(NotificationsModule).onEventDeleted(futureEvent._id, session)
-              deletedFutureEvents.push({ ...futureEvent, deleted: true, seq: futureEvent.seq + 1 })
+
+              // Batch delete all notifications at once
+              await container.resolve(NotificationsModule).onEventsDeleted(futureEventIds, session)
+
+              // Track deleted events for client notification
+              for (const futureEvent of futureEvents) {
+                deletedFutureEvents.push({ ...futureEvent, deleted: true, seq: futureEvent.seq + 1 })
+              }
             }
           }
         })

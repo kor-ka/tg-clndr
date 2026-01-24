@@ -127,4 +127,7 @@ export class NotificationsModule {
 
   onEventDeleted = (eventId: ObjectId, session: ClientSession) => this.db.deleteMany({ eventId }, { session })
 
+  onEventsDeleted = (eventIds: ObjectId[], session: ClientSession) => this.db.deleteMany({ eventId: { $in: eventIds } }, { session })
+
 }
+
