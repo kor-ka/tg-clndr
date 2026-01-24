@@ -293,7 +293,7 @@ const MainScreenAddEventButton = WithModel(({ model }: { model: SessionModel }) 
 const EventItem = React.memo(({ eventVM, displayDate }: { eventVM: VM<Event>, displayDate?: number }) => {
     const event = useVMvalue(eventVM)
     const model = React.useContext(ModelContext);
-    const userSettings = model ? useVMvalue(model.userSettings) : undefined;
+    const userSettings = useVMvalue(model?.userSettings);
 
     const { id, date, endDate, deleted, title, description, attendees, geo, imageURL, recurrent } = event;
 
