@@ -66,11 +66,16 @@ export type Event = {
   } | null;
   imageURL?: string;
   notification?: Notification | null;
+  // Recurring event fields
+  rrule?: string; // RRule string (e.g., "FREQ=WEEKLY;BYDAY=MO,WE,FR")
+  recurringGroupId?: string; // Shared ID for all instances of a recurring event
+  recurringEventId?: string; // Reference to the original template event
+  excludedFromGroup?: boolean; // True if this instance was excluded from recurring series
 };
 
 type ClientApiEvent = Omit<
   Event,
-  "uid" | "deleted" | "seq" | "attendees" | "geo" | "notification"
+  "uid" | "deleted" | "seq" | "attendees" | "geo" | "notification" | "recurringGroupId" | "recurringEventId" | "excludedFromGroup"
 >;
 export type ClientApiEventCreateCommand = {
   type: "create";
@@ -80,11 +85,13 @@ export type ClientApiEventCreateCommand = {
 export type ClientApiEventUpdateCommand = {
   type: "update";
   event: ClientApiEvent;
+  recurringMode?: "single" | "thisAndFuture"; // How to handle recurring event updates
 };
 
 export type ClientApiEventDeleteCommand = {
   type: "delete";
   id: string;
+  recurringMode?: "single" | "thisAndFuture"; // How to handle recurring event deletion
 };
 
 export type ClientApiEventUpsertCommand =

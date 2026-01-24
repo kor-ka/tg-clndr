@@ -185,7 +185,7 @@ export class ClientAPI {
                 users.forEach((u) => this.updateUser(chatId, u));
                 ack({ patch: { event: event, type } });
               } else if (type === "delete") {
-                const event = await this.eventsModule.deleteEvent(command.id);
+                const event = await this.eventsModule.deleteEvent(command.id, command.recurringMode);
                 ack({ patch: { event: savedEventToApiLight(event), type } });
               }
             } catch (e) {

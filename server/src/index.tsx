@@ -205,7 +205,7 @@ initMDB()
         async (req, res) => {
           try {
             const { chatId, threadId } = req.params;
-            const { token, userId, id } = req.query;
+            const { token, userId, id, recurringMode } = req.query;
 
             checkAssistantToken(token?.toString());
 
@@ -218,7 +218,11 @@ initMDB()
               optNumber(threadId),
               Number(userId),
               // TODO: validate event
-              { type: id ? "update" : "create", event: req.body },
+              {
+                type: id ? "update" : "create",
+                event: req.body,
+                recurringMode: recurringMode as "single" | "thisAndFuture" | undefined
+              },
             );
 
             const key = getKey(Number(chatId), optNumber(threadId));
@@ -237,14 +241,17 @@ initMDB()
         async (req, res) => {
           try {
             const { chatId } = req.params;
-            const { token, userId, id } = req.query;
+            const { token, userId, id, recurringMode } = req.query;
 
             checkAssistantToken(token?.toString());
             await checkAccess(Number(chatId), Number(userId));
 
             const eventsModule = container.resolve(EventsModule);
 
-            const resEvent = await eventsModule.deleteEvent(String(id));
+            const resEvent = await eventsModule.deleteEvent(
+              String(id),
+              recurringMode as "single" | "thisAndFuture" | undefined
+            );
 
             res.setHeader("Content-Type", "application/json");
             res.send(JSON.stringify(resEvent));

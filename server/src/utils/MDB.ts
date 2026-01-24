@@ -101,6 +101,30 @@ const _initMDB = async () => {
       },
     );
 
+    // Recurring events indexes
+    await MDB.collection("events").createIndex(
+      { recurringGroupId: 1, date: 1 },
+      {
+        name: "events:recurringGroup",
+        sparse: true,
+      }
+    );
+
+    await MDB.collection("recurring_groups").createIndex(
+      { groupId: 1 },
+      {
+        name: "recurring_groups:groupId",
+        unique: true,
+      }
+    );
+
+    await MDB.collection("recurring_groups").createIndex(
+      { materializationHorizon: 1, deleted: 1 },
+      {
+        name: "recurring_groups:materialization",
+      }
+    );
+
   } catch (e) {
     console.error(e)
     throw (e)
