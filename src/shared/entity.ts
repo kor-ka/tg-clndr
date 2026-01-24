@@ -55,6 +55,7 @@ export type UserSettings = {
   enableNotifications?: boolean;
   notifyBefore: null | DurationDscrpitor;
   timeZone?: string;
+  experimentalFeatures?: boolean;
 };
 
 export type Notification = {

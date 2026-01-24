@@ -292,6 +292,8 @@ const MainScreenAddEventButton = WithModel(({ model }: { model: SessionModel }) 
 
 const EventItem = React.memo(({ eventVM, displayDate }: { eventVM: VM<Event>, displayDate?: number }) => {
     const event = useVMvalue(eventVM)
+    const model = React.useContext(ModelContext);
+    const userSettings = model ? useVMvalue(model.userSettings) : undefined;
 
     const { id, date, endDate, deleted, title, description, attendees, geo, imageURL, recurrent } = event;
 
@@ -381,7 +383,7 @@ const EventItem = React.memo(({ eventVM, displayDate }: { eventVM: VM<Event>, di
             }
             right={<div style={{ fontSize: '1.2em', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
                 {timeDisplay.map((time, i) => <span key={i}>{time}</span>)}
-                {recurrent && <span style={{ fontSize: '0.6em', color: 'var(--tg-theme-hint-color)' }}>🔄 {recurrenceToLabel(recurrent)}</span>}
+                {userSettings?.experimentalFeatures && recurrent && <span style={{ fontSize: '0.6em', color: 'var(--tg-theme-hint-color)' }}>🔄 {recurrenceToLabel(recurrent)}</span>}
             </div>}
         />
     </>

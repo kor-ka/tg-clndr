@@ -290,7 +290,7 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
                 <ListItem titile={validationError} />
             </Card>}
 
-            <Card>
+            {(userSettings.experimentalFeatures || isRecurringEvent) && <Card>
                 <ListItem
                     titile="Repeat"
                     right={
@@ -309,7 +309,7 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
                         </select>
                     }
                 />
-            </Card>
+            </Card>}
 
             <Card>
                 <textarea value={description} onChange={onDescriptionInputChange} disabled={disable || !canEdit} style={{ flexGrow: 1, padding: '8px 0', background: 'var(--tg-theme-secondary-bg-color)', height: 128 }} placeholder="Description" />
