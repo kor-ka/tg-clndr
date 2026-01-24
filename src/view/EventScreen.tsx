@@ -185,8 +185,11 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
             return;
         }
 
-        // For recurring events being edited, ask about future events
-        if (editEv && isRecurringEvent) {
+        // Check if we're adding recurrence to a non-recurring event
+        const isAddingRecurrence = !isRecurringEvent && !!recurrence;
+
+        // For recurring events being edited, or when adding recurrence, ask about future events
+        if (editEv && (isRecurringEvent || isAddingRecurrence)) {
             showConfirm("Apply changes to all future events in this series?", (updateFuture) => {
                 doSave(updateFuture);
             });
@@ -194,7 +197,7 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
             doSave(false);
         }
 
-    }, [validationError, model, editEv, isRecurringEvent, doSave]);
+    }, [validationError, model, editEv, isRecurringEvent, recurrence, doSave]);
 
     // 
     // STATUS
