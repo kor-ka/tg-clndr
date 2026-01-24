@@ -164,6 +164,7 @@ export class EventsModule {
     const session = MDBClient.startSession()
     let _id: ObjectId | undefined
     let materializedFutureEvents: SavedEvent[] = []
+    let deletedFutureEvents: SavedEvent[] = []
 
     let latestDateCandidate = event.date;
     let latestEndDateCandidate = event.endDate ?? event.date + Duraion.h;
@@ -245,12 +246,25 @@ export class EventsModule {
 
           // If updating future recurring events and there's a group
           if (udpateFutureRecurringEvents && groupId) {
-            // Delete all future events in this recurrence group (after this event's original date)
-            await this.events.deleteMany({
+            // Find and soft-delete all future events in this recurrence group (after this event's original date)
+            const oldFutureEvents = await this.events.find({
               'recurrent.groupId': groupId,
               date: { $gt: savedEvent.date },
-              _id: { $ne: _id }
-            }, { session })
+              _id: { $ne: _id },
+              deleted: { $ne: true }
+            }, { session }).toArray()
+
+            // Soft delete each event
+            const notificationsModule = container.resolve(NotificationsModule)
+            for (const oldEvent of oldFutureEvents) {
+              await this.events.updateOne(
+                { _id: oldEvent._id },
+                { $set: { deleted: true }, $inc: { seq: 1 } },
+                { session }
+              )
+              await notificationsModule.onEventDeleted(oldEvent._id, session)
+              deletedFutureEvents.push({ ...oldEvent, deleted: true, seq: oldEvent.seq + 1 })
+            }
 
             // Re-materialize future events if we have a recurrence rule
             const finalRecurrent = eventData.recurrent
@@ -367,6 +381,11 @@ export class EventsModule {
     // notify all
     this.upateSubject.next({ chatId, threadId, event: updatedEvent, type });
 
+    // Emit all deleted future events as a batch (for update with udpateFutureRecurringEvents)
+    if (deletedFutureEvents.length > 0) {
+      this.updateBatchSubject.next({ chatId, threadId, events: deletedFutureEvents, type: 'delete' });
+    }
+
     // Emit all materialized future events for recurring events as a batch
     if (materializedFutureEvents.length > 0) {
       this.updateBatchSubject.next({ chatId, threadId, events: materializedFutureEvents, type: 'create' });
@@ -432,9 +451,9 @@ export class EventsModule {
       // notify all about main event deletion
       this.upateSubject.next({ chatId, threadId, event, type: 'delete' });
 
-      // notify about all future deleted events
-      for (const deletedEvent of deletedFutureEvents) {
-        this.upateSubject.next({ chatId, threadId, event: deletedEvent, type: 'delete' });
+      // notify about all future deleted events as a batch
+      if (deletedFutureEvents.length > 0) {
+        this.updateBatchSubject.next({ chatId, threadId, events: deletedFutureEvents, type: 'delete' });
       }
 
       return event;

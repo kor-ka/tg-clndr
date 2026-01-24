@@ -111,9 +111,9 @@ export class EventsModule {
         nextFutureMapEntries.sort((a, b) => a[1].val.date - b[1].val.date)
         const nextFutureMap = new Map(nextFutureMapEntries)
 
-        // Remove events that have ended
+        // Remove events that have ended or are deleted
         for (const vm of vms) {
-            if (vm.val.endDate < Date.now()) {
+            if (vm.val.endDate < Date.now() || vm.val.deleted) {
                 nextFutureMap.delete(vm.val.id)
             }
         }
