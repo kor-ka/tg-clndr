@@ -279,6 +279,16 @@ export class EventsModule {
                 container.resolve(NotificationsModule).onEventsDeleted(deletedEventIds, session)
               ])
             }
+
+            // If setting to "never", clear recurrent field from all past events in the group
+            // to prevent the cron job from materializing more events
+            if (!recurrent) {
+              await this.events.updateMany(
+                { 'recurrent.groupId': groupId, _id: { $ne: _id } },
+                { $unset: { recurrent: '' }, $inc: { seq: 1 } },
+                { session }
+              )
+            }
           }
 
           // Materialize future events if we have a recurrence rule and updating future events
@@ -457,6 +467,14 @@ export class EventsModule {
                 container.resolve(NotificationsModule).onEventsDeleted(deletedEventIds, session)
               ])
             }
+
+            // Clear recurrent field from all past events in the group
+            // to prevent the cron job from materializing more events
+            await this.events.updateMany(
+              { 'recurrent.groupId': groupId, _id: { $ne: _id } },
+              { $unset: { recurrent: '' }, $inc: { seq: 1 } },
+              { session }
+            )
           }
         })
       } finally {
