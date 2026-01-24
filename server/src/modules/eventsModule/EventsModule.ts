@@ -80,9 +80,14 @@ export class EventsModule {
 
         if (!recurrent) continue;
 
-        const rule = RRule.fromString(recurrent.descriptor);
         const fromDate = new Date(latestDate);
         const toDate = new Date(oneYearFromNow);
+
+        // Create RRule with dtstart set to the latest event date so occurrences are based on event time, not current time
+        const rule = new RRule({
+          ...RRule.parseString(recurrent.descriptor),
+          dtstart: fromDate
+        });
 
         const duration = latestEvent.endDate - latestEvent.date;
 
@@ -197,10 +202,14 @@ export class EventsModule {
 
           if (eventData.recurrent) {
             // Materialise future events
-            const rule = RRule.fromString(eventData.recurrent.descriptor)
             const fromDate = new Date(eventData.date)
             const toDate = new Date(eventData.date)
             toDate.setFullYear(fromDate.getFullYear() + 1)
+            // Create RRule with dtstart set to the event date so occurrences are based on event time, not current time
+            const rule = new RRule({
+              ...RRule.parseString(eventData.recurrent.descriptor),
+              dtstart: fromDate
+            })
 
             const duration = eventData.endDate - eventData.date
             const futureOccurrences = rule.between(fromDate, toDate, false) // false = exclude start date
@@ -236,16 +245,18 @@ export class EventsModule {
           const eventData: Partial<ServerEvent> = {
             ...event,
             // If not updating future events, remove recurrence from this single event
-            // If updating future events, keep/update the recurrence
+            // If updating future events with recurrent set, update/keep the recurrence
+            // If updating future events with recurrent unset (never), remove recurrence
             recurrent: udpateFutureRecurringEvents && recurrent ? {
               groupId: groupId ?? new ObjectId(),
               descriptor: recurrent
-            } : (udpateFutureRecurringEvents ? savedEvent.recurrent : undefined)
+            } : undefined
           }
 
           await this.events.updateOne({ _id, seq: savedEvent.seq }, { $set: eventData, $inc: { seq: 1 } }, { session })
 
-          // If updating future recurring events and there's a group
+          // If updating future recurring events and there's an existing group, delete future events
+          // This handles both: changing recurrence pattern AND setting to "never"
           if (udpateFutureRecurringEvents && groupId) {
             const filter = {
               'recurrent.groupId': groupId,
@@ -269,40 +280,55 @@ export class EventsModule {
               ])
             }
 
-            // Re-materialize future events if we have a recurrence rule
-            const finalRecurrent = eventData.recurrent
-            if (finalRecurrent) {
-              const rule = RRule.fromString(finalRecurrent.descriptor)
-              const fromDate = new Date(event.date)
-              const toDate = new Date(event.date)
-              toDate.setFullYear(fromDate.getFullYear() + 1)
+            // If setting to "never", clear recurrent field from all past events in the group
+            // to prevent the cron job from materializing more events
+            if (!recurrent) {
+              await this.events.updateMany(
+                { 'recurrent.groupId': groupId, _id: { $ne: _id } },
+                { $unset: { recurrent: '' }, $inc: { seq: 1 } },
+                { session }
+              )
+            }
+          }
 
-              const duration = event.endDate - event.date
-              const futureOccurrences = rule.between(fromDate, toDate, false) // false = exclude start date
-              const futureEvents = futureOccurrences.slice(1).map(dateObj => { // Skip first occurrence (it's the edited event)
-                const date = new Date(dateObj).getTime()
-                const eventId = new ObjectId()
-                return {
-                  ...savedEvent,
-                  ...event,
-                  _id: eventId,
-                  recurrent: finalRecurrent,
-                  idempotencyKey: `${savedEvent.idempotencyKey.split('_').slice(0, 2).join('_')}_${date}`,
-                  date,
-                  endDate: date + duration,
-                  seq: 0
-                }
-              })
-              if (futureEvents.length > 0) {
-                await this.events.insertMany(futureEvents, { session })
-                // Create notifications for all re-materialized events
-                const notificationsModule = container.resolve(NotificationsModule)
-                for (const futureEvent of futureEvents) {
-                  await notificationsModule.updateNotificationOnAttend(futureEvent._id, futureEvent.date, true, savedEvent.uid, session)
-                }
-                // Track re-materialized events to emit after transaction
-                materializedFutureEvents = futureEvents
+          // Materialize future events if we have a recurrence rule and updating future events
+          // This works for both: existing recurring events AND non-recurring converted to recurring
+          const finalRecurrent = eventData.recurrent
+          if (udpateFutureRecurringEvents && finalRecurrent) {
+            const fromDate = new Date(event.date)
+            const toDate = new Date(event.date)
+            toDate.setFullYear(fromDate.getFullYear() + 1)
+            // Create RRule with dtstart set to the event date so occurrences are based on event time, not current time
+            const rule = new RRule({
+              ...RRule.parseString(finalRecurrent.descriptor),
+              dtstart: fromDate
+            })
+
+            const duration = event.endDate - event.date
+            const futureOccurrences = rule.between(fromDate, toDate, false) // false = exclude start date
+            const futureEvents = futureOccurrences.slice(1).map(dateObj => { // Skip first occurrence (it's the edited event)
+              const date = new Date(dateObj).getTime()
+              const eventId = new ObjectId()
+              return {
+                ...savedEvent,
+                ...event,
+                _id: eventId,
+                recurrent: finalRecurrent,
+                idempotencyKey: `${savedEvent.idempotencyKey.split('_').slice(0, 2).join('_')}_${date}`,
+                date,
+                endDate: date + duration,
+                seq: 0
               }
+            })
+            if (futureEvents.length > 0) {
+              await this.events.insertMany(futureEvents, { session })
+              // Create notifications for all re-materialized events
+              const notificationsModule = container.resolve(NotificationsModule)
+              for (const futureEvent of futureEvents) {
+                await notificationsModule.updateNotificationOnAttend(futureEvent._id, futureEvent.date, true, savedEvent.uid, session)
+              }
+              // Track re-materialized events to emit after transaction
+              materializedFutureEvents = futureEvents
             }
           }
 
@@ -441,6 +467,14 @@ export class EventsModule {
                 container.resolve(NotificationsModule).onEventsDeleted(deletedEventIds, session)
               ])
             }
+
+            // Clear recurrent field from all past events in the group
+            // to prevent the cron job from materializing more events
+            await this.events.updateMany(
+              { 'recurrent.groupId': groupId, _id: { $ne: _id } },
+              { $unset: { recurrent: '' }, $inc: { seq: 1 } },
+              { session }
+            )
           }
         })
       } finally {
