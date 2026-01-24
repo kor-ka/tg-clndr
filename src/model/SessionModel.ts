@@ -87,6 +87,14 @@ export class SessionModel {
             this.addEvent(update.event)
         });
 
+        this.socket.on("updates", (update: { events: Event[], type: 'create' | 'update' | 'delete' }) => {
+            this.eventsModule.updateEventsVM(update.events)
+        });
+
+        this.socket.on("deletes", (eventIds: string[]) => {
+            this.eventsModule.deleteEventsVM(eventIds)
+        });
+
     }
 
 
