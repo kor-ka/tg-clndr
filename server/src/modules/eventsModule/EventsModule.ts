@@ -8,6 +8,8 @@ import { GeoModule } from "../geoModule/GeoModule";
 import { NotificationsModule } from "../notificationsModule/NotificationsModule";
 import * as linkify from 'linkifyjs';
 import { parseMeta as getMeta } from "./metaParser";
+import { RRule } from 'rrule'
+
 @singleton()
 export class EventsModule {
   private geo = container.resolve(GeoModule)
@@ -39,21 +41,62 @@ export class EventsModule {
       await session.withTransaction(async () => {
         // Write op
         if (command.type === 'create') {
-          const { id, ...event } = command.event
-          const eventData = { ...event, endDate: event.endDate ?? event.date + Duraion.h, uid, chatId, threadId };
+          const { id, recurrent, ...event } = command.event
+          const eventData = {
+            ...event,
+
+            recurrent: recurrent ? {
+              groupId: new ObjectId(),
+              descriptor: recurrent
+            } : undefined,
+
+            uid,
+            chatId,
+            threadId,
+
+            seq: 0,
+            idempotencyKey: `${uid}_${id}`,
+            attendees: { yes: [uid], no: [], maybe: [] },
+            geo: null
+          };
           // create new event
-          _id = (await this.events.insertOne({ ...eventData, seq: 0, idempotencyKey: `${uid}_${id}`, attendees: { yes: [uid], no: [], maybe: [] }, geo: null }, { session })).insertedId
+          _id = (await this.events.insertOne({ ...eventData }, { session })).insertedId
           await container.resolve(NotificationsModule).updateNotificationOnAttend(_id, event.date, true, uid, session)
+
+          if (eventData.recurrent) {
+            // Materialise future events
+            const rule = RRule.fromString(eventData.recurrent.descriptor)
+            const fromDate = new Date(eventData.date)
+            const toDate = new Date(eventData.date)
+            toDate.setFullYear(fromDate.getFullYear() + 1)
+
+            const duration = eventData.endDate - eventData.date
+            const futureEvents = rule.between(fromDate, toDate).map(dateStr => {
+              const date = new Date(dateStr).getTime()
+              return { ...eventData, idempotencyKey: `${eventData.idempotencyKey}_${date}`, date, endDate: date + duration }
+            })
+            await this.events.insertMany(futureEvents, { session })
+            // TODO: update notification module for all created
+          }
         } else if (type === 'update') {
-          const { id, ...event } = command.event
+          const { id, recurrent, udpateFutureRecurringEvents, ...event } = command.event
           _id = new ObjectId(id)
           // update event
           const savedEvent = (await this.events.findOne({ _id, deleted: { $ne: true } }, { session }))
           if (!savedEvent) {
-            throw new Error("Operation not found")
+            throw new Error("Event not found")
           }
-          const eventWithEndDate = { ...event, endDate: event.endDate ?? event.date + Duraion.h };
-          await this.events.updateOne({ _id, seq: savedEvent.seq }, { $set: eventWithEndDate, $inc: { seq: 1 } }, { session })
+
+          const recurringRuleUpdated = recurrent && ((savedEvent.date !== event.date) || (savedEvent.endDate !== event.endDate) || (savedEvent.recurrent?.descriptor !== recurrent))
+
+          const eventData = {
+            ...event,
+            // clean recurrent 
+            recurrent: !udpateFutureRecurringEvents ? null : {}
+          }
+          await this.events.updateOne({ _id, seq: savedEvent.seq }, { $set: event, $inc: { seq: 1 } }, { session })
+
+          // TODO: if udpate future events, delete future events and re-materialize
 
           // update notifications
           await container.resolve(NotificationsModule).onEventUpdated(_id, event.date, session)

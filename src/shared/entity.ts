@@ -66,6 +66,7 @@ export type Event = {
   } | null;
   imageURL?: string;
   notification?: Notification | null;
+  recurrent?: string
 };
 
 type ClientApiEvent = Omit<
@@ -79,12 +80,13 @@ export type ClientApiEventCreateCommand = {
 
 export type ClientApiEventUpdateCommand = {
   type: "update";
-  event: ClientApiEvent;
+  event: ClientApiEvent & { udpateFutureRecurringEvents?: boolean };
 };
 
 export type ClientApiEventDeleteCommand = {
   type: "delete";
   id: string;
+  deleteFutureRecurringEvents?: boolean
 };
 
 export type ClientApiEventUpsertCommand =
