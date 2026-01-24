@@ -9,6 +9,12 @@ import { NotificationsModule } from "../notificationsModule/NotificationsModule"
 import * as linkify from 'linkifyjs';
 import { parseMeta as getMeta } from "./metaParser";
 import { RRule } from 'rrule'
+import { CronJob } from "cron";
+import { __DEV__ } from "../../utils/dev";
+
+// Time constants for recurring event materialization
+const SIX_MONTHS_MS = 6 * 30 * 24 * 60 * 60 * 1000;
+const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
 @singleton()
 export class EventsModule {
@@ -19,16 +25,138 @@ export class EventsModule {
 
   readonly upateSubject = new Subject<{ chatId: number, threadId: number | undefined, event: SavedEvent, type: 'create' | 'update' | 'delete' }>;
 
-  // constructor() {
-  //   (async () => {
-  //     const a = this.events
-  //       .find()
-  //       .map(e => this.events.updateOne({ _id: e._id }, { $set: { 'attendees.yes': [e.uid], 'attendees.no': [], 'attendees.maybe': [] } }))
-  //       .toArray()
-  //     await Promise.all((await a).flat())
-  //     console.log('migrated')
-  //   })()
-  // }
+  constructor() {
+    // Cron job to materialize recurring events - runs daily at 3 AM
+    new CronJob('0 3 * * *', async () => {
+      console.log('recurring events materialization cron fired');
+      try {
+        await this.materializeRecurringEvents();
+      } catch (e) {
+        console.error('Error in recurring events materialization cron:', e);
+      }
+    }, null, !__DEV__);
+  }
+
+  /**
+   * Materializes future recurring events for all recurring event groups
+   * where the latest materialized event is less than 6 months away.
+   */
+  private materializeRecurringEvents = async () => {
+    const now = Date.now();
+    const sixMonthsFromNow = now + SIX_MONTHS_MS;
+    const oneYearFromNow = now + ONE_YEAR_MS;
+
+    // Find all distinct recurring event groups
+    const recurringGroups = await this.events.aggregate<{
+      _id: ObjectId;
+      latestDate: number;
+      latestEvent: SavedEvent;
+    }>([
+      // Only non-deleted events with recurrent field
+      { $match: { 'recurrent.groupId': { $exists: true }, deleted: { $ne: true } } },
+      // Group by recurrent.groupId and find the latest event in each group
+      {
+        $sort: { date: -1 }
+      },
+      {
+        $group: {
+          _id: '$recurrent.groupId',
+          latestDate: { $max: '$date' },
+          latestEvent: { $first: '$$ROOT' }
+        }
+      },
+      // Only groups where latest event is less than 6 months away
+      { $match: { latestDate: { $lt: sixMonthsFromNow } } }
+    ]).toArray();
+
+    console.log(`Found ${recurringGroups.length} recurring groups needing materialization`);
+
+    for (const group of recurringGroups) {
+      try {
+        const { latestEvent, latestDate } = group;
+        const recurrent = latestEvent.recurrent;
+
+        if (!recurrent) continue;
+
+        const rule = RRule.fromString(recurrent.descriptor);
+        const fromDate = new Date(latestDate);
+        const toDate = new Date(oneYearFromNow);
+
+        const duration = latestEvent.endDate - latestEvent.date;
+
+        // Get future occurrences starting from the latest existing event
+        const futureOccurrences = rule.between(fromDate, toDate, false); // exclude start date
+
+        if (futureOccurrences.length === 0) continue;
+
+        // Skip the first one if it matches the latest event date
+        const newOccurrences = futureOccurrences.filter(d => new Date(d).getTime() > latestDate);
+
+        if (newOccurrences.length === 0) continue;
+
+        const baseIdempotencyKey = latestEvent.idempotencyKey.split('_').slice(0, 2).join('_');
+
+        const newEvents = newOccurrences.map(dateObj => {
+          const date = new Date(dateObj).getTime();
+          const eventId = new ObjectId();
+          return {
+            _id: eventId,
+            title: latestEvent.title,
+            description: latestEvent.description,
+            tz: latestEvent.tz,
+            uid: latestEvent.uid,
+            chatId: latestEvent.chatId,
+            threadId: latestEvent.threadId,
+            date,
+            endDate: date + duration,
+            recurrent,
+            idempotencyKey: `${baseIdempotencyKey}_${date}`,
+            seq: 0,
+            attendees: { yes: [latestEvent.uid], no: [], maybe: [] },
+            geo: null
+          };
+        });
+
+        // Check for duplicates using idempotency keys
+        const idempotencyKeys = newEvents.map(e => e.idempotencyKey);
+        const existingEvents = await this.events.find({
+          idempotencyKey: { $in: idempotencyKeys }
+        }).toArray();
+        const existingKeys = new Set(existingEvents.map(e => e.idempotencyKey));
+
+        const eventsToInsert = newEvents.filter(e => !existingKeys.has(e.idempotencyKey));
+
+        if (eventsToInsert.length > 0) {
+          await this.events.insertMany(eventsToInsert);
+
+          // Create notifications for new events
+          const notificationsModule = container.resolve(NotificationsModule);
+          const session = MDBClient.startSession();
+          try {
+            await session.withTransaction(async () => {
+              for (const event of eventsToInsert) {
+                await notificationsModule.updateNotificationOnAttend(
+                  event._id,
+                  event.date,
+                  true,
+                  event.uid,
+                  session
+                );
+              }
+            });
+          } finally {
+            await session.endSession();
+          }
+
+          console.log(`Materialized ${eventsToInsert.length} new events for group ${group._id}`);
+        }
+      } catch (e) {
+        console.error(`Error materializing events for group ${group._id}:`, e);
+      }
+    }
+
+    console.log('Recurring events materialization complete');
+  }
 
   commitOperation = async (chatId: number, threadId: number | undefined, uid: number, command: ClientApiEventUpsertCommand) => {
     const { type, event } = command;
