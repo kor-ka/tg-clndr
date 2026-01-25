@@ -190,7 +190,11 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
 
         // For recurring events being edited, ask about future events
         if (editEv && isRecurringEvent) {
-            showConfirm("Apply changes to all future events in this series?", (updateFuture) => {
+            // Different message when changing to non-recurring (deletes future events)
+            const message = !recurrence
+                ? "Also delete all future events in this series?"
+                : "Apply changes to all future events in this series?";
+            showConfirm(message, (updateFuture) => {
                 doSave(updateFuture);
             });
         } else {
