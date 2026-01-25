@@ -270,10 +270,20 @@ export class EventsModule {
           // Determine what to do with recurrent field:
           // - Set it if updating future events AND providing a recurrence pattern
           // - Unset it if:
-          //   a) Not updating future events (making this single event non-recurring)
+          //   a) Not updating future events AND dates/recurrence changed (break this event out of series)
           //   b) OR updating future events with no recurrence (setting to "never")
           const shouldSetRecurrent = udpateFutureRecurringEvents && recurrent
-          const shouldUnsetRecurrent = groupId && (!udpateFutureRecurringEvents || !recurrent)
+
+          // Check if dates or recurrence descriptor changed - only then should we break out of series
+          const datesOrRecurrenceChanged =
+            savedEvent.date !== event.date ||
+            savedEvent.endDate !== event.endDate ||
+            savedEvent.recurrent?.descriptor !== recurrent
+
+          const shouldUnsetRecurrent = groupId && (
+            (!udpateFutureRecurringEvents && datesOrRecurrenceChanged) ||
+            (udpateFutureRecurringEvents && !recurrent)
+          )
 
           if (shouldSetRecurrent) {
             eventData.recurrent = {
