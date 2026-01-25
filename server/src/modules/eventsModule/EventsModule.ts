@@ -9,7 +9,34 @@ import { NotificationsModule } from "../notificationsModule/NotificationsModule"
 import * as linkify from 'linkifyjs';
 import { parseMeta as getMeta } from "./metaParser";
 import { RRule } from 'rrule'
+import { DateTime } from 'luxon'
 import { CronJob } from "cron";
+
+/**
+ * Converts a Date returned by RRule (with tzid) to a proper Unix timestamp.
+ *
+ * When RRule is used with tzid, it returns Date objects where the UTC time components
+ * represent the local time in the specified timezone. This function converts those
+ * "floating" dates to actual timestamps by interpreting the UTC components as local time.
+ *
+ * @param rruleDate - Date object returned by RRule.between() or similar methods
+ * @param timezone - The IANA timezone string (e.g., "America/New_York")
+ * @returns Unix timestamp in milliseconds
+ */
+function rruleDateToTimestamp(rruleDate: Date, timezone: string): number {
+  // RRule with tzid returns dates where UTC components = local time components
+  // Extract the UTC components (which actually represent local time)
+  const dt = DateTime.fromObject({
+    year: rruleDate.getUTCFullYear(),
+    month: rruleDate.getUTCMonth() + 1, // luxon uses 1-indexed months
+    day: rruleDate.getUTCDate(),
+    hour: rruleDate.getUTCHours(),
+    minute: rruleDate.getUTCMinutes(),
+    second: rruleDate.getUTCSeconds(),
+  }, { zone: timezone });
+
+  return dt.toMillis();
+}
 import { __DEV__ } from "../../utils/dev";
 
 // Time constants for recurring event materialization
@@ -106,7 +133,8 @@ export class EventsModule {
         const baseIdempotencyKey = latestEvent.idempotencyKey.split('_').slice(0, 2).join('_');
 
         const newEvents = newOccurrences.map(dateObj => {
-          const date = new Date(dateObj).getTime();
+          // Convert rrule's floating date to proper timestamp in event timezone
+          const date = rruleDateToTimestamp(dateObj, latestEvent.tz);
           const eventId = new ObjectId();
           return {
             _id: eventId,
@@ -223,7 +251,8 @@ export class EventsModule {
             const duration = eventData.endDate - eventData.date
             const futureOccurrences = rule.between(fromDate, toDate, false) // false = exclude start date
             const futureEvents = futureOccurrences.slice(1).map(dateObj => { // Skip first occurrence (it's the main event)
-              const date = new Date(dateObj).getTime()
+              // Convert rrule's floating date to proper timestamp in event timezone
+              const date = rruleDateToTimestamp(dateObj, eventData.tz)
               const eventId = new ObjectId()
               return { _id: eventId, ...eventData, idempotencyKey: `${eventData.idempotencyKey}_${date}`, date, endDate: date + duration }
             })
@@ -338,7 +367,8 @@ export class EventsModule {
             const duration = event.endDate - event.date
             const futureOccurrences = rule.between(fromDate, toDate, false) // false = exclude start date
             const futureEvents = futureOccurrences.slice(1).map(dateObj => { // Skip first occurrence (it's the edited event)
-              const date = new Date(dateObj).getTime()
+              // Convert rrule's floating date to proper timestamp in event timezone
+              const date = rruleDateToTimestamp(dateObj, event.tz)
               const eventId = new ObjectId()
               return {
                 ...savedEvent,
