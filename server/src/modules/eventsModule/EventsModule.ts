@@ -321,14 +321,24 @@ export class EventsModule {
               }
             })
             if (futureEvents.length > 0) {
-              await this.events.insertMany(futureEvents, { session })
-              // Create notifications for all re-materialized events
-              const notificationsModule = container.resolve(NotificationsModule)
-              for (const futureEvent of futureEvents) {
-                await notificationsModule.updateNotificationOnAttend(futureEvent._id, futureEvent.date, true, savedEvent.uid, session)
+              // Check for duplicates using idempotency keys (e.g., when edited event's date is still a valid occurrence)
+              const idempotencyKeys = futureEvents.map(e => e.idempotencyKey)
+              const existingEvents = await this.events.find({
+                idempotencyKey: { $in: idempotencyKeys }
+              }, { session }).toArray()
+              const existingKeys = new Set(existingEvents.map(e => e.idempotencyKey))
+              const eventsToInsert = futureEvents.filter(e => !existingKeys.has(e.idempotencyKey))
+
+              if (eventsToInsert.length > 0) {
+                await this.events.insertMany(eventsToInsert, { session })
+                // Create notifications for all re-materialized events
+                const notificationsModule = container.resolve(NotificationsModule)
+                for (const futureEvent of eventsToInsert) {
+                  await notificationsModule.updateNotificationOnAttend(futureEvent._id, futureEvent.date, true, savedEvent.uid, session)
+                }
               }
               // Track re-materialized events to emit after transaction
-              materializedFutureEvents = futureEvents
+              materializedFutureEvents = eventsToInsert
             }
           }
 
