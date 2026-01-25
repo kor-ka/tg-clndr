@@ -480,7 +480,7 @@ export const savedEventToApiLight = (saved: SavedEvent): Event => {
   return {
     ...event,
     id: _id.toHexString(),
-    recurrent: recurrent?.descriptor
+    recurrent: recurrent?.descriptor ?? ''
   };
 };
 
