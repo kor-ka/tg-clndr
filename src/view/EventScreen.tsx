@@ -154,7 +154,7 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
             description: description.trim(),
             date: date.getTime(),
             endDate: endDate.getTime(),
-            recurrent: recurrence || undefined,
+            recurrent: recurrence,
         };
 
         if (editEv) {
