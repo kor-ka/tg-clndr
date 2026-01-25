@@ -80,6 +80,47 @@ export class NotificationsModule {
     }
   }
 
+  /**
+   * Batch create notifications for multiple events for a single user.
+   * This is much faster than calling updateNotificationOnAttend in a loop
+   * because it fetches user settings once and uses bulkWrite for all notifications.
+   */
+  batchCreateNotificationsForUser = async (
+    events: { eventId: ObjectId; date: number }[],
+    userId: number,
+    session: ClientSession
+  ) => {
+    if (events.length === 0) return;
+
+    // Fetch user settings once instead of for each event
+    const user = await this.users.findOne({ id: userId });
+    if (!user) return;
+
+    const { settings: { enableNotifications, notifyBefore } } = user;
+    if (!enableNotifications || !notifyBefore) return;
+
+    const notifyBeforeMs = beforeToMs(notifyBefore);
+
+    // Use bulkWrite with upsert operations for all events at once
+    const operations = events.map(({ eventId, date }) => ({
+      updateOne: {
+        filter: { eventId, userId },
+        update: {
+          $setOnInsert: {
+            sent: false,
+            time: date - notifyBeforeMs,
+            eventTime: date,
+            notifyBefore,
+            notifyBeforeMs
+          }
+        },
+        upsert: true
+      }
+    }));
+
+    await this.db.bulkWrite(operations, { session });
+  }
+
   updateNotification = async (eventId: ObjectId, userId: number, { notifyBefore }: Notification) => {
     const event = await EVENTS().findOne({ _id: eventId })
     if (!event) {

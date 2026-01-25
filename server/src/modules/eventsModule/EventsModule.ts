@@ -136,20 +136,25 @@ export class EventsModule {
         if (eventsToInsert.length > 0) {
           await this.events.insertMany(eventsToInsert);
 
-          // Create notifications for new events
+          // Create notifications for new events in batch (grouped by user)
           const notificationsModule = container.resolve(NotificationsModule);
           const session = MDBClient.startSession();
           try {
             await session.withTransaction(async () => {
+              // Group events by user for batch processing
+              const eventsByUser = new Map<number, { eventId: ObjectId; date: number }[]>();
               for (const event of eventsToInsert) {
-                await notificationsModule.updateNotificationOnAttend(
-                  event._id,
-                  event.date,
-                  true,
-                  event.uid,
-                  session
-                );
+                const userEvents = eventsByUser.get(event.uid) || [];
+                userEvents.push({ eventId: event._id, date: event.date });
+                eventsByUser.set(event.uid, userEvents);
               }
+
+              // Create notifications for each user in batch
+              await Promise.all(
+                Array.from(eventsByUser.entries()).map(([userId, events]) =>
+                  notificationsModule.batchCreateNotificationsForUser(events, userId, session)
+                )
+              );
             });
           } finally {
             await session.endSession();
@@ -221,11 +226,13 @@ export class EventsModule {
 
             if (futureEvents.length > 0) {
               await this.events.insertMany(futureEvents, { session })
-              // Create notifications for all materialized events
+              // Create notifications for all materialized events in batch
               const notificationsModule = container.resolve(NotificationsModule)
-              for (const futureEvent of futureEvents) {
-                await notificationsModule.updateNotificationOnAttend(futureEvent._id, futureEvent.date, true, uid, session)
-              }
+              await notificationsModule.batchCreateNotificationsForUser(
+                futureEvents.map(e => ({ eventId: e._id, date: e.date })),
+                uid,
+                session
+              )
               // Track future events to emit after transaction
               materializedFutureEvents = futureEvents
             }
@@ -340,11 +347,13 @@ export class EventsModule {
             })
             if (futureEvents.length > 0) {
               await this.events.insertMany(futureEvents, { session })
-              // Create notifications for all re-materialized events
+              // Create notifications for all re-materialized events in batch
               const notificationsModule = container.resolve(NotificationsModule)
-              for (const futureEvent of futureEvents) {
-                await notificationsModule.updateNotificationOnAttend(futureEvent._id, futureEvent.date, true, savedEvent.uid, session)
-              }
+              await notificationsModule.batchCreateNotificationsForUser(
+                futureEvents.map(e => ({ eventId: e._id, date: e.date })),
+                savedEvent.uid,
+                session
+              )
               // Track re-materialized events to emit after transaction
               materializedFutureEvents = futureEvents
             }
