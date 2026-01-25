@@ -78,15 +78,16 @@ const Month = React.memo(({ startDate, scrollInto, intersectionObserver }: { sta
     const weeks = React.useMemo(() => {
         const weekDay = (startDate.getDay() + 7 - WEEK_START.MONDAY) % 7
         const weeksCount = 6
+        // Calculate the first date of the calendar grid using Date constructor
+        // to properly handle DST transitions (millisecond arithmetic fails at DST boundaries)
+        const firstDay = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() - weekDay)
 
         const weeks: Date[][] = []
         let day = 0
         for (let i = 0; i < weeksCount; i++) {
             const week: Date[] = []
-            let daysCount = 7
-            const weekStartTime = startDate.getTime() - 1000 * 60 * 60 * 24 * weekDay
-            for (let weekDay = 0; weekDay < daysCount; weekDay++) {
-                week.push(new Date(weekStartTime + 1000 * 60 * 60 * 24 * day++))
+            for (let j = 0; j < 7; j++) {
+                week.push(new Date(firstDay.getFullYear(), firstDay.getMonth(), firstDay.getDate() + day++))
             }
             weeks.push(week)
         }

@@ -536,8 +536,11 @@ const EventsView = React.memo((({ eventsVM, selectedDate }: { eventsVM: VM<Map<s
                 const eventEndDate = new Date(vm.val.endDate + getOffset(timeZone));
                 const eventEndDay = new Date(eventEndDate.getFullYear(), eventEndDate.getMonth(), eventEndDate.getDate()).getTime();
 
-                // Add this event to each day it spans
-                for (let day = eventStartDay; day <= eventEndDay; day += 24 * 60 * 60 * 1000) {
+                // Add this event to each day it spans using Date constructor (handles DST correctly)
+                const startDayDate = new Date(eventStartDate.getFullYear(), eventStartDate.getMonth(), eventStartDate.getDate());
+                const dayCount = Math.round((eventEndDay - eventStartDay) / (24 * 60 * 60 * 1000)) + 1;
+                for (let dayOffset = 0; dayOffset < dayCount; dayOffset++) {
+                    const day = new Date(startDayDate.getFullYear(), startDayDate.getMonth(), startDayDate.getDate() + dayOffset).getTime();
                     if (day >= todayStartInTZ) {
                         if (!dateToEvents.has(day)) {
                             dateToEvents.set(day, []);
