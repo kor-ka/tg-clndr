@@ -244,16 +244,34 @@ export class EventsModule {
           // Prepare the update data
           const eventData: Partial<ServerEvent> = {
             ...event,
-            // If not updating future events, remove recurrence from this single event
-            // If updating future events with recurrent set, update/keep the recurrence
-            // If updating future events with recurrent unset (never), remove recurrence
-            recurrent: udpateFutureRecurringEvents && recurrent ? {
-              groupId: groupId ?? new ObjectId(),
-              descriptor: recurrent
-            } : undefined
           }
 
-          await this.events.updateOne({ _id, seq: savedEvent.seq }, { $set: eventData, $inc: { seq: 1 } }, { session })
+          // Determine what to do with recurrent field:
+          // - Set it if updating future events AND providing a recurrence pattern
+          // - Unset it if:
+          //   a) Not updating future events (making this single event non-recurring)
+          //   b) OR updating future events with no recurrence (setting to "never")
+          const shouldSetRecurrent = udpateFutureRecurringEvents && recurrent
+          const shouldUnsetRecurrent = groupId && (!udpateFutureRecurringEvents || !recurrent)
+
+          if (shouldSetRecurrent) {
+            eventData.recurrent = {
+              groupId: groupId ?? new ObjectId(),
+              descriptor: recurrent
+            }
+          }
+
+          // Build the update operation - use $unset for recurrent when needed
+          // (MongoDB ignores undefined values in $set, so we must use $unset to remove fields)
+          const updateOp: { $set: Partial<ServerEvent>, $inc: { seq: 1 }, $unset?: { recurrent: '' } } = {
+            $set: eventData,
+            $inc: { seq: 1 }
+          }
+          if (shouldUnsetRecurrent) {
+            updateOp.$unset = { recurrent: '' }
+          }
+
+          await this.events.updateOne({ _id, seq: savedEvent.seq }, updateOp, { session })
 
           // If updating future recurring events and there's an existing group, delete future events
           // This handles both: changing recurrence pattern AND setting to "never"
