@@ -12,20 +12,28 @@ import { RRule } from 'rrule'
 import { CronJob } from "cron";
 
 /**
- * Converts a Date returned by RRule (with tzid) to a proper Unix timestamp.
+ * Converts a Date returned by RRule to a proper Unix timestamp.
  *
- * When RRule is used with tzid, it returns Date objects where the UTC time components
- * represent the local time in the specified timezone. This function converts those
- * "floating" dates to actual timestamps by interpreting the UTC components as local time.
+ * RRule returns dates with a misleading "Z" suffix where the UTC components
+ * (getUTCHours, etc.) actually represent the local machine time, not real UTC.
+ * Per the rrule docs: "Returned 'UTC' dates are always meant to be interpreted
+ * as dates in your local timezone."
+ *
+ * This function extracts the UTC components and interprets them as local time
+ * to get the correct Unix timestamp.
  */
-function rruleDateToTimestamp(rruleDate: Date, timezone: string): number {
-  // Get timezone offset by comparing how the same moment appears in UTC vs target timezone
-  const inTz = new Date(rruleDate.toLocaleString('en-US', { timeZone: timezone }));
-  const inUtc = new Date(rruleDate.toLocaleString('en-US', { timeZone: 'UTC' }));
-  const offsetMs = inUtc.getTime() - inTz.getTime();
-
-  // rruleDate.getTime() wrongly treats local time as UTC, adjust by the offset
-  return rruleDate.getTime() + offsetMs;
+function rruleDateToTimestamp(rruleDate: Date): number {
+  // Extract UTC components (which are actually local time values)
+  // and create a Date interpreting them as local machine time
+  return new Date(
+    rruleDate.getUTCFullYear(),
+    rruleDate.getUTCMonth(),
+    rruleDate.getUTCDate(),
+    rruleDate.getUTCHours(),
+    rruleDate.getUTCMinutes(),
+    rruleDate.getUTCSeconds(),
+    rruleDate.getUTCMilliseconds()
+  ).getTime();
 }
 import { __DEV__ } from "../../utils/dev";
 
@@ -123,8 +131,8 @@ export class EventsModule {
         const baseIdempotencyKey = latestEvent.idempotencyKey.split('_').slice(0, 2).join('_');
 
         const newEvents = newOccurrences.map(dateObj => {
-          // Convert rrule's floating date to proper timestamp in event timezone
-          const date = rruleDateToTimestamp(dateObj, latestEvent.tz);
+          // Convert rrule's floating date to proper timestamp
+          const date = rruleDateToTimestamp(dateObj);
           const eventId = new ObjectId();
           return {
             _id: eventId,
@@ -241,8 +249,8 @@ export class EventsModule {
             const duration = eventData.endDate - eventData.date
             const futureOccurrences = rule.between(fromDate, toDate, false) // false = exclude start date
             const futureEvents = futureOccurrences.slice(1).map(dateObj => { // Skip first occurrence (it's the main event)
-              // Convert rrule's floating date to proper timestamp in event timezone
-              const date = rruleDateToTimestamp(dateObj, eventData.tz)
+              // Convert rrule's floating date to proper timestamp
+              const date = rruleDateToTimestamp(dateObj)
               const eventId = new ObjectId()
               return { _id: eventId, ...eventData, idempotencyKey: `${eventData.idempotencyKey}_${date}`, date, endDate: date + duration }
             })
@@ -357,8 +365,8 @@ export class EventsModule {
             const duration = event.endDate - event.date
             const futureOccurrences = rule.between(fromDate, toDate, false) // false = exclude start date
             const futureEvents = futureOccurrences.slice(1).map(dateObj => { // Skip first occurrence (it's the edited event)
-              // Convert rrule's floating date to proper timestamp in event timezone
-              const date = rruleDateToTimestamp(dateObj, event.tz)
+              // Convert rrule's floating date to proper timestamp
+              const date = rruleDateToTimestamp(dateObj)
               const eventId = new ObjectId()
               return {
                 ...savedEvent,
