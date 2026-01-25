@@ -314,7 +314,7 @@ export class EventsModule {
                 ...event,
                 _id: eventId,
                 recurrent: finalRecurrent,
-                idempotencyKey: `${savedEvent.idempotencyKey.split('_').slice(0, 2).join('_')}_${date}`,
+                idempotencyKey: `${savedEvent.idempotencyKey.split('_').slice(0, 2).join('_')}_${date}_${savedEvent.seq}`,
                 date,
                 endDate: date + duration,
                 seq: 0
