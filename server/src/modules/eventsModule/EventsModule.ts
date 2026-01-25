@@ -103,7 +103,7 @@ export class EventsModule {
 
         const baseIdempotencyKey = latestEvent.idempotencyKey.split('_').slice(0, 2).join('_');
 
-        const newEvents = newOccurrences.map(dateObj => {
+        const newEvents = newOccurrences.map((dateObj, index) => {
           const date = new Date(dateObj).getTime();
           const eventId = new ObjectId();
           return {
@@ -117,7 +117,7 @@ export class EventsModule {
             date,
             endDate: date + duration,
             recurrent,
-            idempotencyKey: `${baseIdempotencyKey}_${date}`,
+            idempotencyKey: `${baseIdempotencyKey}_${date}_${index}`,
             seq: 0,
             attendees: { yes: [latestEvent.uid], no: [], maybe: [] },
             geo: null
@@ -213,10 +213,10 @@ export class EventsModule {
 
             const duration = eventData.endDate - eventData.date
             const futureOccurrences = rule.between(fromDate, toDate, false) // false = exclude start date
-            const futureEvents = futureOccurrences.slice(1).map(dateObj => { // Skip first occurrence (it's the main event)
+            const futureEvents = futureOccurrences.slice(1).map((dateObj, index) => { // Skip first occurrence (it's the main event)
               const date = new Date(dateObj).getTime()
               const eventId = new ObjectId()
-              return { _id: eventId, ...eventData, idempotencyKey: `${eventData.idempotencyKey}_${date}`, date, endDate: date + duration }
+              return { _id: eventId, ...eventData, idempotencyKey: `${eventData.idempotencyKey}_${date}_${index}`, date, endDate: date + duration }
             })
 
             if (futureEvents.length > 0) {
@@ -306,7 +306,7 @@ export class EventsModule {
 
             const duration = event.endDate - event.date
             const futureOccurrences = rule.between(fromDate, toDate, false) // false = exclude start date
-            const futureEvents = futureOccurrences.slice(1).map(dateObj => { // Skip first occurrence (it's the edited event)
+            const futureEvents = futureOccurrences.slice(1).map((dateObj, index) => { // Skip first occurrence (it's the edited event)
               const date = new Date(dateObj).getTime()
               const eventId = new ObjectId()
               return {
@@ -314,7 +314,7 @@ export class EventsModule {
                 ...event,
                 _id: eventId,
                 recurrent: finalRecurrent,
-                idempotencyKey: `${savedEvent.idempotencyKey.split('_').slice(0, 2).join('_')}_${date}`,
+                idempotencyKey: `${savedEvent.idempotencyKey.split('_').slice(0, 2).join('_')}_${date}_${index}`,
                 date,
                 endDate: date + duration,
                 seq: 0
