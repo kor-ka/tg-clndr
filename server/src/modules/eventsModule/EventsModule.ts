@@ -9,7 +9,6 @@ import { NotificationsModule } from "../notificationsModule/NotificationsModule"
 import * as linkify from 'linkifyjs';
 import { parseMeta as getMeta } from "./metaParser";
 import { RRule } from 'rrule'
-import { DateTime } from 'luxon'
 import { CronJob } from "cron";
 
 /**
@@ -24,18 +23,44 @@ import { CronJob } from "cron";
  * @returns Unix timestamp in milliseconds
  */
 function rruleDateToTimestamp(rruleDate: Date, timezone: string): number {
-  // RRule with tzid returns dates where UTC components = local time components
-  // Extract the UTC components (which actually represent local time)
-  const dt = DateTime.fromObject({
-    year: rruleDate.getUTCFullYear(),
-    month: rruleDate.getUTCMonth() + 1, // luxon uses 1-indexed months
-    day: rruleDate.getUTCDate(),
-    hour: rruleDate.getUTCHours(),
-    minute: rruleDate.getUTCMinutes(),
-    second: rruleDate.getUTCSeconds(),
-  }, { zone: timezone });
+  // RRule with tzid returns dates where UTC components = local time in the target timezone
+  // We need to find the actual UTC timestamp for that local time
+  const year = rruleDate.getUTCFullYear();
+  const month = rruleDate.getUTCMonth();
+  const day = rruleDate.getUTCDate();
+  const hour = rruleDate.getUTCHours();
+  const minute = rruleDate.getUTCMinutes();
+  const second = rruleDate.getUTCSeconds();
 
-  return dt.toMillis();
+  // Use these components as an initial UTC timestamp guess
+  const guessUtc = Date.UTC(year, month, day, hour, minute, second);
+
+  // See what local time this UTC timestamp corresponds to in the target timezone
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+
+  const parts = formatter.formatToParts(new Date(guessUtc));
+  const p: Record<string, number> = {};
+  for (const part of parts) {
+    if (part.type !== 'literal') {
+      p[part.type] = parseInt(part.value, 10);
+    }
+  }
+
+  // Calculate the difference between the local time we wanted and what we got
+  const actualLocalMs = Date.UTC(p.year, p.month - 1, p.day, p.hour === 24 ? 0 : p.hour, p.minute, p.second);
+  const wantedLocalMs = Date.UTC(year, month, day, hour, minute, second);
+
+  // Adjust the guess by this difference to get the correct UTC timestamp
+  return guessUtc - (actualLocalMs - wantedLocalMs);
 }
 import { __DEV__ } from "../../utils/dev";
 
