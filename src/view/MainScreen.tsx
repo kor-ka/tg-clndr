@@ -1,5 +1,5 @@
 import React, { lazy, useRef } from "react";
-import { Event, recurrenceToLabel } from "../shared/entity"
+import { Event } from "../shared/entity"
 import { SessionModel } from "../model/SessionModel"
 import { useVMvalue } from "../utils/vm/useVM"
 import { VM } from "../utils/vm/VM";
@@ -383,7 +383,6 @@ const EventItem = React.memo(({ eventVM, displayDate }: { eventVM: VM<Event>, di
             }
             right={<div style={{ fontSize: '1.2em', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
                 {timeDisplay.map((time, i) => <span key={i}>{time}</span>)}
-                {userSettings?.experimentalFeatures && recurrent && <span style={{ fontSize: '0.6em', color: 'var(--tg-theme-hint-color)' }}>🔄 {recurrenceToLabel(recurrent)}</span>}
             </div>}
         />
     </>
