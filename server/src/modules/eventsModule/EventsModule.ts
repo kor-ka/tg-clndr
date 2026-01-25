@@ -84,9 +84,11 @@ export class EventsModule {
         const toDate = new Date(oneYearFromNow);
 
         // Create RRule with dtstart set to the latest event date so occurrences are based on event time, not current time
+        // Pass timezone to prevent DST-related time shifts throughout the year
         const rule = new RRule({
           ...RRule.parseString(recurrent.descriptor),
-          dtstart: fromDate
+          dtstart: fromDate,
+          tzid: latestEvent.tz
         });
 
         const duration = latestEvent.endDate - latestEvent.date;
@@ -211,9 +213,11 @@ export class EventsModule {
             const toDate = new Date(eventData.date)
             toDate.setFullYear(fromDate.getFullYear() + 1)
             // Create RRule with dtstart set to the event date so occurrences are based on event time, not current time
+            // Pass timezone to prevent DST-related time shifts throughout the year
             const rule = new RRule({
               ...RRule.parseString(eventData.recurrent.descriptor),
-              dtstart: fromDate
+              dtstart: fromDate,
+              tzid: eventData.tz
             })
 
             const duration = eventData.endDate - eventData.date
@@ -324,9 +328,11 @@ export class EventsModule {
             const toDate = new Date(event.date)
             toDate.setFullYear(fromDate.getFullYear() + 1)
             // Create RRule with dtstart set to the event date so occurrences are based on event time, not current time
+            // Pass timezone to prevent DST-related time shifts throughout the year
             const rule = new RRule({
               ...RRule.parseString(finalRecurrent.descriptor),
-              dtstart: fromDate
+              dtstart: fromDate,
+              tzid: event.tz
             })
 
             const duration = event.endDate - event.date
