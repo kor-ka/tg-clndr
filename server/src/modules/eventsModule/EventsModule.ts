@@ -10,67 +10,15 @@ import * as linkify from 'linkifyjs';
 import { parseMeta as getMeta } from "./metaParser";
 import { RRule } from 'rrule'
 import { CronJob } from "cron";
-
-/**
- * Converts a Date returned by RRule (with tzid) to a proper Unix timestamp.
- *
- * RRule returns dates with a misleading "Z" suffix where the UTC components
- * (getUTCHours, etc.) actually represent the wall-clock time in the tzid timezone,
- * not real UTC. Per the rrule docs: "Returned 'UTC' dates are always meant to be
- * interpreted as dates in your local timezone."
- *
- * This function interprets those components as time in the specified timezone
- * and converts to actual UTC, similar to the Luxon example in rrule docs:
- *   DateTime.fromJSDate(date).toUTC().setZone('local', { keepLocalTime: true })
- */
-function rruleDateToTimestamp(rruleDate: Date, timezone: string): number {
-  // Extract the wall-clock components (e.g., 19:00 if event is at 19:00 in the timezone)
-  const year = rruleDate.getUTCFullYear();
-  const month = rruleDate.getUTCMonth();
-  const day = rruleDate.getUTCDate();
-  const hours = rruleDate.getUTCHours();
-  const minutes = rruleDate.getUTCMinutes();
-  const seconds = rruleDate.getUTCSeconds();
-  const ms = rruleDate.getUTCMilliseconds();
-
-  // Treat this wall-clock time as if it were UTC (for offset calculation)
-  const wallClockAsUtc = Date.UTC(year, month, day, hours, minutes, seconds, ms);
-
-  // Find what time it shows in the target timezone when it's this time in UTC
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  });
-
-  const parts = formatter.formatToParts(new Date(wallClockAsUtc));
-  const getValue = (type: string) => parseInt(parts.find(p => p.type === type)!.value);
-
-  const tzYear = getValue('year');
-  const tzMonth = getValue('month') - 1;
-  const tzDay = getValue('day');
-  let tzHour = getValue('hour');
-  if (tzHour === 24) tzHour = 0; // Handle midnight edge case
-  const tzMinute = getValue('minute');
-  const tzSecond = getValue('second');
-
-  // Express this timezone time as if it were UTC
-  const tzTimeAsUtc = Date.UTC(tzYear, tzMonth, tzDay, tzHour, tzMinute, tzSecond, ms);
-
-  // Calculate offset: UTC_timestamp - timezone_display = offset
-  // e.g., if timezone is UTC-7: at 19:00 UTC, timezone shows 12:00
-  // offset = 19:00 - 12:00 = +7 hours
-  const offset = wallClockAsUtc - tzTimeAsUtc;
-
-  // To convert wall-clock time in the timezone to actual UTC: wallClock + offset
-  return wallClockAsUtc + offset;
-}
 import { __DEV__ } from "../../utils/dev";
+
+function rruleDateToJsDate(rruleDate: Date, timeZone: string): Date {
+  const date = new Date()
+  const utcDate = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
+  const tzDate = new Date(date.toLocaleString('en-US', { timeZone }));
+  const offset = (tzDate.getTime() - utcDate.getTime());
+  return new Date(rruleDate.getTime() + offset)
+}
 
 // Time constants for recurring event materialization
 const SIX_MONTHS_MS = 6 * 30 * 24 * 60 * 60 * 1000;
@@ -154,7 +102,7 @@ export class EventsModule {
         const duration = latestEvent.endDate - latestEvent.date;
 
         // Get future occurrences starting from the latest existing event
-        const futureOccurrences = rule.between(fromDate, toDate, false); // exclude start date
+        const futureOccurrences = rule.between(fromDate, toDate, false).map((d) => rruleDateToJsDate(d, latestEvent.tz)); // exclude start date
 
         if (futureOccurrences.length === 0) continue;
 
@@ -167,7 +115,7 @@ export class EventsModule {
 
         const newEvents = newOccurrences.map(dateObj => {
           // Convert rrule's floating date to proper timestamp
-          const date = rruleDateToTimestamp(dateObj, latestEvent.tz);
+          const date = dateObj.getTime()
           const eventId = new ObjectId();
           return {
             _id: eventId,
@@ -282,10 +230,10 @@ export class EventsModule {
             })
 
             const duration = eventData.endDate - eventData.date
-            const futureOccurrences = rule.between(fromDate, toDate, false) // false = exclude start date
+            const futureOccurrences = rule.between(fromDate, toDate, false).map(d => rruleDateToJsDate(d, eventData.tz)) // false = exclude start date
             const futureEvents = futureOccurrences.slice(1).map(dateObj => { // Skip first occurrence (it's the main event)
               // Convert rrule's floating date to proper timestamp
-              const date = rruleDateToTimestamp(dateObj, eventData.tz)
+              const date = dateObj.getTime()
               const eventId = new ObjectId()
               return { _id: eventId, ...eventData, idempotencyKey: `${eventData.idempotencyKey}_${date}`, date, endDate: date + duration }
             })
@@ -398,10 +346,10 @@ export class EventsModule {
             })
 
             const duration = event.endDate - event.date
-            const futureOccurrences = rule.between(fromDate, toDate, false) // false = exclude start date
+            const futureOccurrences = rule.between(fromDate, toDate, false).map(d => rruleDateToJsDate(d, event.tz)) // false = exclude start date
             const futureEvents = futureOccurrences.slice(1).map(dateObj => { // Skip first occurrence (it's the edited event)
               // Convert rrule's floating date to proper timestamp
-              const date = rruleDateToTimestamp(dateObj, event.tz)
+              const date = dateObj.getTime()
               const eventId = new ObjectId()
               return {
                 ...savedEvent,
