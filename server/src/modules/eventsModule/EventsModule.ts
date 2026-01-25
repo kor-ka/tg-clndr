@@ -230,8 +230,8 @@ export class EventsModule {
             })
 
             const duration = eventData.endDate - eventData.date
-            const futureOccurrences = rule.between(fromDate, toDate, false).map(d => rruleDateToJsDate(d, eventData.tz)) // false = exclude start date
-            const futureEvents = futureOccurrences.slice(1).map(dateObj => { // Skip first occurrence (it's the main event)
+            const futureOccurrences = rule.between(fromDate, toDate, false).map(d => rruleDateToJsDate(d, eventData.tz)) // false = exclude start date (the main event)
+            const futureEvents = futureOccurrences.map(dateObj => {
               // Convert rrule's floating date to proper timestamp
               const date = dateObj.getTime()
               const eventId = new ObjectId()
@@ -346,8 +346,8 @@ export class EventsModule {
             })
 
             const duration = event.endDate - event.date
-            const futureOccurrences = rule.between(fromDate, toDate, false).map(d => rruleDateToJsDate(d, event.tz)) // false = exclude start date
-            const futureEvents = futureOccurrences.slice(1).map(dateObj => { // Skip first occurrence (it's the edited event)
+            const futureOccurrences = rule.between(fromDate, toDate, false).map(d => rruleDateToJsDate(d, event.tz)) // false = exclude start date (the edited event)
+            const futureEvents = futureOccurrences.map(dateObj => {
               // Convert rrule's floating date to proper timestamp
               const date = dateObj.getTime()
               const eventId = new ObjectId()
