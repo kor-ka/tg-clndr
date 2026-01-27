@@ -1,7 +1,8 @@
 import React from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { SessionModel } from "../model/SessionModel";
 import { DurationDscrpitor, Event, NotifyBeforeOptions, Notification, RecurrenceOptions } from "../shared/entity";
+import { recurrenceToDetailedLabel } from "../shared/rruleHelpers";
 import { useVMvalue } from "../utils/vm/useVM";
 import { UsersProviderContext, UserContext } from "./App";
 import { ListItem, UserPic, Card, Button, Page, CardLight, Block } from "./uikit/kit";
@@ -54,11 +55,16 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
     const canEdit = (chatSettings.allowPublicEdit || context.isAdmin);
 
     const uid = React.useContext(UserContext);
+    const navigate = useNavigate();
+    const location = useLocation();
 
     let [searchParams] = useSearchParams();
 
     const editEvId = searchParams.get("editEvent");
     const editEv: Event | undefined = editEvId ? model?.eventsModule.useEvent(editEvId) : undefined;
+
+    // Check for rrule returned from CustomRepeatScreen
+    const returnedRRule = searchParams.get("rrule");
 
     let disable = !!editEv?.deleted;
 
@@ -103,17 +109,26 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
     const [endDate, setEndDate] = React.useState(initialEndDate);
     const [validationError, setValidationError] = React.useState<string | null>(null);
 
-    // Recurrence state
-    const [recurrence, setRecurrence] = React.useState<string>(editEv?.recurrent ?? '');
+    // Recurrence state - initialize from returned rrule or existing event
+    const [recurrence, setRecurrence] = React.useState<string>(returnedRRule ?? editEv?.recurrent ?? '');
 
-    const onRecurrenceChange = React.useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-        const value = e.target.value;
-        setRecurrence(value);
-        setEdited(true);
-    }, []);
+    // Update recurrence when returning from CustomRepeatScreen
+    React.useEffect(() => {
+        if (returnedRRule !== null) {
+            setRecurrence(returnedRRule);
+            setEdited(true);
+        }
+    }, [returnedRRule]);
 
     // Check if this is a recurring event
     const isRecurringEvent = !!editEv?.recurrent;
+
+    // Navigate to custom repeat screen
+    const onRepeatClick = React.useCallback(() => {
+        if (disable || !canEdit) return;
+        const currentPath = location.pathname + location.search.replace(/[&?]rrule=[^&]*/g, '');
+        navigate(`/tg/customRepeat?rrule=${encodeURIComponent(recurrence)}&returnPath=${encodeURIComponent(currentPath)}`);
+    }, [navigate, location, recurrence, disable, canEdit]);
 
     // Reactive validation: check dates whenever they change
     React.useEffect(() => {
@@ -298,23 +313,13 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
                 <ListItem titile={validationError} />
             </Card>}
 
-            {(userSettings.experimentalFeatures || isRecurringEvent) && <Card>
+            {(userSettings.experimentalFeatures || isRecurringEvent) && <Card onClick={onRepeatClick}>
                 <ListItem
                     titile="Repeat"
                     right={
-                        <select
-                            value={recurrence}
-                            onChange={onRecurrenceChange}
-                            disabled={disable || !canEdit}
-                            style={{ background: 'var(--tg-theme-secondary-bg-color)', padding: '8px 0' }}
-                        >
-                            <option value="">Never</option>
-                            <option value={RecurrenceOptions.daily}>Daily</option>
-                            <option value={RecurrenceOptions.weekly}>Weekly</option>
-                            <option value={RecurrenceOptions.biweekly}>Every 2 weeks</option>
-                            <option value={RecurrenceOptions.monthly}>Monthly</option>
-                            <option value={RecurrenceOptions.yearly}>Yearly</option>
-                        </select>
+                        <span style={{ color: 'var(--tg-theme-link-color)' }}>
+                            {recurrenceToDetailedLabel(recurrence)}
+                        </span>
                     }
                 />
             </Card>}
