@@ -21,7 +21,6 @@ export const TimezoneContext = React.createContext<string | undefined>(undefined
 export const renderApp = (model: SessionModel) => {
     const SettingsScreen = lazyPreload(() => import("./settigns/SettingsScreen"), webAppReady.promise);
     const EventScreen = lazyPreload(() => import("./EventScreen"));
-    const CustomRepeatScreen = lazyPreload(() => import("./CustomRepeatScreen"));
 
     const router = createBrowserRouter([
         {
@@ -51,15 +50,6 @@ export const renderApp = (model: SessionModel) => {
                 <ErrorBoundry>
                     <React.Suspense fallback={null}>
                         <SettingsScreen />
-                    </React.Suspense>
-                </ErrorBoundry>,
-        },
-        {
-            path: "/tg/customRepeat",
-            element:
-                <ErrorBoundry>
-                    <React.Suspense fallback={null}>
-                        <CustomRepeatScreen />
                     </React.Suspense>
                 </ErrorBoundry>,
         },
