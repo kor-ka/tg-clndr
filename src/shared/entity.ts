@@ -33,6 +33,8 @@ export const NotifyBeforeOptions: DurationDscrpitor[] = [
 export const RecurrenceOptions = {
   none: '',
   daily: 'FREQ=DAILY',
+  weekdays: 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR',
+  weekends: 'FREQ=WEEKLY;BYDAY=SA,SU',
   weekly: 'FREQ=WEEKLY',
   biweekly: 'FREQ=WEEKLY;INTERVAL=2',
   monthly: 'FREQ=MONTHLY',
@@ -44,6 +46,8 @@ export type RecurrenceType = keyof typeof RecurrenceOptions;
 export const recurrenceToLabel = (recurrence: string | undefined): string => {
   if (!recurrence) return 'Never';
   if (recurrence.includes('FREQ=DAILY')) return 'Daily';
+  if (recurrence.includes('BYDAY=MO,TU,WE,TH,FR')) return 'Weekdays';
+  if (recurrence.includes('BYDAY=SA,SU')) return 'Weekends';
   if (recurrence.includes('INTERVAL=2') && recurrence.includes('FREQ=WEEKLY')) return 'Every 2 weeks';
   if (recurrence.includes('FREQ=WEEKLY')) return 'Weekly';
   if (recurrence.includes('FREQ=MONTHLY')) return 'Monthly';
