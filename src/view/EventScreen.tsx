@@ -310,6 +310,8 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
                         >
                             <option value="">Never</option>
                             <option value={RecurrenceOptions.daily}>Daily</option>
+                            <option value={RecurrenceOptions.weekdays}>Weekdays</option>
+                            <option value={RecurrenceOptions.weekends}>Weekends</option>
                             <option value={RecurrenceOptions.weekly}>Weekly</option>
                             <option value={RecurrenceOptions.biweekly}>Every 2 weeks</option>
                             <option value={RecurrenceOptions.monthly}>Monthly</option>
