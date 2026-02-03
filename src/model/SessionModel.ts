@@ -118,9 +118,9 @@ export class SessionModel {
         return d.promise
     };
 
-    updateStatus = (eventId: string, status: 'yes' | 'no' | 'maybe'): Promise<Event> => {
+    updateStatus = (eventId: string, status: 'yes' | 'no' | 'maybe', updateFutureRecurringEvents?: boolean): Promise<Event> => {
         const d = new Deffered<Event>()
-        this.emit("status", { eventId, status }, (res: { updated: Event, error: never } | { error: string, updated: never }) => {
+        this.emit("status", { eventId, status, updateFutureRecurringEvents }, (res: { updated: Event, error: never } | { error: string, updated: never }) => {
             console.log("on_status_ack", res)
             const { updated, error } = res
             if (updated) {

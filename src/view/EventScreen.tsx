@@ -216,9 +216,15 @@ const EventScreen = WithModel(({ model }: { model: SessionModel }) => {
 
     const onStatusChange = React.useCallback((s: 'yes' | 'no' | 'maybe') => {
         if (model && editEvId && s !== status) {
-            handleOperation(() => model.updateStatus(editEvId, s));
+            if (isRecurringEvent) {
+                showConfirm("Apply to all future events in this series?", (updateFuture) => {
+                    handleOperation(() => model.updateStatus(editEvId, s, updateFuture));
+                });
+            } else {
+                handleOperation(() => model.updateStatus(editEvId, s));
+            }
         }
-    }, [model, editEvId, status]);
+    }, [model, editEvId, status, isRecurringEvent]);
     const onStatusChangeYes = React.useCallback(() => onStatusChange('yes'), [onStatusChange]);
     const onStatusChangeNo = React.useCallback(() => onStatusChange('no'), [onStatusChange]);
     const onStatusChangeMaybe = React.useCallback(() => onStatusChange('maybe'), [onStatusChange]);

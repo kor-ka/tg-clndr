@@ -554,20 +554,63 @@ export class EventsModule {
     }
   }
 
-  updateAtendeeStatus = async (chatId: number, threadId: number | undefined, eventId: string, uid: number, status: 'yes' | 'no' | 'maybe') => {
+  updateAtendeeStatus = async (chatId: number, threadId: number | undefined, eventId: string, uid: number, status: 'yes' | 'no' | 'maybe', updateFutureRecurringEvents?: boolean) => {
     const _id = new ObjectId(eventId);
     const addTo = status
     const pullFrom = ['yes', 'no', 'maybe'].filter(s => s != addTo).map(k => `attendees.${k}`)
 
     let updatedEvent: SavedEvent | undefined
+    let updatedFutureEvents: SavedEvent[] = []
 
     const session = MDBClient.startSession()
     try {
       await session.withTransaction(async () => {
+        // First get the event to check if it's recurring
+        const currentEvent = await this.events.findOne({ _id }, { session })
+        if (!currentEvent) {
+          throw new Error("Event not found")
+        }
+
+        // Update the main event
         await this.events.updateOne({ _id }, { $pull: { [pullFrom[0]]: uid, [pullFrom[1]]: uid }, $addToSet: { [`attendees.${addTo}`]: uid }, $inc: { seq: 1 } }, { session })
-        // update notifications
+        // update notifications for main event
         updatedEvent = (await this.events.findOne({ _id }, { session }))!
         await container.resolve(NotificationsModule).updateNotificationOnAttend(_id, updatedEvent.date, status === 'yes', uid, session)
+
+        // If updating future recurring events
+        if (updateFutureRecurringEvents && currentEvent.recurrent?.groupId) {
+          const groupId = currentEvent.recurrent.groupId
+          const filter = {
+            'recurrent.groupId': groupId,
+            date: { $gt: currentEvent.date },
+            _id: { $ne: _id },
+            deleted: { $ne: true }
+          }
+
+          // Get IDs of future events to update
+          const futureEventIds = await this.events.distinct('_id', filter, { session }) as ObjectId[]
+
+          if (futureEventIds.length > 0) {
+            // Batch update all future events' attendance
+            await this.events.updateMany(
+              { _id: { $in: futureEventIds } },
+              { $pull: { [pullFrom[0]]: uid, [pullFrom[1]]: uid }, $addToSet: { [`attendees.${addTo}`]: uid }, $inc: { seq: 1 } },
+              { session }
+            )
+
+            // Update notifications for all future events
+            const notificationsModule = container.resolve(NotificationsModule)
+            const futureEvents = await this.events.find({ _id: { $in: futureEventIds } }, { session }).toArray()
+            await Promise.all(
+              futureEvents.map(event =>
+                notificationsModule.updateNotificationOnAttend(event._id, event.date, status === 'yes', uid, session)
+              )
+            )
+
+            // Track updated future events to emit after transaction
+            updatedFutureEvents = futureEvents
+          }
+        }
       })
     } finally {
       await session.endSession();
@@ -579,8 +622,13 @@ export class EventsModule {
     if (!updatedEvent) {
       throw new Error("operation lost during updateAtendeeStatus");
     }
-    // notify all
+    // notify all about main event
     this.upateSubject.next({ chatId, threadId, event: updatedEvent, type: 'update' });
+
+    // Emit all updated future events as a batch
+    if (updatedFutureEvents.length > 0) {
+      this.updateBatchSubject.next({ chatId, threadId, events: updatedFutureEvents, type: 'update' });
+    }
 
     return updatedEvent;
   }
