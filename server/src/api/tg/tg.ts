@@ -481,12 +481,15 @@ ${pinned ? "" : "And don't forget to pin the message with the button, so you can
               messages: message.message_id,
             });
             if (event) {
+              // If event is recurring, apply attendance to all future events in the group
+              const updateFutureRecurringEvents = !!event.recurrent?.groupId;
               await this.eventsModule.updateAtendeeStatus(
                 message.chat.id,
                 message.message_thread_id,
                 event._id.toHexString(),
                 q.from.id,
                 vote,
+                updateFutureRecurringEvents,
               );
             }
           }
