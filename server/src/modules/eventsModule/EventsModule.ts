@@ -587,29 +587,23 @@ export class EventsModule {
             deleted: { $ne: true }
           }
 
-          // Get IDs of future events to update
-          const futureEventIds = await this.events.distinct('_id', filter, { session }) as ObjectId[]
+          // Batch update all future events' attendance
+          await this.events.updateMany(
+            filter,
+            { $pull: { [pullFrom[0]]: uid, [pullFrom[1]]: uid }, $addToSet: { [`attendees.${addTo}`]: uid }, $inc: { seq: 1 } },
+            { session }
+          )
 
-          if (futureEventIds.length > 0) {
-            // Batch update all future events' attendance
-            await this.events.updateMany(
-              { _id: { $in: futureEventIds } },
-              { $pull: { [pullFrom[0]]: uid, [pullFrom[1]]: uid }, $addToSet: { [`attendees.${addTo}`]: uid }, $inc: { seq: 1 } },
-              { session }
-            )
+          // Fetch updated future events for notifications and emitting
+          updatedFutureEvents = await this.events.find(filter, { session }).toArray()
 
-            // Update notifications for all future events
-            const notificationsModule = container.resolve(NotificationsModule)
-            const futureEvents = await this.events.find({ _id: { $in: futureEventIds } }, { session }).toArray()
-            await Promise.all(
-              futureEvents.map(event =>
-                notificationsModule.updateNotificationOnAttend(event._id, event.date, status === 'yes', uid, session)
-              )
-            )
-
-            // Track updated future events to emit after transaction
-            updatedFutureEvents = futureEvents
-          }
+          // Batch update notifications for all future events
+          await container.resolve(NotificationsModule).batchUpdateNotificationsOnAttend(
+            updatedFutureEvents.map(e => ({ eventId: e._id, date: e.date })),
+            status === 'yes',
+            uid,
+            session
+          )
         }
       })
     } finally {
