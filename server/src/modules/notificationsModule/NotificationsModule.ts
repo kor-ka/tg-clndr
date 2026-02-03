@@ -121,6 +121,26 @@ export class NotificationsModule {
     await this.db.bulkWrite(operations, { session });
   }
 
+  /**
+   * Batch update notifications for multiple events when attendance changes.
+   * Creates notifications if attending, deletes them if not attending.
+   */
+  batchUpdateNotificationsOnAttend = async (
+    events: { eventId: ObjectId; date: number }[],
+    isAttendee: boolean,
+    userId: number,
+    session: ClientSession
+  ) => {
+    if (events.length === 0) return;
+
+    if (isAttendee) {
+      await this.batchCreateNotificationsForUser(events, userId, session);
+    } else {
+      const eventIds = events.map(e => e.eventId);
+      await this.db.deleteMany({ eventId: { $in: eventIds }, userId }, { session });
+    }
+  }
+
   updateNotification = async (eventId: ObjectId, userId: number, { notifyBefore }: Notification) => {
     const event = await EVENTS().findOne({ _id: eventId })
     if (!event) {

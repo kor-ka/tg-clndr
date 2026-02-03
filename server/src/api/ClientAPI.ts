@@ -214,9 +214,11 @@ export class ClientAPI {
             {
               eventId,
               status,
+              updateFutureRecurringEvents,
             }: {
               eventId: string;
               status: "yes" | "no" | "maybe";
+              updateFutureRecurringEvents?: boolean;
             },
             ack: (
               res:
@@ -231,6 +233,7 @@ export class ClientAPI {
                 eventId,
                 tgData.user.id,
                 status,
+                updateFutureRecurringEvents,
               );
               const [event, users] = await resolveEvent(
                 savedEvent,
