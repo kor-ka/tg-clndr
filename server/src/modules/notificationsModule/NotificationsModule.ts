@@ -34,7 +34,7 @@ export class NotificationsModule {
                 // non-outdated
                 if (n.time && (Date.now() - n.time < 1000 * 60 * 60)) {
                   // TODO: group/cache events
-                  const event = await EVENTS().findOne({ _id: n.eventId });
+                  const event = await EVENTS().findOne({ _id: n.eventId, deleted: { $ne: true } });
                   // event still exists
                   if (event) {
                     const user = await USER().findOne({ id: n.userId })
@@ -169,8 +169,8 @@ export class NotificationsModule {
     }
   }
 
-  onEventUpdated = async (eventId: ObjectId, date: number, session: ClientSession) => {
-    this.db.updateMany({ eventId }, [
+  onEventUpdated = (eventId: ObjectId, date: number, session: ClientSession) => {
+    return this.db.updateMany({ eventId }, [
       {
         $set: {
           eventTime: date,
