@@ -1,0 +1,25 @@
+{
+  "files": {
+    "main.css": "/tg-clndr/static/css/main.f7ae22e0.css",
+    "main.js": "/tg-clndr/static/js/main.02905569.js",
+    "static/js/268.7423e7c4.chunk.js": "/tg-clndr/static/js/268.7423e7c4.chunk.js",
+    "static/css/303.c7c0d908.chunk.css": "/tg-clndr/static/css/303.c7c0d908.chunk.css",
+    "static/js/303.af1bf6c7.chunk.js": "/tg-clndr/static/js/303.af1bf6c7.chunk.js",
+    "static/js/58.f1266fa2.chunk.js": "/tg-clndr/static/js/58.f1266fa2.chunk.js",
+    "static/js/905.a10df754.chunk.js": "/tg-clndr/static/js/905.a10df754.chunk.js",
+    "static/js/924.246441c4.chunk.js": "/tg-clndr/static/js/924.246441c4.chunk.js",
+    "index.html": "/tg-clndr/index.html",
+    "main.f7ae22e0.css.map": "/tg-clndr/static/css/main.f7ae22e0.css.map",
+    "main.02905569.js.map": "/tg-clndr/static/js/main.02905569.js.map",
+    "268.7423e7c4.chunk.js.map": "/tg-clndr/static/js/268.7423e7c4.chunk.js.map",
+    "303.c7c0d908.chunk.css.map": "/tg-clndr/static/css/303.c7c0d908.chunk.css.map",
+    "303.af1bf6c7.chunk.js.map": "/tg-clndr/static/js/303.af1bf6c7.chunk.js.map",
+    "58.f1266fa2.chunk.js.map": "/tg-clndr/static/js/58.f1266fa2.chunk.js.map",
+    "905.a10df754.chunk.js.map": "/tg-clndr/static/js/905.a10df754.chunk.js.map",
+    "924.246441c4.chunk.js.map": "/tg-clndr/static/js/924.246441c4.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.f7ae22e0.css",
+    "static/js/main.02905569.js"
+  ]
+}
