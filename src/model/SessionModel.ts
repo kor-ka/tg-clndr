@@ -74,6 +74,10 @@ export class SessionModel {
             events.map(this.addEvent)
             users.forEach(this.users.updateUser)
             this.ready.resolve()
+            const currentTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (userSettings.timeZone !== currentTimeZone) {
+                this.updateUserSettings({ timeZone: currentTimeZone }).catch(console.error);
+            }
             if (key && context.isPrivate) {
                 Cookies.set("pm_key", key, { path: "/", sameSite: 'None', secure: true, expires: 365 });
             }
