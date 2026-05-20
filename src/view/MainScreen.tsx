@@ -365,7 +365,7 @@ const EventItem = React.memo(({ eventVM, displayDate }: { eventVM: VM<Event>, di
             titile={topicName ? undefined : title}
             titleView={topicName ? <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
                 <span style={{ whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{title}</span>
-                <span className="topic-pill" style={{ '--pill-color': pillColor } as any}>{topicName}</span>
+                <span className="topic-pill" style={pillColor ? { color: pillColor, backgroundColor: `color-mix(in srgb, ${pillColor} 20%, transparent)` } : undefined}>{topicName}</span>
             </div> : undefined}
             subtitle={description}
             subTitleStyle={{ filter: 'grayscale(1)' }}
