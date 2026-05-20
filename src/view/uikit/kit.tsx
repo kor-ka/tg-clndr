@@ -77,7 +77,7 @@ export const ListItem = React.memo(({ titile: title, titleView, subtitle, subtit
 }
 )
 
-const colors = [
+export const colors = [
     'var(--color-user-1)',
     'var(--color-user-8)',
     'var(--color-user-5)',
