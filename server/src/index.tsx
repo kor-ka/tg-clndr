@@ -19,6 +19,8 @@ import {
   TimezoneContext,
   UserContext,
   UsersProviderContext,
+  TopicsContext,
+  ViewThreadIdContext,
 } from "../../src/view/App";
 import { MainScreenView } from "../../src/view/MainScreen";
 import { SelectedDateContext } from "../../src/view/monthcal/shared";
@@ -34,6 +36,7 @@ import { UserModule } from "./modules/userModule/UserModule";
 import { VM } from "../../src/utils/vm/VM";
 import { ChatMetaModule } from "./modules/chatMetaModule/ChatMetaModule";
 import { ICSModule } from "./modules/icsModule/ICSModule";
+import { TopicsModule } from "./modules/topicsModule/TopicsModule";
 import { checkChatToken } from "./api/Auth";
 import cors from "cors";
 import { SW } from "./utils/stopwatch";
@@ -304,10 +307,15 @@ initMDB()
         }
         sw.lap("check cookies");
 
-        const { events } = await mesure(
-          () => eventsModule.getEventsCached(chatId, threadId),
-          "getEventsCached",
-        );
+        const [{ events }, topicsMap] = await Promise.all([
+          mesure(
+            () => eventsModule.getEventsCached(chatId, threadId),
+            "getEventsCached",
+          ),
+          threadId === undefined
+            ? container.resolve(TopicsModule).getTopics(chatId)
+            : Promise.resolve(new Map<number, string>()),
+        ]);
         const users = events.reduce((users, event) => {
           const attendees = [
             ...event.attendees.yes,
@@ -349,7 +357,11 @@ initMDB()
                     selectDate: () => {},
                     closeCal: () => {}
                   }}>
-                    <MainScreenView eventsVM={new VM(eventsMap)} />
+                    <ViewThreadIdContext.Provider value={threadId}>
+                      <TopicsContext.Provider value={topicsMap}>
+                        <MainScreenView eventsVM={new VM(eventsMap)} />
+                      </TopicsContext.Provider>
+                    </ViewThreadIdContext.Provider>
                   </SelectedDateContext.Provider>
                 </UsersProviderContext.Provider>
               </UserContext.Provider>

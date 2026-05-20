@@ -636,8 +636,8 @@ export class EventsModule {
     return res
   }
 
-  getEventsDateRange = async (from: number, to: number, chatId: number, threadId: number | null): Promise<SavedEvent[]> => {
-    const threadFilter = threadId !== null ? { threadId } : {};
+  getEventsDateRange = async (from: number, to: number, chatId: number, threadId: number | null | undefined): Promise<SavedEvent[]> => {
+    const threadFilter = threadId != null ? { threadId } : {};
     return await this.events.find({ chatId, ...threadFilter, date: { $gte: from, $lt: to }, deleted: { $ne: true } }, { sort: { date: 1 } }).toArray();
   }
 

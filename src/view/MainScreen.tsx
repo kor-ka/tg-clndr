@@ -10,7 +10,7 @@ import { Card, ListItem, UsersPics, CardLight, Link, BackgroundContext, Page } f
 import { ModelContext } from "./ModelContext";
 import { WithModel } from "./utils/withModelHOC";
 import { SettignsIcon } from "./uikit/SettingsIcon";
-import { SplitAvailableContext, TimezoneContext, HomeLocSetup } from "./App";
+import { SplitAvailableContext, TimezoneContext, HomeLocSetup, TopicsContext, ViewThreadIdContext } from "./App";
 import { useSearchParams } from 'react-router-dom';
 import { EventsVM } from "../model/EventsModule";
 import { BackButtonController } from "./uikit/tg/BackButtonController";
@@ -294,12 +294,16 @@ const EventItem = React.memo(({ eventVM, displayDate }: { eventVM: VM<Event>, di
     const event = useVMvalue(eventVM)
     const model = React.useContext(ModelContext);
     const userSettings = useVMvalue(model?.userSettings);
-    const topics = useVMvalue(model?.topics);
+    const modelTopics = useVMvalue(model?.topics);
+    const ssrTopics = React.useContext(TopicsContext);
+    const topics = modelTopics ?? ssrTopics;
+    const ssrViewThreadId = React.useContext(ViewThreadIdContext);
+    const viewThreadId = model?.threadId ?? ssrViewThreadId;
 
     const { id, date, endDate, deleted, title, description, attendees, geo, imageURL, recurrent, threadId } = event;
 
-    const topicName = (model?.threadId === undefined && threadId !== undefined)
-        ? (topics?.get(threadId) ?? `#${threadId}`)
+    const topicName = (viewThreadId === undefined && threadId != null)
+        ? (topics?.get(threadId!) ?? `#${threadId}`)
         : undefined;
 
     const nav = useSSRReadyNavigate()
