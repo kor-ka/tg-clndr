@@ -14,11 +14,13 @@ export class SessionModel {
     readonly eventsModule: EventsModule
     readonly users: UsersModule;
     readonly chatId: number | undefined
+    readonly threadId: number | undefined
 
     readonly chatSettings = new VM<ChatSettings>({ allowPublicEdit: false, enableEventMessages: false })
     readonly userSettings = new VM<UserSettings>({ notifyBefore: null })
 
     readonly context = new VM<ChatContext>({ isAdmin: false, isPrivate: false })
+    readonly topics = new VM<Map<number, string>>(new Map())
 
     readonly ready = new Deffered<void>()
 
@@ -36,6 +38,7 @@ export class SessionModel {
         let [chatId, threadId] = chat_descriptor?.split('_').map(Number) ?? []
 
         this.chatId = chatId
+        this.threadId = threadId || undefined
 
         this.eventsModule = new EventsModule(this);
 
@@ -62,11 +65,14 @@ export class SessionModel {
             console.log(e);
         });
 
-        this.socket.on("state", ({ events, users, chatSettings, userSettings, context, key }: { events: Event[], users: User[], chatSettings: ChatSettings, userSettings: UserSettings, context: ChatContext, key?: string }) => {
+        this.socket.on("state", ({ events, users, chatSettings, userSettings, context, key, topics }: { events: Event[], users: User[], chatSettings: ChatSettings, userSettings: UserSettings, context: ChatContext, key?: string, topics?: Record<string, string> }) => {
             console.log("on_State", { events, users })
             this.userSettings.next(userSettings)
             this.chatSettings.next(chatSettings)
             this.context.next(context)
+            if (topics) {
+                this.topics.next(new Map(Object.entries(topics).map(([k, v]) => [Number(k), v])));
+            }
             // happens on reconnect and cache update
             // since some event may be deleted in between, rewrite whole event
             // TODO: detect deletions?
@@ -81,6 +87,12 @@ export class SessionModel {
             if (key && context.isPrivate) {
                 Cookies.set("pm_key", key, { path: "/", sameSite: 'None', secure: true, expires: 365 });
             }
+        });
+
+        this.socket.on("topic_update", ({ threadId, name }: { threadId: number, name: string }) => {
+            const updated = new Map(this.topics.val);
+            updated.set(threadId, name);
+            this.topics.next(updated);
         });
 
         this.socket.on("user", (user: User) => {

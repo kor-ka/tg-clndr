@@ -17,6 +17,7 @@ import { getChatToken } from "../Auth";
 import { __DEV__ } from "../../utils/dev";
 import { StatsModule } from "../../modules/statsModule/StatsModule";
 import { getKey } from "./getKey";
+import { TopicsModule } from "../../modules/topicsModule/TopicsModule";
 
 const renderEventMessage = async (
   event: SavedEvent,
@@ -145,11 +146,15 @@ export class TelegramBot {
     console.log("createPin", chatId);
     let message: TB.Message;
     const events = await this.eventsModule.getEvents(chatId, threadId);
+    const topics = threadId === undefined
+      ? await container.resolve(TopicsModule).getTopics(chatId)
+      : undefined;
     let { text, buttonsRows } = await renderPin(
       chatId,
       threadId,
       events,
       renderAttendees,
+      topics,
     );
     message = await this.bot.sendMessage(chatId, text, {
       reply_markup: { inline_keyboard: buttonsRows },
@@ -199,11 +204,15 @@ ${pinned ? "" : "And don't forget to pin the message with the button, so you can
 
     if (pinned) {
       const events = await this.eventsModule.getEvents(chatId, threadId);
+      const topics = threadId === undefined
+        ? await container.resolve(TopicsModule).getTopics(chatId)
+        : undefined;
       const { text, buttonsRows } = await renderPin(
         chatId,
         threadId,
         events,
         renderAttendees,
+        topics,
       );
       const inlineKeyboardDescriptor = JSON.stringify(buttonsRows);
 
@@ -409,6 +418,16 @@ ${pinned ? "" : "And don't forget to pin the message with the button, so you can
 
     this.bot.on("message", async (message) => {
       try {
+        const forumCreated = (message as any).forum_topic_created;
+        const forumEdited = (message as any).forum_topic_edited;
+        if (message.message_thread_id) {
+          if (forumCreated?.name) {
+            await container.resolve(TopicsModule).upsertTopic(message.chat.id, message.message_thread_id, forumCreated.name);
+          } else if (forumEdited?.name) {
+            await container.resolve(TopicsModule).upsertTopic(message.chat.id, message.message_thread_id, forumEdited.name);
+          }
+        }
+
         if (
           message.from &&
           (!message.from.is_bot || message.chat.title?.endsWith("__DEV__"))

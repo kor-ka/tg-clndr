@@ -118,6 +118,18 @@ input[type=number] {
   opacity: 0.8;
 }
 
+.topic-pill {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 0.7em;
+  background-color: color-mix(in srgb, var(--tg-theme-button-color) 20%, transparent);
+  color: var(--tg-theme-button-color);
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1.6;
+}
+
 select {
   background-color: transparent;
   background: transparent;

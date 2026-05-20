@@ -46,8 +46,8 @@ const renderAtChat = (atChat?: { name: string, id: number }) => {
     return ""
 }
 
-export const renderEvent = async ({ date, endDate, tz, title, description, attendees, deleted, geo, chatId, recurrent }: SavedEvent, options?: { timeZones?: Set<string>, renderDate?: boolean, renderAttendees?: boolean, atChat?: { name: string, id: number } }) => {
-    const { timeZones, renderDate, renderAttendees, atChat } = options ?? {}
+export const renderEvent = async ({ date, endDate, tz, title, description, attendees, deleted, geo, chatId, recurrent }: SavedEvent, options?: { timeZones?: Set<string>, renderDate?: boolean, renderAttendees?: boolean, atChat?: { name: string, id: number }, topicName?: string }) => {
+    const { timeZones, renderDate, renderAttendees, atChat, topicName } = options ?? {}
     const dateStr = renderDate !== false ? `🗓️ ${new Date(date).toLocaleString('en-US', { month: 'short', day: 'numeric', timeZone: tz })} - ` : '';
     const timeStr = new Date(date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: tz });
 
@@ -66,7 +66,8 @@ export const renderEvent = async ({ date, endDate, tz, title, description, atten
         }
     }
 
-    const lines = [`${deleted ? "<s>" : ""}${dateStr}<b>${htmlEntities(title.slice(0, 2048).trim()) + renderAtChat(atChat)}</b>, ${timeStr}${endTimeStr} ${(timeZones?.size ?? 0) > 1 ? `(${tz})` : ''}${deleted ? "</s>" : ""}`];
+    const topicStr = topicName ? ` <i>[${htmlEntities(topicName)}]</i>` : '';
+    const lines = [`${deleted ? "<s>" : ""}${dateStr}<b>${htmlEntities(title.slice(0, 2048).trim()) + renderAtChat(atChat)}</b>${topicStr}, ${timeStr}${endTimeStr} ${(timeZones?.size ?? 0) > 1 ? `(${tz})` : ''}${deleted ? "</s>" : ""}`];
     if (recurrent?.descriptor) {
         const recurrenceLabel = recurrenceToLabel(recurrent.descriptor);
         lines.push(`🔁 ${recurrenceLabel}`);

@@ -630,13 +630,15 @@ export class EventsModule {
   logCache = new Map<string, SavedEvent[]>();
   getEvents = async (chatId: number, threadId: number | undefined, limit = 200): Promise<SavedEvent[]> => {
     const now = new Date().getTime();
-    let res = await this.events.find({ chatId, threadId, endDate: { $gte: now }, deleted: { $ne: true } }, { limit, sort: { date: 1 } }).toArray();
-    this.logCache.set(`${chatId}-${threadId ?? undefined}-${limit}`, res)
+    const threadFilter = threadId !== undefined ? { threadId } : {};
+    let res = await this.events.find({ chatId, ...threadFilter, endDate: { $gte: now }, deleted: { $ne: true } }, { limit, sort: { date: 1 } }).toArray();
+    this.logCache.set(`${chatId}-${threadId ?? 'all'}-${limit}`, res)
     return res
   }
 
   getEventsDateRange = async (from: number, to: number, chatId: number, threadId: number | null): Promise<SavedEvent[]> => {
-    return await this.events.find({ chatId, threadId: threadId ?? undefined, date: { $gte: from, $lt: to }, deleted: { $ne: true } }, { sort: { date: 1 } }).toArray();
+    const threadFilter = threadId !== null ? { threadId } : {};
+    return await this.events.find({ chatId, ...threadFilter, date: { $gte: from, $lt: to }, deleted: { $ne: true } }, { sort: { date: 1 } }).toArray();
   }
 
   getEvent = async (id: string): Promise<SavedEvent> => {
@@ -650,7 +652,7 @@ export class EventsModule {
   getEventsCached = async (chatId: number, threadId: number | undefined, limit = 200) => {
     const now = new Date().getTime();
 
-    let events = this.logCache.get(`${chatId}-${threadId ?? undefined}-${limit}`)?.filter(e => e.endDate >= now)
+    let events = this.logCache.get(`${chatId}-${threadId ?? 'all'}-${limit}`)?.filter(e => e.endDate >= now)
     const eventsPromise = this.getEvents(chatId, threadId, limit).catch(e => {
       console.error(e)
       return []
