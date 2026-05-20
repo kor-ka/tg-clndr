@@ -16,6 +16,8 @@ export const UserContext = React.createContext<number | undefined>(undefined);
 export const UsersProviderContext = React.createContext<UsersModule>(new UsersModule());
 export const SplitAvailableContext = React.createContext(false);
 export const TimezoneContext = React.createContext<string | undefined>(undefined);
+export const TopicsContext = React.createContext<Map<number, string>>(new Map());
+export const ViewThreadIdContext = React.createContext<number | undefined>(undefined);
 
 
 export const renderApp = (model: SessionModel) => {

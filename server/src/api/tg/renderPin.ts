@@ -30,7 +30,7 @@ export const renderPin = async (
     events.map((e) => renderEvent(e, {
       timeZones,
       renderAttendees,
-      topicName: e.threadId !== undefined ? (topics?.get(e.threadId) ?? `#${e.threadId}`) : undefined,
+      topicName: (threadId === undefined && e.threadId != null) ? (topics?.get(e.threadId) ?? `#${e.threadId}`) : undefined,
     })),
   );
   let body = "";

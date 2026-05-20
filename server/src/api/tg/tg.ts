@@ -531,6 +531,12 @@ ${pinned ? "" : "And don't forget to pin the message with the button, so you can
         this.udpatePin(upd.chatId, upd.threadId, !isPrivate).catch((e) =>
           console.error(e),
         );
+        // also update general chat pin when a thread event changes
+        if (upd.threadId !== undefined) {
+          this.udpatePin(upd.chatId, undefined, !isPrivate).catch((e) =>
+            console.error(e),
+          );
+        }
         if (upd.type === "create") {
           if (
             (await this.chatMetaModule.getChatMeta(upd.chatId))?.settings
