@@ -10,6 +10,7 @@ import {
   Notification,
 } from "../../../src/shared/entity";
 import { ChatMetaModule } from "../modules/chatMetaModule/ChatMetaModule";
+import { TopicsModule } from "../modules/topicsModule/TopicsModule";
 import { EventsModule } from "../modules/eventsModule/EventsModule";
 import { SavedEvent } from "../modules/eventsModule/eventStore";
 import { UserModule } from "../modules/userModule/UserModule";
@@ -71,6 +72,9 @@ export class ClientAPI {
       this.io
         .to("chatClient_" + [chatId, threadId].filter(Boolean).join("_"))
         .emit("update", upd);
+      if (threadId !== undefined) {
+        this.io.to(`chatClient_${chatId}`).emit("update", upd);
+      }
     });
 
     this.eventsModule.updateBatchSubject.subscribe((state) => {
@@ -79,13 +83,24 @@ export class ClientAPI {
       this.io
         .to("chatClient_" + [chatId, threadId].filter(Boolean).join("_"))
         .emit("updates", upd);
+      if (threadId !== undefined) {
+        this.io.to(`chatClient_${chatId}`).emit("updates", upd);
+      }
     });
 
     this.eventsModule.deleteBatchSubject.subscribe((state) => {
       const { chatId, threadId, eventIds } = state;
+      const ids = eventIds.map(id => id.toHexString());
       this.io
         .to("chatClient_" + [chatId, threadId].filter(Boolean).join("_"))
-        .emit("deletes", eventIds.map(id => id.toHexString()));
+        .emit("deletes", ids);
+      if (threadId !== undefined) {
+        this.io.to(`chatClient_${chatId}`).emit("deletes", ids);
+      }
+    });
+
+    container.resolve(TopicsModule).topicUpdated.subscribe(({ chatId, threadId, name }) => {
+      this.io.to(`chatClient_${chatId}`).emit("topic_update", { threadId, name });
     });
 
     this.userModule.userUpdated.subscribe(({ user, chatId }) => {
@@ -437,6 +452,10 @@ export class ClientAPI {
             const chatSettings = meta.settings;
             const userSettings = user.settings;
             const context = { isAdmin, isPrivate: chatId === tgData.user.id };
+            const topicsMap = threadId === undefined
+              ? await container.resolve(TopicsModule).getTopics(chatId)
+              : new Map<number, string>();
+            const topics = Object.fromEntries(topicsMap);
 
             sw.lap("convert");
 
@@ -448,6 +467,7 @@ export class ClientAPI {
               userSettings,
               context,
               key: getKey(chatId, threadId),
+              topics,
             });
             sw.lap("emit");
             sw.report();
@@ -479,11 +499,12 @@ export class ClientAPI {
 }
 
 export const savedEventToApiLight = (saved: SavedEvent): Event => {
-  const { _id, recurrent, chatId, threadId, idempotencyKey, messages, ...event } = saved;
+  const { _id, recurrent, chatId, idempotencyKey, messages, threadId, ...event } = saved;
   return {
     ...event,
     id: _id.toHexString(),
-    recurrent: recurrent?.descriptor ?? ''
+    recurrent: recurrent?.descriptor ?? '',
+    threadId,
   };
 };
 

@@ -9,6 +9,7 @@ export const renderPin = async (
   threadId: number | undefined,
   events: SavedEvent[],
   renderAttendees: boolean,
+  topics?: Map<number, string>,
 ) => {
   const key = getKey(chatId, threadId);
 
@@ -26,7 +27,11 @@ export const renderPin = async (
   budget -= footer.length + 2;
 
   let eventsTexts = await Promise.all(
-    events.map((e) => renderEvent(e, { timeZones, renderAttendees })),
+    events.map((e) => renderEvent(e, {
+      timeZones,
+      renderAttendees,
+      topicName: e.threadId !== undefined ? (topics?.get(e.threadId) ?? `#${e.threadId}`) : undefined,
+    })),
   );
   let body = "";
   for (let eventText of eventsTexts) {

@@ -294,8 +294,13 @@ const EventItem = React.memo(({ eventVM, displayDate }: { eventVM: VM<Event>, di
     const event = useVMvalue(eventVM)
     const model = React.useContext(ModelContext);
     const userSettings = useVMvalue(model?.userSettings);
+    const topics = useVMvalue(model?.topics);
 
-    const { id, date, endDate, deleted, title, description, attendees, geo, imageURL, recurrent } = event;
+    const { id, date, endDate, deleted, title, description, attendees, geo, imageURL, recurrent, threadId } = event;
+
+    const topicName = (model?.threadId === undefined && threadId !== undefined)
+        ? (topics?.get(threadId) ?? `#${threadId}`)
+        : undefined;
 
     const nav = useSSRReadyNavigate()
     const onClick = React.useCallback(() => {
@@ -352,7 +357,11 @@ const EventItem = React.memo(({ eventVM, displayDate }: { eventVM: VM<Event>, di
                 position: 'relative',
             }}
             onClick={onClick}
-            titile={title}
+            titile={topicName ? undefined : title}
+            titleView={topicName ? <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
+                <span style={{ whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{title}</span>
+                <span className="topic-pill">{topicName}</span>
+            </div> : undefined}
             subtitle={description}
             subTitleStyle={{ filter: 'grayscale(1)' }}
             before={

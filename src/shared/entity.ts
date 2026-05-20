@@ -93,7 +93,8 @@ export type Event = {
   } | null;
   imageURL?: string;
   notification?: Notification | null;
-  recurrent?: string
+  recurrent?: string;
+  threadId?: number;
 };
 
 type ClientApiEvent = Omit<
