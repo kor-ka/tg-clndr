@@ -123,8 +123,8 @@ input[type=number] {
   padding: 1px 7px;
   border-radius: 10px;
   font-size: 0.7em;
-  background-color: color-mix(in srgb, var(--pill-color, var(--tg-theme-button-color)) 20%, transparent);
-  color: var(--pill-color, var(--tg-theme-button-color));
+  background-color: color-mix(in srgb, var(--tg-theme-button-color) 20%, transparent);
+  color: var(--tg-theme-button-color);
   white-space: nowrap;
   flex-shrink: 0;
   line-height: 1.6;
