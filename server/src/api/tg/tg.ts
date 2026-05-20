@@ -564,6 +564,7 @@ ${pinned ? "" : "And don't forget to pin the message with the button, so you can
           const recentlyEnded = now - 1000 * 60 * 10; // 10 minutes ago
 
           let i = 0;
+          const generalPinScheduled = new Set<number>();
           await LATEST_EVENTS()
             .find({
               endDate: { $gte: recentlyEnded },
@@ -588,6 +589,16 @@ ${pinned ? "" : "And don't forget to pin the message with the button, so you can
                   });
                 // ~30 m/s
               }, i++ * 33);
+
+              // also update general chat pin when a thread event changes
+              if (le.threadId !== undefined && !generalPinScheduled.has(le.chatId)) {
+                generalPinScheduled.add(le.chatId);
+                setTimeout(() => {
+                  this.udpatePin(le.chatId, undefined, !isPrivate).catch((e) => {
+                    console.error(e?.message);
+                  });
+                }, i++ * 33);
+              }
             });
 
           console.log("pin updates scheduled: " + i);
