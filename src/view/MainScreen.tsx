@@ -6,7 +6,7 @@ import { VM } from "../utils/vm/VM";
 import { expand, getItem, isAndroid, reqestWriteAccess, setItem, showAlert, showConfirm, WebApp, __DEV__ } from "./utils/webapp";
 import { useSSRReadyNavigate } from "./utils/navigation/useSSRReadyNavigate";
 import { MainButtonController } from "./uikit/tg/MainButtonController";
-import { Card, ListItem, UsersPics, CardLight, Link, BackgroundContext, Page } from "./uikit/kit";
+import { Card, ListItem, UsersPics, CardLight, Link, BackgroundContext, Page, colors } from "./uikit/kit";
 import { ModelContext } from "./ModelContext";
 import { WithModel } from "./utils/withModelHOC";
 import { SettignsIcon } from "./uikit/SettingsIcon";
@@ -305,6 +305,7 @@ const EventItem = React.memo(({ eventVM, displayDate }: { eventVM: VM<Event>, di
     const topicName = (viewThreadId === undefined && threadId != null)
         ? (topics?.get(threadId!) ?? `#${threadId}`)
         : undefined;
+    const pillColor = threadId != null ? colors[threadId % colors.length] : undefined;
 
     const nav = useSSRReadyNavigate()
     const onClick = React.useCallback(() => {
@@ -364,7 +365,7 @@ const EventItem = React.memo(({ eventVM, displayDate }: { eventVM: VM<Event>, di
             titile={topicName ? undefined : title}
             titleView={topicName ? <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
                 <span style={{ whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{title}</span>
-                <span className="topic-pill">{topicName}</span>
+                <span className="topic-pill" style={{ '--pill-color': pillColor } as React.CSSProperties}>{topicName}</span>
             </div> : undefined}
             subtitle={description}
             subTitleStyle={{ filter: 'grayscale(1)' }}
